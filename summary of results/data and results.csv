@@ -1,0 +1,35 @@
+Random forest,,,,,,,,,,,,,,,,
+,,,,,Hamming accuracy,,,F1 measure,,,Jaccard index,,,Subset 0/1 accuracy,,
+data set,number of instance,number of features,number of labels,,CLR,partial_order,pre_order,CLR,partial_order,pre_order,CLR,partial_order,pre_order,CLR,partial_order,pre_order
+emotion,593,72,6,,74.71%,76.91%,78.75%,27.23%,67.75%,68.30%,21.98%,58.49%,59.31%,6.25%,31.04%,32.04%
+scene,2407,294,6,,84.92%,73.96%,74.47%,16.35%,68.51%,68.72%,16.03%,62.50%,62.91%,15.08%,49.68%,50.64%
+CHD_49,555,49,6,,61.31%,70.07%,70.94%,35.06%,66.81%,67.08%,25.39%,56.11%,56.42%,2.53%,19.29%,20.19%
+yeast,2417,103,14,,75.94%,80.50%,80.69%,37.48%,67.12%,66.97%,28.16%,56.94%,56.63%,2.48%,22.26%,20.73%
+water-quality,1060,16,14,,70.53%,70.38%,71.27%,40.88%,60.64%,61.15%,29.12%,46.09%,46.63%,1.13%,1.32%,1.32%
+,,,,,,,,,,,,,,,,
+LightGBM ,,,,,,,,,,,,,,,,
+,,,,,Hamming accuracy,,,F1 measure,,,Jaccard index,,,Subset 0/1 accuracy,,
+data set,number of instance,number of features,number of labels,,CLR,partial_order,pre_order,CLR,partial_order,pre_order,CLR,partial_order,pre_order,CLR,partial_order,pre_order
+emotion,593,72,6,,77.24%,77.54%,78.61%,40.67%,68.25%,68.83%,34.22%,58.71%,59.41%,14.18%,29.00%,31.02%
+scene,2407,294,6,,87.36%,81.67%,82.27%,32.73%,75.12%,75.48%,32.05%,70.22%,70.71%,29.99%,58.70%,59.45%
+CHD_49,555,49,6,,62.15%,69.01%,68.45%,42.57%,65.82%,64.99%,31.99%,54.56%,53.42%,4.68%,16.76%,14.06%
+yeast,2417,103,14,,77.09%,79.67%,80.02%,48.94%,67.50%,67.73%,38.16%,57.04%,57.22%,4.76%,20.15%,19.77%
+water-quality,1060,16,14,,70.48%,68.64%,69.00%,45.62%,60.17%,60.27%,32.99%,45.53%,45.57%,1.42%,1.04%,0.75%
+,,,,,,,,,,,,,,,,
+Random forest + sigmoid calibration,,,,,,,,,,,,,,,,
+,,,,,Hamming accuracy,,,F1 measure,,,Jaccard index,,,Subset 0/1 accuracy,,
+data set,number of instance,number of features,number of labels,,CLR,partial_order,pre_order,CLR,partial_order,pre_order,CLR,partial_order,pre_order,CLR,partial_order,pre_order
+emotion,593,72,6,,75.64%,77.52%,79.32%,30.89%,68.35%,68.99%,25.31%,59.21%,60.01%,7.94%,32.55%,32.89%
+scene,2407,294,6,,87.97%,80.03%,80.54%,35.55%,73.25%,73.69%,34.97%,68.24%,68.85%,33.23%,56.50%,57.62%
+CHD_49,555,49,6,,60.56%,68.99%,70.82%,34.30%,66.40%,66.90%,24.53%,55.38%,56.06%,2.34%,16.58%,19.81%
+yeast,2417,103,14,,,,,,,,,,,,,
+water-quality,1060,16,14,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,
+LightGBM + sigmoid calibration,,,,,,,,,,,,,,,,
+,,,,,Hamming accuracy,,,F1 measure,,,Jaccard index,,,Subset 0/1 accuracy,,
+data set,number of instance,number of features,number of labels,,CLR,partial_order,pre_order,CLR,partial_order,pre_order,CLR,partial_order,pre_order,CLR,partial_order,pre_order
+emotion,593,72,6,,74.43%,77.63%,78.50%,25.51%,68.48%,68.54%,20.71%,59.06%,59.56%,5.41%,29.68%,32.53%
+scene,2407,294,6,,86.50%,81.37%,81.99%,26.78%,75.08%,75.55%,26.27%,70.50%,71.13%,24.76%,59.99%,61.07%
+CHD_49,555,49,6,,60.38%,67.69%,69.13%,33.20%,65.28%,65.20%,23.95%,54.28%,53.68%,2.70%,15.88%,15.85%
+yeast,2417,103,14,,,,,,,,,,,,,
+water-quality,1060,16,14,,,,,,,,,,,,,
