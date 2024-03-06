@@ -1,4 +1,4 @@
-# -predictors- coding: utf-8 -*-
+# -pairwise_independence_predictors- coding: utf-8 -*-
 """
 Created on Mon Oct 23 20:54:40 2023
 
@@ -72,7 +72,7 @@ class predictors:
             predicted_ranks.append(rank)
         return predicted_Y, predicted_ranks
 
-    def _partialorders(self, X_test, pairwise_3classifier, calibrated_2classifier):
+    def _partialorders(self, X_test, Y_pred_chains, n_chains):
         indices_vector = {}
         indVec = 0
         for i in range(n_labels - 1):
@@ -90,41 +90,43 @@ class predictors:
         for index in range(n_instances):
             #            print(index, n_instances)
             vector = []
-            #            indexEmpty = []
+            #           indexEmpty = []
             for i in range(n_labels - 1):
-                local_classifier = pairwise_3classifier[i]
-                for k_2 in range(n_labels - i - 1):
-                    clf = local_classifier[k_2]
-                    j = i + k_2 + 1
-                    pairInfor_ori = clf.predict_proba(X_test[index].reshape(1, -1))
-                    pairInfor = pairInfor_ori[0]
-                    presented_classes = list(clf.classes_)
-                    if len(presented_classes) < 3:
-                        pairInfor = [
-                            (
-                                pairInfor[presented_classes.index(x)]
-                                if x in presented_classes
-                                else 0
-                            )
-                            for x in range(n_labels)
-                        ]
-                    # add a small regularization term if the probabilistic prediction is deterministic instead of probabilistic
-                    if max(pairInfor) == 1:
-                        pairInfor = [
-                            x - 10**-10 if x == 1 else (10**-10) / 2 for x in pairInfor
-                        ]
-                    if min(pairInfor) == 0:
-                        zero_indices = [ind for ind in range(3) if pairInfor[ind] == 0]
-                        pairInfor = [
-                            (
-                                (10**-10) / len(zero_indices)
-                                if x == 0
-                                else x - (10**-10) / (3 - len(zero_indices))
-                            )
-                            for x in pairInfor
-                        ]
-                    pairInfor = [-np.log(pairInfor[l]) for l in range(3)]
-                    vector += pairInfor
+                for j in range(j, n_labels):
+                    current_predictions = Y_pred_chains[:, index, [i, j]]
+                    pairInfor = [0, 0, 0]
+                    for index_clf in range(n_chains):
+                        pairInfor[0] += current_predictions[index_clf, 0] * (
+                            1 - current_predictions[index_clf, 1]
+                        )
+                        pairInfor[1] += (
+                            1 - current_predictions[index_clf, 0]
+                        ) * current_predictions[index_clf, 1]
+                        pairInfor[2] += (
+                            1
+                            - current_predictions[index_clf, 0]
+                            * (1 - current_predictions[index_clf, 1])
+                            - (1 - current_predictions[index_clf, 0])
+                            * current_predictions[index_clf, 1]
+                        )
+                pairInfor = [x / n_chains for x in pairInfor]
+                # add a small regularization term if the probabilistic prediction is deterministic instead of probabilistic
+                if max(pairInfor) == 1:
+                    pairInfor = [
+                        x - 10**-10 if x == 1 else (10**-10) / 2 for x in pairInfor
+                    ]
+                if min(pairInfor) == 0:
+                    zero_indices = [ind for ind in range(3) if pairInfor[ind] == 0]
+                    pairInfor = [
+                        (
+                            (10**-10) / len(zero_indices)
+                            if x == 0
+                            else x - (10**-10) / (3 - len(zero_indices))
+                        )
+                        for x in pairInfor
+                    ]
+                pairInfor = [-np.log(pairInfor[l]) for l in range(3)]
+                vector += pairInfor
             #                    empty = [indices_vector["%i_%i_%i"%(i,j,l)] for l in range(3) if pairInfor[l] == 0]
             #                    indexEmpty += empty
             Gtest = np.array(G)
@@ -132,7 +134,7 @@ class predictors:
             #            for indCol in indexEmpty:
             #                Gtest[:, indCol] = 0
             #                Atest[:, indCol] = 0
-            hard_prediction_indices, predicted_preorder = (
+            hard_prediction, predicted_preorder = (
                 predictors._partialorders_reasoning_procedure(
                     base_learner,
                     vector,
@@ -147,9 +149,6 @@ class predictors:
                 )
             )
             # , indexEmpty)
-            hard_prediction = [
-                1 if x in hard_prediction_indices else 0 for x in range(n_labels)
-            ]
             predicted_Y.append(hard_prediction)
             predicted_preorders.append(predicted_preorder)
         return predicted_Y, predicted_preorders
@@ -294,13 +293,14 @@ class predictors:
         #                epist_00 += optX[indicesVector["%i_%i_%i"%(i,j,2)],0]
         #                aleat_11 += optX[indicesVector["%i_%i_%i"%(i,j,3)],0]
         hard_prediction = [
-            ind for ind in range(n_labels) if scores_d[ind] > 0 or scores_n[ind] == 0
+            1 if scores_d[ind] > 0 or scores_n[ind] == 0 else 0
+            for ind in range(n_labels)
         ]
 
         predicted_partialorder = []
         return hard_prediction, predicted_partialorder
 
-    def _preorders(self, X_test, pairwise_4classifier, calibrated_2classifier):
+    def _preorders(self, X_test, Y_pred_chains, n_chains):
         indices_vector = {}
         indVec = 0
         for i in range(n_labels - 1):
@@ -320,44 +320,41 @@ class predictors:
             vector = []
             #           indexEmpty = []
             for i in range(n_labels - 1):
-                local_classifier = pairwise_4classifier[i]
-                for k_2 in range(n_labels - i - 1):
-                    #                for j in range(i+1,n_labels):
-                    clf = local_classifier[k_2]
-                    j = i + k_2 + 1
-                    pairInfor_ori = clf.predict_proba(X_test[index].reshape(1, -1))
-                    pairInfor = pairInfor_ori[0]
-                    presented_classes = list(clf.classes_)
-                    if len(presented_classes) < 4:
-                        pairInfor = [
-                            (
-                                pairInfor[presented_classes.index(x)]
-                                if x in presented_classes
-                                else 0
-                            )
-                            for x in range(n_labels)
-                        ]
-                    #                    if min(pairInfor) == 0 and max(pairInfor) == 0:
-                    #                        print(pairInfor_ori)
-                    #                        print(pairInfor)
-                    #                        print("aaaaaaaaaaaaaaaaaaa")
-                    # add a small regularization term if the probabilistic prediction is deterministic instead of probabilistic
-                    if max(pairInfor) == 1:
-                        pairInfor = [
-                            x - 10**-10 if x == 1 else (10**-10) / 3 for x in pairInfor
-                        ]
-                    if min(pairInfor) == 0:
-                        zero_indices = [ind for ind in range(4) if pairInfor[ind] == 0]
-                        pairInfor = [
-                            (
-                                (10**-10) / len(zero_indices)
-                                if x == 0
-                                else x - (10**-10) / (4 - len(zero_indices))
-                            )
-                            for x in pairInfor
-                        ]
-                    pairInfor = [-np.log(pairInfor[l]) for l in range(4)]
-                    vector += pairInfor
+                for j in range(j, n_labels):
+                    current_predictions = Y_pred_chains[:, index, [i, j]]
+                    pairInfor = [0, 0, 0, 0]
+                    for index_clf in range(n_chains):
+                        pairInfor[0] += current_predictions[index_clf, 0] * (
+                            1 - current_predictions[index_clf, 1]
+                        )
+                        pairInfor[1] += (
+                            1 - current_predictions[index_clf, 0]
+                        ) * current_predictions[index_clf, 1]
+                        pairInfor[2] += (1 - current_predictions[index_clf, 0]) * (
+                            1 - current_predictions[index_clf, 1]
+                        )
+                        pairInfor[3] += (
+                            current_predictions[index_clf, 0]
+                            * current_predictions[index_clf, 1]
+                        )
+                pairInfor = [x / n_chains for x in pairInfor]
+                # add a small regularization term if the probabilistic prediction is deterministic instead of probabilistic
+                if max(pairInfor) == 1:
+                    pairInfor = [
+                        x - 10**-10 if x == 1 else (10**-10) / 3 for x in pairInfor
+                    ]
+                if min(pairInfor) == 0:
+                    zero_indices = [ind for ind in range(4) if pairInfor[ind] == 0]
+                    pairInfor = [
+                        (
+                            (10**-10) / len(zero_indices)
+                            if x == 0
+                            else x - (10**-10) / (4 - len(zero_indices))
+                        )
+                        for x in pairInfor
+                    ]
+                pairInfor = [-np.log(pairInfor[l]) for l in range(4)]
+                vector += pairInfor
             #                   empty = [indices_vector["%i_%i_%i"%(i,j,l)] for l in range(4) if pairInfor[l] == 0]
             #                   indexEmpty += empty
             Gtest = np.array(G)
@@ -365,7 +362,7 @@ class predictors:
             #            for indCol in indexEmpty:
             #                Gtest[:, indCol] = 0
             #                Atest[:, indCol] = 0
-            hard_prediction_indices, predicted_preorder = (
+            hard_prediction, predicted_preorder = (
                 predictors._preorders_reasoning_procedure(
                     base_learner,
                     vector,
@@ -380,9 +377,6 @@ class predictors:
                 )
             )
             # , indexEmpty)
-            hard_prediction = [
-                1 if x in hard_prediction_indices else 0 for x in range(n_labels)
-            ]
             predicted_Y.append(hard_prediction)
             predicted_preorders.append(predicted_preorder)
         return predicted_Y, predicted_preorders
@@ -543,7 +537,8 @@ class predictors:
         #                epist_00 += optX[indicesVector["%i_%i_%i"%(i,j,2)],0]
         #                aleat_11 += optX[indicesVector["%i_%i_%i"%(i,j,3)],0]
         hard_prediction = [
-            ind for ind in range(n_labels) if scores_d[ind] > 0 or scores_n[ind] == 0
+            1 if scores_d[ind] > 0 or scores_n[ind] == 0 else 0
+            for ind in range(n_labels)
         ]
         predicted_preorder = []
         return hard_prediction, predicted_preorder
@@ -640,15 +635,16 @@ if __name__ == "__main__":
         "Water-quality.arff",
     ]:
         #    n_labels_set = [19]
-        #   for dataFile in ['birds.arff']:
+        #    for dataFile in ['birds.arff']:
         n_labels = n_labels_set[ind]
         ind += 1
         #        n_labels = 6
         total_repeat = 1
         folds = 10
+        n_chains = 50
         for noisy_rate in [0.0, 0.2, 0.4]:
             #        for noisy_rate in [0.2, 0.4]:
-            for base_learner in ["XGBoost"]:
+            for base_learner in ["RF", "ET"]:
                 #        for base_learner in ["RF", "ETC", "XGBoost", "LightGBM"]:
 
                 print(dataFile, base_learner)
@@ -776,19 +772,39 @@ if __name__ == "__main__":
                         # print(subset_exact_match_pairwise_2classifier)
                         #                    print(np.mean([np.mean(x) for x in hard_predictions]))
 
+                        print("====================== Train ECC ======================")
+                        from sklearn.multioutput import ClassifierChain
+                        from sklearn.ensemble import RandomForestClassifier
+                        from sklearn.ensemble import ExtraTreesClassifier
+                        from sklearn.ensemble import GradientBoostingClassifier
+                        import lightgbm as lgb
+
+                        if base_learner == "RF":
+                            clf = RandomForestClassifier(random_state=42)
+                        if base_learner == "ET":
+                            clf = ExtraTreesClassifier(random_state=42)
+                        if base_learner == "XGBoost":
+                            clf = GradientBoostingClassifier(random_state=42)
+                        if base_learner == "LightGBM":
+                            clf = lgb.LGBMClassifier(random_state=42)
+                        chains = [
+                            ClassifierChain(clf, order="random", random_state=i * 10)
+                            for i in range(n_chains)
+                        ]
+                        n_clf = 0
+                        for chain in chains:
+                            print(n_clf, n_chains)
+                            n_clf += 1
+                            chain.fit(X[train_index], Y[train_index])
+                        Y_pred_chains = np.array(
+                            [chain.predict_proba(X[test_index]) for chain in chains]
+                        )
+
                         print(
                             "====================== pairwise_3classifier ======================"
                         )
-                        pairwise_3classifier = (
-                            pairwise_classifiers._pairwise_3classifier(
-                                base_learner, n_labels, X[train_index], Y[train_index]
-                            )
-                        )
                         predicted_Y, predicted_ranks = predictors._partialorders(
-                            n_labels,
-                            X[test_index],
-                            pairwise_3classifier,
-                            calibrated_2classifier,
+                            n_labels, X[test_index], Y_pred_chains, n_chains
                         )
                         #            print(hard_predictions)
                         hamming_loss_pairwise_3classifier = predictors._hamming(
@@ -833,16 +849,9 @@ if __name__ == "__main__":
                         print(
                             "====================== pairwise_4classifier ======================"
                         )
-                        pairwise_4classifier = (
-                            pairwise_classifiers._pairwise_4classifier(
-                                base_learner, n_labels, X[train_index], Y[train_index]
-                            )
-                        )
+
                         predicted_Y, predicted_ranks = predictors._preorders(
-                            n_labels,
-                            X[test_index],
-                            pairwise_4classifier,
-                            calibrated_2classifier,
+                            n_labels, X[test_index], Y_pred_chains, n_chains
                         )
                         #            print(hard_predictions)
                         hamming_loss_pairwise_4classifier = predictors._hamming(
@@ -882,36 +891,17 @@ if __name__ == "__main__":
                         # average_subset_exact_match_pairwise_4classifier.append(subset_exact_match_pairwise_4classifier)
                         # print(subset_exact_match_pairwise_4classifier)
                         #                    print(np.mean([np.mean(x) for x in hard_predictions]))
-                        print("====================== ECC ======================")
-                        from sklearn.multioutput import ClassifierChain
-                        from sklearn.ensemble import RandomForestClassifier
-                        from sklearn.ensemble import ExtraTreesClassifier
-                        from sklearn.ensemble import GradientBoostingClassifier
-                        import lightgbm as lgb
-
-                        if base_learner == "RF":
-                            clf = RandomForestClassifier(random_state=42)
-                        if base_learner == "ET":
-                            clf = ExtraTreesClassifier(random_state=42)
-                        if base_learner == "XGBoost":
-                            clf = GradientBoostingClassifier(random_state=42)
-                        if base_learner == "LightGBM":
-                            clf = lgb.LGBMClassifier(random_state=42)
-                        chains = [
-                            ClassifierChain(clf, order="random", random_state=i)
-                            for i in range(10)
-                        ]
-                        for chain in chains:
-                            chain.fit(X[train_index], Y[train_index])
-                        Y_pred_chains = np.array(
-                            [chain.predict(X[test_index]) for chain in chains]
-                        )
-                        Y_pred_ensemble = Y_pred_chains.mean(axis=0)
-                        predicted_Y = np.where(Y_pred_ensemble > 0.5, 1, 0)
 
                         #                    ECC.fit(X[train_index].astype(float), Y[train_index].astype(float))
                         #                    predicted_Y = ECC.predict(X[test_index].astype(float))
                         print("====================== ECC ======================")
+                        Y_pred_members = np.array(
+                            [chain.predict(X[test_index]) for chain in chains]
+                        )
+
+                        Y_pred_ensemble = Y_pred_members.mean(axis=0)
+                        predicted_Y = np.where(Y_pred_ensemble > 0.5, 1, 0)
+
                         hamming_loss_ECC = predictors._hamming(
                             base_learner, predicted_Y, Y[test_index]
                         )
@@ -1025,12 +1015,15 @@ if __name__ == "__main__":
                     ],
                 ]
 
-                res_file = "noisy_4_w_try_compareAcc_%i_%i_%i_%s_%s" % (
-                    int(noisy_rate * 10),
-                    total_repeat,
-                    folds,
-                    dataFile,
-                    base_learner,
+                res_file = (
+                    "pairwise_independence_noisy_4_w_try_compareAcc_%i_%i_%i_%s_%s"
+                    % (
+                        int(noisy_rate * 10),
+                        total_repeat,
+                        folds,
+                        dataFile,
+                        base_learner,
+                    )
                 )
                 file = open(res_file, "w")
                 file.writelines("%s\n" % line for line in final_results)
