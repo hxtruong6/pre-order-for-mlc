@@ -10,6 +10,7 @@ from scipy.io import arff
 import pandas as pd
 from sklearn.model_selection import KFold
 from scipy.stats import bernoulli
+from evaluation_metric import EvaluationMetric
 
 
 from pairwise_classifiers import pairwise_classifiers
@@ -562,12 +563,14 @@ if __name__ == "__main__":
     ind = 0
     #    for dataFile in ['Water-quality.arff']:
     n_labels_set = [6, 6, 6, 14, 14]
+
+    eval_metric = EvaluationMetric()
     for dataFile in [
         "emotions.arff",
-        "CHD_49.arff",
-        "scene.arff",
-        "Yeast.arff",
-        "Water-quality.arff",
+        # "CHD_49.arff",
+        # "scene.arff",
+        # "Yeast.arff",
+        # "Water-quality.arff",
     ]:
         #    n_labels_set = [19]
         #   for dataFile in ['birds.arff']:
@@ -575,9 +578,9 @@ if __name__ == "__main__":
         ind += 1
         #        n_labels = 6
         total_repeat = 1
-        folds = 10
-        for noisy_rate in [0.0, 0.2, 0.4]:
-            #        for noisy_rate in [0.2, 0.4]:
+        folds = 2
+        for noisy_rate in [0.0]:
+            #        for noisy_rate in [0.0, 0.2, 0.4]:
             for base_learner in ["XGBoost"]:
                 #        for base_learner in ["RF", "ETC", "XGBoost", "LightGBM"]:
 
@@ -668,34 +671,51 @@ if __name__ == "__main__":
                             pairwise_2classifier,
                             calibrated_2classifier,
                         )
-                        hamming_loss_pairwise_2classifier = predictors._hamming(
-                            base_learner, predicted_Y, Y[test_index]
+                        # hamming_loss_pairwise_2classifier = predictors._hamming(
+                        #     base_learner, predicted_Y, Y[test_index]
+                        # )
+                        hamming_loss_pairwise_2classifier = eval_metric.hamming_loss(
+                            predicted_Y, Y[test_index]
                         )
+
                         average_hamming_loss_pairwise_2classifier.append(
                             hamming_loss_pairwise_2classifier
                         )
                         print(hamming_loss_pairwise_2classifier)
-                        f1_pairwise_2classifier = predictors._f1(
-                            base_learner, predicted_Y, Y[test_index]
+                        # f1_pairwise_2classifier = predictors._f1(
+                        #     base_learner, predicted_Y, Y[test_index]
+                        # )
+                        f1_pairwise_2classifier = eval_metric.f1(
+                            predicted_Y, Y[test_index]
                         )
                         average_f1_pairwise_2classifier.append(f1_pairwise_2classifier)
                         print(f1_pairwise_2classifier)
-                        jaccard_pairwise_2classifier = predictors._jaccard(
-                            base_learner, predicted_Y, Y[test_index]
+
+                        # jaccard_pairwise_2classifier = predictors._jaccard(
+                        #     base_learner, predicted_Y, Y[test_index]
+                        # )
+                        jaccard_pairwise_2classifier = eval_metric.jaccard(
+                            predicted_Y, Y[test_index]
                         )
                         average_jaccard_pairwise_2classifier.append(
                             jaccard_pairwise_2classifier
                         )
                         print(jaccard_pairwise_2classifier)
-                        subset0_1_pairwise_2classifier = predictors._subset0_1(
-                            base_learner, predicted_Y, Y[test_index]
+                        # subset0_1_pairwise_2classifier = predictors._subset0_1(
+                        #     base_learner, predicted_Y, Y[test_index]
+                        # )
+                        subset0_1_pairwise_2classifier = eval_metric.subset0_1(
+                            predicted_Y, Y[test_index]
                         )
                         average_subset0_1_pairwise_2classifier.append(
                             subset0_1_pairwise_2classifier
                         )
                         print(subset0_1_pairwise_2classifier)
-                        recall_pairwise_2classifier = predictors._recall(
-                            base_learner, predicted_Y, Y[test_index]
+                        # recall_pairwise_2classifier = predictors._recall(
+                        #     base_learner, predicted_Y, Y[test_index]
+                        # )
+                        recall_pairwise_2classifier = eval_metric.recall(
+                            predicted_Y, Y[test_index]
                         )
                         average_recall_pairwise_2classifier.append(
                             recall_pairwise_2classifier
@@ -721,34 +741,54 @@ if __name__ == "__main__":
                             calibrated_2classifier,
                         )
                         #            print(hard_predictions)
-                        hamming_loss_pairwise_3classifier = predictors._hamming(
-                            base_learner, predicted_Y, Y[test_index]
+                        # hamming_loss_pairwise_3classifier = predictors._hamming(
+                        #     base_learner, predicted_Y, Y[test_index]
+                        # )
+                        hamming_loss_pairwise_3classifier = eval_metric.hamming_loss(
+                            predicted_Y, Y[test_index]
                         )
                         average_hamming_loss_pairwise_3classifier.append(
                             hamming_loss_pairwise_3classifier
                         )
                         print(hamming_loss_pairwise_3classifier)
-                        f1_pairwise_3classifier = predictors._f1(
-                            base_learner, predicted_Y, Y[test_index]
+                        # f1_pairwise_3classifier = predictors._f1(
+                        #     base_learner, predicted_Y, Y[test_index]
+                        # )
+                        f1_pairwise_3classifier = eval_metric.f1(
+                            predicted_Y, Y[test_index]
                         )
                         average_f1_pairwise_3classifier.append(f1_pairwise_3classifier)
                         print(f1_pairwise_3classifier)
-                        jaccard_pairwise_3classifier = predictors._jaccard(
-                            base_learner, predicted_Y, Y[test_index]
+                        # jaccard_pairwise_3classifier = predictors._jaccard(
+                        #     base_learner, predicted_Y, Y[test_index]
+                        # )
+                        jaccard_pairwise_3classifier = eval_metric.jaccard(
+                            predicted_Y, Y[test_index]
                         )
                         average_jaccard_pairwise_3classifier.append(
                             jaccard_pairwise_3classifier
                         )
                         print(jaccard_pairwise_3classifier)
-                        subset0_1_pairwise_3classifier = predictors._subset0_1(
-                            base_learner, predicted_Y, Y[test_index]
+                        # subset0_1_pairwise_3classifier = predictors._subset0_1(
+                        #     base_learner, predicted_Y, Y[test_index]
+                        # )
+                        subset0_1_pairwise_3classifier = eval_metric.subset0_1(
+                            predicted_Y, Y[test_index]
                         )
+
+                        subset0_1_pairwise_3classifier = eval_metric.subset0_1(
+                            predicted_Y, Y[test_index]
+                        )
+
                         average_subset0_1_pairwise_3classifier.append(
                             subset0_1_pairwise_3classifier
                         )
                         print(subset0_1_pairwise_3classifier)
-                        recall_pairwise_3classifier = predictors._recall(
-                            base_learner, predicted_Y, Y[test_index]
+                        # recall_pairwise_3classifier = predictors._recall(
+                        #     base_learner, predicted_Y, Y[test_index]
+                        # )
+                        recall_pairwise_3classifier = eval_metric.recall(
+                            predicted_Y, Y[test_index]
                         )
                         average_recall_pairwise_3classifier.append(
                             recall_pairwise_3classifier
@@ -775,35 +815,55 @@ if __name__ == "__main__":
                             calibrated_2classifier,
                         )
                         #            print(hard_predictions)
-                        hamming_loss_pairwise_4classifier = predictors._hamming(
-                            base_learner, predicted_Y, Y[test_index]
+                        # hamming_loss_pairwise_4classifier = predictors._hamming(
+                        #     base_learner, predicted_Y, Y[test_index]
+                        # )
+                        hamming_loss_pairwise_4classifier = eval_metric.hamming_loss(
+                            predicted_Y, Y[test_index]
                         )
+
                         average_hamming_loss_pairwise_4classifier.append(
                             hamming_loss_pairwise_4classifier
                         )
                         print(hamming_loss_pairwise_4classifier)
-                        f1_pairwise_4classifier = predictors._f1(
-                            base_learner, predicted_Y, Y[test_index]
+                        # f1_pairwise_4classifier = predictors._f1(
+                        #     base_learner, predicted_Y, Y[test_index]
+                        # )
+                        f1_pairwise_4classifier = eval_metric.f1(
+                            predicted_Y, Y[test_index]
                         )
                         average_f1_pairwise_4classifier.append(f1_pairwise_4classifier)
                         print(f1_pairwise_4classifier)
-                        jaccard_pairwise_4classifier = predictors._jaccard(
-                            base_learner, predicted_Y, Y[test_index]
+
+                        # jaccard_pairwise_4classifier = predictors._jaccard(
+                        #     base_learner, predicted_Y, Y[test_index]
+                        # )
+                        jaccard_pairwise_4classifier = eval_metric.jaccard(
+                            predicted_Y, Y[test_index]
                         )
+
                         average_jaccard_pairwise_4classifier.append(
                             jaccard_pairwise_4classifier
                         )
                         print(jaccard_pairwise_4classifier)
-                        subset0_1_pairwise_4classifier = predictors._subset0_1(
-                            base_learner, predicted_Y, Y[test_index]
+                        # subset0_1_pairwise_4classifier = predictors._subset0_1(
+                        #     base_learner, predicted_Y, Y[test_index]
+                        # )
+                        subset0_1_pairwise_4classifier = eval_metric.subset0_1(
+                            predicted_Y, Y[test_index]
                         )
+
                         average_subset0_1_pairwise_4classifier.append(
                             subset0_1_pairwise_4classifier
                         )
                         print(subset0_1_pairwise_4classifier)
-                        recall_pairwise_4classifier = predictors._recall(
-                            base_learner, predicted_Y, Y[test_index]
+                        # recall_pairwise_4classifier = predictors._recall(
+                        #     base_learner, predicted_Y, Y[test_index]
+                        # )
+                        recall_pairwise_4classifier = eval_metric.recall(
+                            predicted_Y, Y[test_index]
                         )
+
                         average_recall_pairwise_4classifier.append(
                             recall_pairwise_4classifier
                         )
@@ -842,29 +902,39 @@ if __name__ == "__main__":
                         #                    ECC.fit(X[train_index].astype(float), Y[train_index].astype(float))
                         #                    predicted_Y = ECC.predict(X[test_index].astype(float))
                         print("====================== ECC ======================")
-                        hamming_loss_ECC = predictors._hamming(
-                            base_learner, predicted_Y, Y[test_index]
+                        # hamming_loss_ECC = predictors._hamming(
+                        #     base_learner, predicted_Y, Y[test_index]
+                        # )
+                        hamming_loss_ECC = eval_metric.hamming_loss(
+                            predicted_Y, Y[test_index]
                         )
+
                         average_hamming_loss_ECC.append(hamming_loss_ECC)
                         print(hamming_loss_ECC)
-                        f1_ECC = predictors._f1(
-                            base_learner, predicted_Y, Y[test_index]
-                        )
+                        # f1_ECC = predictors._f1(
+                        #     base_learner, predicted_Y, Y[test_index]
+                        # )
+                        f1_ECC = eval_metric.f1(predicted_Y, Y[test_index])
                         average_f1_ECC.append(f1_ECC)
                         print(f1_ECC)
-                        jaccard_ECC = predictors._jaccard(
-                            base_learner, predicted_Y, Y[test_index]
-                        )
+                        # jaccard_ECC = predictors._jaccard(
+                        #     base_learner, predicted_Y, Y[test_index]
+                        # )
+                        jaccard_ECC = eval_metric.jaccard(predicted_Y, Y[test_index])
                         average_jaccard_ECC.append(jaccard_ECC)
                         print(jaccard_ECC)
-                        subset0_1_ECC = predictors._subset0_1(
-                            base_learner, predicted_Y, Y[test_index]
+                        # subset0_1_ECC = predictors._subset0_1(
+                        #     base_learner, predicted_Y, Y[test_index]
+                        # )
+                        subset0_1_ECC = eval_metric.subset0_1(
+                            predicted_Y, Y[test_index]
                         )
                         average_subset0_1_ECC.append(subset0_1_ECC)
                         print(subset0_1_ECC)
-                        recall_ECC = predictors._recall(
-                            base_learner, predicted_Y, Y[test_index]
-                        )
+                        # recall_ECC = predictors._recall(
+                        #     base_learner, predicted_Y, Y[test_index]
+                        # )
+                        recall_ECC = eval_metric.recall(predicted_Y, Y[test_index])
                         average_recall_ECC.append(recall_ECC)
                         print(recall_ECC)
 

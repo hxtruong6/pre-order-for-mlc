@@ -3,12 +3,10 @@ from sklearn.metrics import hamming_loss
 
 
 class EvaluationMetric:
-    def _hamming(self, predicted_Y, true_Y):
+    def hamming_loss(self, predicted_Y, true_Y):
         return 1 - hamming_loss(predicted_Y, true_Y)
 
-    def _f1(self, predicted_Y, true_Y):
-        #        from sklearn.metrics import f1_score
-        #        return np.mean(f1_score(hard_predictions, true_label, average=None))
+    def f1(self, predicted_Y, true_Y):
         f1 = 0
         n_instances = len(predicted_Y)
         for index in range(n_instances):
@@ -20,9 +18,7 @@ class EvaluationMetric:
                 )
         return f1 / n_instances
 
-    def _jaccard(self, predicted_Y, true_Y):
-        #        from sklearn.metrics import jaccard_score
-        #        return np.mean(jaccard_score(hard_predictions, true_label, average=None))
+    def jaccard(self, predicted_Y, true_Y):
         jaccard = 0
         n_instances = len(predicted_Y)
         for index in range(n_instances):
@@ -36,9 +32,7 @@ class EvaluationMetric:
                 )
         return jaccard / n_instances
 
-    def _subset0_1(self, predicted_Y, true_Y):
-        #        from sklearn.metrics import jaccard_score
-        #        return np.mean(jaccard_score(hard_predictions, true_label, average=None))
+    def subset0_1(self, predicted_Y, true_Y):
         subset0_1 = 0
         n_instances = len(predicted_Y)
         for index in range(n_instances):
@@ -46,10 +40,11 @@ class EvaluationMetric:
                 subset0_1 += 1
         return subset0_1 / n_instances
 
-    def _subset_exact_match(self, predicted_Y, true_Y):
+    def subset_exact_match(self, predicted_Y, true_Y):
         n_instances = len(predicted_Y)
         n_labels = len(predicted_Y[0])
-        subset_exact_match = [0 for x in range(n_labels)]
+        subset_exact_match = np.zeros(n_labels)
+
         for index in range(n_instances):
             matched_positions = np.sum(
                 [
@@ -61,9 +56,7 @@ class EvaluationMetric:
                 subset_exact_match[pos] += 1
         return [x / n_instances for x in subset_exact_match]
 
-    def _recall(self, predicted_Y, true_Y):
-        #        from sklearn.metrics import jaccard_score
-        #        return np.mean(jaccard_score(hard_predictions, true_label, average=None))
+    def recall(self, predicted_Y, true_Y):
         recall = 0
         n_instances = len(predicted_Y)
         for index in range(n_instances):
