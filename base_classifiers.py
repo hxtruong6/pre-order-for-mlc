@@ -1,17 +1,7 @@
-# -base_classifiers- coding: utf-8 -*-
-"""
-Created on Mon Oct 23 14:02:21 2023
-
-@author: nguyenli_admin
-"""
-
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 import lightgbm as lgb
-from sklearn.calibration import CalibratedClassifierCV
-
-# from imblearn.over_sampling import SMOTE
 
 
 class base_classifiers:
