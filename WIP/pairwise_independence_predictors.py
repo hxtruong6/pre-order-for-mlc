@@ -12,7 +12,7 @@ from sklearn.model_selection import KFold
 from scipy.stats import bernoulli
 
 
-from pairwise_classifiers import pairwise_classifiers
+from pairwise_classifiers import PairwiseClassifiers
 
 
 class predictors:
@@ -724,7 +724,7 @@ if __name__ == "__main__":
                             "====================== pairwise_2classifier ======================"
                         )
                         pairwise_2classifier, calibrated_2classifier = (
-                            pairwise_classifiers._pairwise_2classifier(
+                            PairwiseClassifiers._pairwise_2classifier(
                                 base_learner, n_labels, X[train_index], Y[train_index]
                             )
                         )

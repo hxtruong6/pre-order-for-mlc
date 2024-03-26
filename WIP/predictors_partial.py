@@ -11,7 +11,7 @@ import pandas as pd
 from scipy.stats import bernoulli
 from sklearn.model_selection import KFold
 
-from pairwise_classifiers import pairwise_classifiers
+from pairwise_classifiers import PairwiseClassifiers
 
 
 class predictors:
@@ -930,7 +930,7 @@ if __name__ == "__main__":
                             )
 
                             pairwise_2classifier, calibrated_2classifier = (
-                                pairwise_classifiers._pairwise_2classifier(
+                                PairwiseClassifiers._pairwise_2classifier(
                                     base_learner,
                                     n_labels,
                                     X[train_index],
@@ -984,7 +984,7 @@ if __name__ == "__main__":
                                 "====================== pairwise_3classifier ======================"
                             )
                             pairwise_3classifier = (
-                                pairwise_classifiers._pairwise_3classifier(
+                                PairwiseClassifiers._pairwise_3classifier(
                                     base_learner,
                                     n_labels,
                                     X[train_index],
@@ -1041,7 +1041,7 @@ if __name__ == "__main__":
                                 "====================== pairwise_4classifier ======================"
                             )
                             pairwise_4classifier = (
-                                pairwise_classifiers._pairwise_4classifier(
+                                PairwiseClassifiers._pairwise_4classifier(
                                     base_learner,
                                     n_labels,
                                     X[train_index],

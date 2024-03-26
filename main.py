@@ -13,7 +13,7 @@ from scipy.stats import bernoulli
 from evaluation_metric import EvaluationMetric
 
 
-from pairwise_classifiers import pairwise_classifiers
+from pairwise_classifiers import PairwiseClassifiers
 from predictor import Predictor
 
 # for a quick test
@@ -116,12 +116,17 @@ if __name__ == "__main__":
                     fold = 0
 
                     Kf = KFold(n_splits=folds, random_state=42, shuffle=True)
+                    pairwise_classifiers = PairwiseClassifiers(base_learner)
 
                     for train_index, test_index in Kf.split(Y):
                         for index in range(len(train_index)):
                             known_index = []
                             for k in range(n_labels):
-                                if bernoulli.rvs(size=1, p=noisy_rate)[0] == 1:
+                                samples = bernoulli.rvs(size=1, p=noisy_rate)
+                                assert isinstance(
+                                    samples, np.ndarray
+                                ), "samples is not an array as expected"
+                                if samples[0] == 1:
                                     if Y[train_index[index], k] == 1:
                                         Y[train_index[index], k] = 0
                                     else:
@@ -132,7 +137,7 @@ if __name__ == "__main__":
                         )
                         pairwise_2classifier, calibrated_2classifier = (
                             pairwise_classifiers._pairwise_2classifier(
-                                base_learner, n_labels, X[train_index], Y[train_index]
+                                n_labels, X[train_index], Y[train_index]
                             )
                         )
                         predicted_Y, predicted_ranks = predictors._CLR(
@@ -200,7 +205,7 @@ if __name__ == "__main__":
                         )
                         pairwise_3classifier = (
                             pairwise_classifiers._pairwise_3classifier(
-                                base_learner, n_labels, X[train_index], Y[train_index]
+                                n_labels, X[train_index], Y[train_index]
                             )
                         )
                         predicted_Y, predicted_ranks = predictors._partialorders(
@@ -273,7 +278,7 @@ if __name__ == "__main__":
                         )
                         pairwise_4classifier = (
                             pairwise_classifiers._pairwise_4classifier(
-                                base_learner, n_labels, X[train_index], Y[train_index]
+                                n_labels, X[train_index], Y[train_index]
                             )
                         )
                         predicted_Y, predicted_ranks = predictors._preorders(
@@ -346,6 +351,7 @@ if __name__ == "__main__":
                         from sklearn.ensemble import GradientBoostingClassifier
                         import lightgbm as lgb
 
+                        clf = None
                         if base_learner == "RF":
                             clf = RandomForestClassifier(random_state=42)
                         if base_learner == "ET":
@@ -354,8 +360,9 @@ if __name__ == "__main__":
                             clf = GradientBoostingClassifier(random_state=42)
                         if base_learner == "LightGBM":
                             clf = lgb.LGBMClassifier(random_state=42)
+
                         chains = [
-                            ClassifierChain(clf, order="random", random_state=i)
+                            ClassifierChain(clf, order="random", random_state=i)  # type: ignore
                             for i in range(10)
                         ]
                         for chain in chains:
@@ -366,41 +373,24 @@ if __name__ == "__main__":
                         Y_pred_ensemble = Y_pred_chains.mean(axis=0)
                         predicted_Y = np.where(Y_pred_ensemble > 0.5, 1, 0)
 
-                        #                    ECC.fit(X[train_index].astype(float), Y[train_index].astype(float))
-                        #                    predicted_Y = ECC.predict(X[test_index].astype(float))
                         print("====================== ECC ======================")
-                        # hamming_loss_ECC = predictors._hamming(
-                        #     base_learner, predicted_Y, Y[test_index]
-                        # )
                         hamming_loss_ECC = eval_metric.hamming_loss(
                             predicted_Y, Y[test_index]
                         )
 
                         average_hamming_loss_ECC.append(hamming_loss_ECC)
                         print(hamming_loss_ECC)
-                        # f1_ECC = predictors._f1(
-                        #     base_learner, predicted_Y, Y[test_index]
-                        # )
                         f1_ECC = eval_metric.f1(predicted_Y, Y[test_index])
                         average_f1_ECC.append(f1_ECC)
                         print(f1_ECC)
-                        # jaccard_ECC = predictors._jaccard(
-                        #     base_learner, predicted_Y, Y[test_index]
-                        # )
                         jaccard_ECC = eval_metric.jaccard(predicted_Y, Y[test_index])
                         average_jaccard_ECC.append(jaccard_ECC)
                         print(jaccard_ECC)
-                        # subset0_1_ECC = predictors._subset0_1(
-                        #     base_learner, predicted_Y, Y[test_index]
-                        # )
                         subset0_1_ECC = eval_metric.subset0_1(
                             predicted_Y, Y[test_index]
                         )
                         average_subset0_1_ECC.append(subset0_1_ECC)
                         print(subset0_1_ECC)
-                        # recall_ECC = predictors._recall(
-                        #     base_learner, predicted_Y, Y[test_index]
-                        # )
                         recall_ECC = eval_metric.recall(predicted_Y, Y[test_index])
                         average_recall_ECC.append(recall_ECC)
                         print(recall_ECC)

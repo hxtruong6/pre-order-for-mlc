@@ -5,12 +5,12 @@ Created on Mon Oct 23 14:02:21 2023
 @author: nguyenli_admin
 """
 
-from base_classifiers import base_classifiers
+from base_classifiers import BaseClassifiers
 
 
-class pairwise_classifiers:
-    def __init__(self, base_learner: str):
-        self.base_learner = base_learner
+class PairwiseClassifiers:
+    def __init__(self, base_learner_name: str):
+        self.base_learner = BaseClassifiers(base_learner_name)
 
     def _pairwise_2classifier(self, n_labels, X, Y):
         n_instances, _ = Y.shape
@@ -22,7 +22,7 @@ class pairwise_classifiers:
                     MCC_y.append(0)
                 else:
                     MCC_y.append(1)
-            calibrated_classifiers.append(base_classifiers._2classifier(self, X, MCC_y))
+            calibrated_classifiers.append(self.base_learner._2classifier(X, MCC_y))
         classifiers = []
         for k_1 in range(n_labels - 1):
             local_classifier = []
@@ -36,15 +36,10 @@ class pairwise_classifiers:
                     elif Y[n, k_2] == 1:
                         MCC_X.append(X[n])
                         MCC_y.append(1)
-                # if len(transformed_classes) == 0:
-                #     print(labels)
-                #     print(k_1,k_2)
-                #     print(labels[:, k_1])
-                #     print(labels[:, k_2])
-                local_classifier.append(
-                    base_classifiers._2classifier(self, MCC_X, MCC_y)
-                )
+
+                local_classifier.append(self.base_learner._2classifier(MCC_X, MCC_y))
             classifiers.append(local_classifier)
+
         return classifiers, calibrated_classifiers
 
     def _pairwise_3classifier(self, n_labels, X, Y):
@@ -61,8 +56,9 @@ class pairwise_classifiers:
                         MCC_y.append(0)
                     elif Y[n, k_2] == 1:
                         MCC_y.append(1)
-                local_classifier.append(base_classifiers._3classifier(self, X, MCC_y))
+                local_classifier.append(self.base_learner._3classifier(X, MCC_y))
             classifiers.append(local_classifier)
+
         return classifiers
 
     def _pairwise_4classifier(self, n_labels, X, Y):
@@ -81,12 +77,13 @@ class pairwise_classifiers:
                         MCC_y.append(0)
                     elif Y[n, k_2] == 1:
                         MCC_y.append(1)
-                local_classifier.append(base_classifiers._4classifier(self, X, MCC_y))
+                local_classifier.append(self.base_learner._4classifier(X, MCC_y))
             classifiers.append(local_classifier)
+
         return classifiers
 
     def _BR(self, n_labels, X, Y):
         classifiers = []
         for k in range(n_labels):
-            classifiers.append(base_classifiers._2classifier(self, X, Y[:, k]))
+            classifiers.append(self.base_learner._2classifier(X, Y[:, k]))
         return classifiers
