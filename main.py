@@ -16,75 +16,60 @@ from evaluation_metric import EvaluationMetric
 from pairwise_classifiers import PairwiseClassifiers
 from predictor import Predictor
 
+
+def load_and_preprocess_data(file_path, data_file, n_labels):
+    """Load and preprocess dataset from ARFF file."""
+    data, meta = arff.loadarff(file_path + data_file)
+    df = pd.DataFrame(data)
+
+    if data_file in ["emotions.arff", "scene.arff"]:
+        X = df.iloc[:, :-n_labels].to_numpy()
+        Y = df.iloc[:, -n_labels:].to_numpy().astype(int)
+    else:
+        X = df.iloc[:, n_labels:].to_numpy()
+        Y = df.iloc[:, :n_labels].to_numpy().astype(int)
+
+    Y = np.where(Y < 0, 0, Y)
+    return X, Y
+
+
 # for a quick test
 if __name__ == "__main__":
-    dataPath = "./data/"
-    #    dataFile = 'emotions.arff'
-    #    dataFile = 'scene.arff'
-    #    dataFile = 'CHD_49.arff'
-    # https://cometa.ujaen.es/datasets/VirusGO
-    # https://www.uco.es/kdis/mllresources/#ImageDesc
-    #    for dataFile in ['emotions.arff','CHD_49.arff', 'scene.arff']:
-    #    n_labels_set = [14]
-    ind = 0
-    #    for dataFile in ['Water-quality.arff']:
-    n_labels_set = [6, 6, 6, 14, 14]
-
-    eval_metric = EvaluationMetric()
-
-    for dataFile in [
+    # Configuration
+    data_path = "./data/"
+    data_files = [
         "emotions.arff",
         # "CHD_49.arff",
         # "scene.arff",
         # "Yeast.arff",
         # "Water-quality.arff",
-    ]:
-        #    n_labels_set = [19]
-        #   for dataFile in ['birds.arff']:
-        n_labels = n_labels_set[ind]
+    ]
+    n_labels_set = [6, 6, 6, 14, 14]  # number of labels in each dataset
+    noisy_rates = [
+        0.0,
+        #    0.2,
+        # 0.4,
+    ]
+    base_learners = [
+        "RF",
+        #  "ETC",
+        # "XGBoost",
+        # "LightGBM",
+    ]
 
-        ind += 1
-        #        n_labels = 6
-        total_repeat = 1
-        folds = 2
-        for noisy_rate in [0.0]:
-            #        for noisy_rate in [0.0, 0.2, 0.4]:
-            for base_learner in ["XGBoost"]:
-                #        for base_learner in ["RF", "ETC", "XGBoost", "LightGBM"]:
+    eval_metric = EvaluationMetric()
+    TOTAL_REPEAT_TIMES = 1
+    NUMBER_FOLDS = 2
 
-                print(dataFile, base_learner)
+    for data_file, n_labels in zip(data_files, n_labels_set):
+        for noisy_rate in noisy_rates:
+            for base_learner in base_learners:
+                print(data_file, base_learner)
                 predictors = Predictor(n_labels, base_learner)
 
-                #    base_learner = "LightGBM"
-                data = arff.loadarff(dataPath + dataFile)
-                df = pd.DataFrame(data[0]).to_numpy()
-                n_cols = len(df[0])
-                if dataFile in ["birds.arff", "emotions.arff", "scene.arff"]:
-                    X = df[:, : n_cols - n_labels]
-                    Y = df[:, n_cols - n_labels :].astype(int)
-                else:
-                    X = df[:, n_labels:]
-                    Y = df[:, :n_labels].astype(int)
-                Y = np.where(Y < 0, 0, Y)
-                # from skmultilearn.dataset import load_from_arff
-                # features, labels = load_from_arff(dataPath+dataFile,
-                #     # number of labels
-                #     label_count=6,
-                #     # MULAN format, labels at the end of rows in arff data, using 'end' for label_location
-                #     # 'start' is also available for MEKA format
-                #     label_location='end',
-                #     # bag of words
-                #     input_feature_type='int', encode_nominal=False,
-                #     # sometimes the sparse ARFF loader is borked, like in delicious,
-                #     # scikit-multilearn converts the loaded data to sparse representations,
-                #     # so disabling the liac-arff sparse loader
-                #     # but you may set load_sparse to True if this fails
-                #     load_sparse=False,
-                #     # this decides whether to return attribute names or not, usually
-                #     # you don't need this
-                #     return_attribute_definitions=False)
+                X, Y = load_and_preprocess_data(data_path, data_file, n_labels)
 
-                for repeat in range(total_repeat):
+                for repeat in range(TOTAL_REPEAT_TIMES):
                     average_hamming_loss_pairwise_2classifier = []
                     average_hamming_loss_pairwise_3classifier = []
                     average_hamming_loss_pairwise_4classifier = []
@@ -109,13 +94,9 @@ if __name__ == "__main__":
                     average_recall_pairwise_3classifier = []
                     average_recall_pairwise_4classifier = []
                     average_recall_ECC = []
-                    #                average_subset_exact_match_pairwise_2classifier = []
-                    #                average_subset_exact_match_pairwise_3classifier = []
-                    #                average_subset_exact_match_pairwise_4classifier = []
 
                     fold = 0
-
-                    Kf = KFold(n_splits=folds, random_state=42, shuffle=True)
+                    Kf = KFold(n_splits=NUMBER_FOLDS, random_state=42, shuffle=True)
                     pairwise_classifiers = PairwiseClassifiers(base_learner)
 
                     for train_index, test_index in Kf.split(Y):
@@ -484,9 +465,9 @@ if __name__ == "__main__":
 
                 res_file = "noisy_4_w_try_compareAcc_%i_%i_%i_%s_%s" % (
                     int(noisy_rate * 10),
-                    total_repeat,
-                    folds,
-                    dataFile,
+                    TOTAL_REPEAT_TIMES,
+                    NUMBER_FOLDS,
+                    data_file,
                     base_learner,
                 )
                 file = open(res_file, "w")
@@ -496,7 +477,7 @@ if __name__ == "__main__":
                 # final_results = [list(np.mean(average_subset_exact_match_pairwise_2classifier, axis=0)),
                 #                  list(np.mean(average_subset_exact_match_pairwise_3classifier, axis=0)),
                 #                  list(np.mean(average_subset_exact_match_pairwise_4classifier, axis=0))]
-                # res_file = "noisy_w_s_try_compareAcc_%i_%i_%s_%s" %(total_repeat, folds, dataFile, base_learner)
+                # res_file = "noisy_w_s_try_compareAcc_%i_%i_%s_%s" %(total_repeat, folds, data_file, base_learner)
                 # file = open(res_file, "w")
                 # file.writelines("%s\n" %line for line in final_results)
                 # file.close()
