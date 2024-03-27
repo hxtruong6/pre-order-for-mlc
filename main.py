@@ -15,22 +15,7 @@ from evaluation_metric import EvaluationMetric
 
 from pairwise_classifiers import PairwiseClassifiers
 from predictor import Predictor
-
-
-def load_and_preprocess_data(file_path, data_file, n_labels):
-    """Load and preprocess dataset from ARFF file."""
-    data, meta = arff.loadarff(file_path + data_file)
-    df = pd.DataFrame(data)
-
-    if data_file in ["emotions.arff", "scene.arff"]:
-        X = df.iloc[:, :-n_labels].to_numpy()
-        Y = df.iloc[:, -n_labels:].to_numpy().astype(int)
-    else:
-        X = df.iloc[:, n_labels:].to_numpy()
-        Y = df.iloc[:, :n_labels].to_numpy().astype(int)
-
-    Y = np.where(Y < 0, 0, Y)
-    return X, Y
+from utils import load_and_preprocess_data
 
 
 # for a quick test
@@ -377,6 +362,7 @@ if __name__ == "__main__":
                         print(recall_ECC)
 
                         fold += 1
+
                     print(
                         "====================== Average results: ======================"
                     )
