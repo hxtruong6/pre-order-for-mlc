@@ -1,8 +1,40 @@
+from enum import Enum
 import numpy as np
 from sklearn.metrics import hamming_loss
 
 
+class EvaluationMetricName(Enum):
+    HAMMING_LOSS = "hamming_loss"
+    F1 = "f1"
+    JACCARD = "jaccard"
+    SUBSET0_1 = "subset0_1"
+    SUBSET_EXACT_MATCH = "subset_exact_match"
+    RECALL = "recall"
+
+
 class EvaluationMetric:
+    def __init__(self):
+        pass
+
+    def list_metrics(self):
+        return [metric.value for metric in EvaluationMetricName]
+
+    def calculate(self, metric_name, predicted_Y, true_Y):
+        if metric_name == EvaluationMetricName.HAMMING_LOSS.value:
+            return self.hamming_loss(predicted_Y, true_Y)
+        elif metric_name == EvaluationMetricName.F1.value:
+            return self.f1(predicted_Y, true_Y)
+        elif metric_name == EvaluationMetricName.JACCARD.value:
+            return self.jaccard(predicted_Y, true_Y)
+        elif metric_name == EvaluationMetricName.SUBSET0_1.value:
+            return self.subset0_1(predicted_Y, true_Y)
+        elif metric_name == EvaluationMetricName.SUBSET_EXACT_MATCH.value:
+            return self.subset_exact_match(predicted_Y, true_Y)
+        elif metric_name == EvaluationMetricName.RECALL.value:
+            return self.recall(predicted_Y, true_Y)
+        else:
+            raise ValueError("Invalid metric name")
+
     def hamming_loss(self, predicted_Y, true_Y):
         return 1 - hamming_loss(predicted_Y, true_Y)
 

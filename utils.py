@@ -3,6 +3,7 @@ from scipy.io import arff
 import pandas as pd
 
 
+# Decrepated
 def load_and_preprocess_data(file_path, data_file, n_labels):
     """Load and preprocess dataset from ARFF file."""
     data, meta = arff.loadarff(file_path + data_file)
