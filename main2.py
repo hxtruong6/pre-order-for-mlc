@@ -74,8 +74,21 @@ def process_dataset(
                 # Step 1: Train the model
                 inference_metric.process_training(X_train, Y_train)
 
+                # Linh: For shared configurations, i.e., experiments with the same type
+                # of preference orders, which can be either partial or preorders, we can 
+                # put an option to call this function for the first configuration, e.g., 
+                # with Hamming accuracy
+                # For the next configurations, we re-use the pre-trained models. 
+
                 # Step 2: Predict the test set
                 predict_results = inference_metric.predict(X_test)
+
+                # Linh: Similar things might be done here. 
+                # For shared configurations, i.e., experiments with the same type
+                # of preference orders, which can be either partial or preorders, we can 
+                # put an option to call this function for the first configuration, e.g., 
+                # with Hamming accuracy
+                # For the next configurations, we re-use the probabilistic information that we predicted. 
 
                 results[dataset_index][f"{noisy_rate}"][base_learner] = {
                     "Y_test": Y_test,
