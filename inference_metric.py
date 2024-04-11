@@ -16,39 +16,40 @@ class InferenceMetric:
     def __init__(
         self,
         estimator: BaseEstimator | lightgbm.LGBMClassifier,
+        preference_order: PreferenceOrder = PreferenceOrder.PRE_ORDER,
     ):
         self.estimator = estimator
-        self.preference_orders = [
-            PreferenceOrder.PRE_ORDER,
-            PreferenceOrder.PARTIAL_ORDER,
-        ]
-        self.result = {
-            f"{PreferenceOrder.PRE_ORDER}": {},
-            f"{PreferenceOrder.PARTIAL_ORDER}": {},
-        }
+        self.preference_order = preference_order
 
         self.models = {}
 
+        self.pairwise_classifier = None
+
     def predict(self, X):
         # Placeholder for prediction process
-        pass
+        if self.preference_order == PreferenceOrder.PRE_ORDER:
+            pass
+        elif self.preference_order == PreferenceOrder.PARTIAL_ORDER:
+            pass
 
-    def process_training(self, X, Y):
-        for preference_order in self.preference_orders:
-            # Apply preference order: PreOrder or PartialOrder
-            y_hamming = self._hamming(X, Y)
-            y_weighted_hamming = self._weighted_hamming(X, Y)
-            y_subset = self._subset(X, Y)
+        # it should return the predicted labels predicted_Y
+        # return predicted_Y
 
-            self.result[f"{preference_order}"]["hamming"] = y_hamming
-            self.result[f"{preference_order}"]["weighted_hamming"] = y_weighted_hamming
-            self.result[f"{preference_order}"]["subset"] = y_subset
+    def fit(self, X, Y):
+        # TODO
+        if self.preference_order == PreferenceOrder.PRE_ORDER:
+            # self.pairwise_classifier = self._pairwise_2classifier(X, Y)
+            pass
+        elif self.preference_order == PreferenceOrder.PARTIAL_ORDER:
+            # self.pairwise_classifier = self._pairwise_3classifier(X, Y)
+            pass
+        else:
+            raise ValueError(f"Unknown preference order: {self.preference_order}")
 
     # Placeholder for metric calculation methods
     def _hamming(self, *args, **kwargs):
-        for preference_order in self.preference_orders:
-            # Apply preference order: PreOrder or PartialOrder
-            pass
+        # Apply preference order: PreOrder or PartialOrder
+        pass
 
     def _weighted_hamming(self, *args, **kwargs):
         pass

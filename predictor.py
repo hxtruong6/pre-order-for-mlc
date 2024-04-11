@@ -2,15 +2,8 @@ import numpy as np
 
 
 class Predictor:
-    def __init__(self, n_labels, base_learner: str):
+    def __init__(self, n_labels):
         self.n_labels = n_labels
-        self.base_learner = base_learner
-
-    def save_model(self, model, filename):
-        import pickle
-
-        with open(filename, "wb") as f:
-            pickle.dump(model, f)
 
     def _CLR(self, X_test, pairwise_2classifier, calibrated_2classifier):
         n_instances, _ = X_test.shape

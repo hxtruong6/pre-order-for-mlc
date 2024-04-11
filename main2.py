@@ -15,7 +15,7 @@ from evaluation_metric import EvaluationMetric, EvaluationMetricName
 
 
 from experience_dataset import ExperienceDataset
-from inference_metric import InferenceMetric
+from inference_metric import InferenceMetric, PreferenceOrder
 
 # add logging
 from logging import basicConfig, INFO, log
@@ -52,6 +52,7 @@ def process_dataset(
 
     for base_learner in base_learners:
         estimator = get_estimator(base_learner)
+
         # Run fold for each dataset and each noisy rate and repeat times
         for repeat_time in range(TOTAL_REPEAT_TIMES):
             log(INFO, f"Dataset: {dataset_index}, Repeat time: {repeat_time}")
@@ -67,33 +68,38 @@ def process_dataset(
                     INFO,
                     f"Fold: {fold}/{NUMBER_FOLDS} - {noisy_rate}",
                 )
+                for order_type in PreferenceOrder:
+                    log(INFO, f"Preference order: {order_type}")
+                    continue
 
-                inference_metric = InferenceMetric(
-                    estimator=estimator,
-                )
-                # Step 1: Train the model
-                inference_metric.process_training(X_train, Y_train)
+                    inference_metric = InferenceMetric(
+                        estimator=estimator,
+                        preference_order=order_type,
+                    )
 
-                # Linh: For shared configurations, i.e., experiments with the same type
-                # of preference orders, which can be either partial or preorders, we can 
-                # put an option to call this function for the first configuration, e.g., 
-                # with Hamming accuracy
-                # For the next configurations, we re-use the pre-trained models. 
+                    # Step 1: Train the model
+                    inference_metric.fit(X_train, Y_train)
 
-                # Step 2: Predict the test set
-                predict_results = inference_metric.predict(X_test)
+                    # Linh: For shared configurations, i.e., experiments with the same type
+                    # of preference orders, which can be either partial or preorders, we can
+                    # put an option to call this function for the first configuration, e.g.,
+                    # with Hamming accuracy
+                    # For the next configurations, we re-use the pre-trained models.
 
-                # Linh: Similar things might be done here. 
-                # For shared configurations, i.e., experiments with the same type
-                # of preference orders, which can be either partial or preorders, we can 
-                # put an option to call this function for the first configuration, e.g., 
-                # with Hamming accuracy
-                # For the next configurations, we re-use the probabilistic information that we predicted. 
+                    # Step 2: Predict the test set
+                    predict_results = inference_metric.predict(X_test)
 
-                results[dataset_index][f"{noisy_rate}"][base_learner] = {
-                    "Y_test": Y_test,
-                    "predict_results": predict_results,
-                }
+                    # Linh: Similar things might be done here.
+                    # For shared configurations, i.e., experiments with the same type
+                    # of preference orders, which can be either partial or preorders, we can
+                    # put an option to call this function for the first configuration, e.g.,
+                    # with Hamming accuracy
+                    # For the next configurations, we re-use the probabilistic information that we predicted.
+
+                    results[dataset_index][f"{noisy_rate}"][base_learner] = {
+                        "Y_test": Y_test,
+                        "predict_results": predict_results,
+                    }
 
     return results
 
@@ -118,14 +124,14 @@ def main(
         # Run for each noisy rate
         for noisy_rate in noisy_rates:
             log(INFO, f"Noisy rate: {noisy_rate}")
-            # process_dataset(
-            #     experience_dataset,
-            #     dataset_index,
-            #     noisy_rate,
-            #     TOTAL_REPEAT_TIMES,
-            #     NUMBER_FOLDS,
-            #     base_learners,
-            # )
+            process_dataset(
+                experience_dataset,
+                dataset_index,
+                noisy_rate,
+                TOTAL_REPEAT_TIMES,
+                NUMBER_FOLDS,
+                base_learners,
+            )
 
             # For each evaluation metric
             for metric in EvaluationMetricName:

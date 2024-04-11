@@ -50,7 +50,7 @@ if __name__ == "__main__":
         for noisy_rate in noisy_rates:
             for base_learner in base_learners:
                 print(data_file, base_learner)
-                predictors = Predictor(n_labels, base_learner)
+                predictors = Predictor(n_labels)
 
                 X, Y = load_and_preprocess_data(data_path, data_file, n_labels)
 
@@ -101,19 +101,19 @@ if __name__ == "__main__":
                         print(
                             "====================== pairwise_2classifier ======================"
                         )
+
                         pairwise_2classifier, calibrated_2classifier = (
                             pairwise_classifiers._pairwise_2classifier(
                                 n_labels, X[train_index], Y[train_index]
                             )
                         )
+
                         predicted_Y, predicted_ranks = predictors._CLR(
                             X[test_index],
                             pairwise_2classifier,
                             calibrated_2classifier,
                         )
-                        # hamming_loss_pairwise_2classifier = predictors._hamming(
-                        #     base_learner, predicted_Y, Y[test_index]
-                        # )
+
                         hamming_loss_pairwise_2classifier = eval_metric.hamming_loss(
                             predicted_Y, Y[test_index]
                         )
@@ -122,18 +122,13 @@ if __name__ == "__main__":
                             hamming_loss_pairwise_2classifier
                         )
                         print(hamming_loss_pairwise_2classifier)
-                        # f1_pairwise_2classifier = predictors._f1(
-                        #     base_learner, predicted_Y, Y[test_index]
-                        # )
+
                         f1_pairwise_2classifier = eval_metric.f1(
                             predicted_Y, Y[test_index]
                         )
                         average_f1_pairwise_2classifier.append(f1_pairwise_2classifier)
                         print(f1_pairwise_2classifier)
 
-                        # jaccard_pairwise_2classifier = predictors._jaccard(
-                        #     base_learner, predicted_Y, Y[test_index]
-                        # )
                         jaccard_pairwise_2classifier = eval_metric.jaccard(
                             predicted_Y, Y[test_index]
                         )
@@ -141,9 +136,7 @@ if __name__ == "__main__":
                             jaccard_pairwise_2classifier
                         )
                         print(jaccard_pairwise_2classifier)
-                        # subset0_1_pairwise_2classifier = predictors._subset0_1(
-                        #     base_learner, predicted_Y, Y[test_index]
-                        # )
+
                         subset0_1_pairwise_2classifier = eval_metric.subset0_1(
                             predicted_Y, Y[test_index]
                         )
@@ -151,9 +144,7 @@ if __name__ == "__main__":
                             subset0_1_pairwise_2classifier
                         )
                         print(subset0_1_pairwise_2classifier)
-                        # recall_pairwise_2classifier = predictors._recall(
-                        #     base_learner, predicted_Y, Y[test_index]
-                        # )
+
                         recall_pairwise_2classifier = eval_metric.recall(
                             predicted_Y, Y[test_index]
                         )
@@ -161,10 +152,6 @@ if __name__ == "__main__":
                             recall_pairwise_2classifier
                         )
                         print(recall_pairwise_2classifier)
-                        # subset_exact_match_pairwise_2classifier = predictors._subset_exact_match(base_learner, predicted_Y, Y[test_index])
-                        # average_subset_exact_match_pairwise_2classifier.append(subset_exact_match_pairwise_2classifier)
-                        # print(subset_exact_match_pairwise_2classifier)
-                        #                    print(np.mean([np.mean(x) for x in hard_predictions]))
 
                         print(
                             "====================== pairwise_3classifier ======================"
