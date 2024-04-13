@@ -12,6 +12,13 @@ class PairwiseClassifiers:
     def __init__(self, base_learner_name: str):
         self.base_learner = BaseClassifiers(base_learner_name)
 
+    # We may use dictionaries to store all the pairwise classifiers
+    #   classifier = {}
+    #    for i in range(n_labels - 1):
+    #        for j in range(i + 1, n_labels):
+    #            key = "%i_%i" % (i, j)
+    #            classifier[key] = the pairwise_classifier for the label pair (y_i,y_j)
+
     def _pairwise_2classifier(self, n_labels, X, Y):
         n_instances, _ = Y.shape
         calibrated_classifiers = []

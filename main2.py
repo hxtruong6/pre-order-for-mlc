@@ -96,6 +96,18 @@ def process_dataset(
                     # with Hamming accuracy
                     # For the next configurations, we re-use the probabilistic information that we predicted.
 
+                    # We may use dictionaries to store all the pairwise probabilsitic predictions
+                    #   pairwise_probabilsitic_predictions = {}
+                    #    for i in range(n_labels - 1):
+                    #        for j in range(i + 1, n_labels):
+                    #            key_classifier = "%i_%i" % (i, j)
+                    #            call the pairwise classifier classifier[key_classifier] for the label pair (y_i,y_j)
+                    #            which has been store when runing inference_metric.fit(X_train, Y_train)
+                    #            for n in range(n_test_instance):
+                    #                key_pairwise_probabilsitic_predictions = "%i_%i_%i" % (i, j,n)
+                    #                pairwise_probabilsitic_predictions[key_pairwise_probabilsitic_predictions] = the prediction 
+                    #                of classifier[key_classifier] on the n-th test instance
+
                     results[dataset_index][f"{noisy_rate}"][base_learner] = {
                         "Y_test": Y_test,
                         "predict_results": predict_results,
