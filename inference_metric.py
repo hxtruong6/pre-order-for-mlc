@@ -9,7 +9,9 @@ import lightgbm
 
 class PreferenceOrder(Enum):
     PRE_ORDER = "PreOrder"
+    BIPARTITE_PRE_ORDER = "BipartitePreOrder"
     PARTIAL_ORDER = "PartialOrder"
+    BIPARTITE_PARTIAL_ORDER = "BipartitePartialOrder"
 
 
 class InferenceMetric:
@@ -29,11 +31,14 @@ class InferenceMetric:
         # Placeholder for prediction process
         if self.preference_order == PreferenceOrder.PRE_ORDER:
             pass
+        elif self.preference_order == PreferenceOrder.BIPARTITE_PRE_ORDER:
+            pass
         elif self.preference_order == PreferenceOrder.PARTIAL_ORDER:
             pass
-
-        # it should return the predicted labels predicted_Y
-        # return predicted_Y
+        elif self.preference_order == PreferenceOrder.BIPARTITE_PARTIAL_ORDER:
+            pass
+        # it should return the predicted preference orders and predicted labels predicted_Y
+        # return predicted_O, predicted_Y
 
     def fit(self, X, Y):
         # TODO
@@ -47,14 +52,14 @@ class InferenceMetric:
             raise ValueError(f"Unknown preference order: {self.preference_order}")
 
     # Placeholder for metric calculation methods
-    def _hamming(self, *args, **kwargs):
+    def _hamming_PL(self, *args, **kwargs):
         # Apply preference order: PreOrder or PartialOrder
         pass
 
-    def _weighted_hamming(self, *args, **kwargs):
+    def _weighted_hamming_PL(self, *args, **kwargs):
         pass
 
-    def _subset(self, *args, **kwargs):
+    def _subset_PL(self, *args, **kwargs):
         pass
 
     def _classify_chain(self, *args, **kwargs):
