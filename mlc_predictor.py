@@ -1,7 +1,9 @@
 import numpy as np
 
+# we shall add the option to predict bipartite graphs by enforcing 
+# more constraints in _partialorders_compute_parameters and _preorders_compute_parameters
 
-class MLCPredictor:
+class Subset_0_1_optimizers:
 
     def __init__(self, n_labels, base_learner: str):
         self.base_learner = base_learner
@@ -11,52 +13,6 @@ class MLCPredictor:
 
         with open(filename, "wb") as f:
             pickle.dump(model, f)
-
-    def _CLR(self, X_test, pairwise_2classifier, calibrated_2classifier):
-        n_instances, _ = X_test.shape
-        calibrated_scores = np.zeros((n_instances))
-        for k in range(n_labels):
-            clf = calibrated_2classifier[k]
-            probabilistic_predictions = clf.predict_proba(X_test)
-            _, n_classes = probabilistic_predictions.shape
-            if n_classes == 1:
-                predicted_class = clf.predict(X_test[:2])
-                if predicted_class[0] == 1:
-                    calibrated_scores += probabilistic_predictions
-            else:
-                calibrated_scores += probabilistic_predictions[:, 1]
-        voting_scores = np.zeros((n_labels, n_instances))
-        for k_1 in range(n_labels - 1):
-            local_classifier = pairwise_2classifier[k_1]
-            for k_2 in range(n_labels - k_1 - 1):
-                clf = local_classifier[k_2]
-                probabilistic_predictions = clf.predict_proba(X_test)
-                _, n_classes = probabilistic_predictions.shape
-                if n_classes == 1:
-                    predicted_class = clf.predict(X_test[:2])
-                    if predicted_class[0] == 0:
-                        voting_scores[k_1, :] += [1 for n in range(n_instances)]
-                    else:
-                        voting_scores[k_1 + k_2 + 1, :] += [
-                            1 for n in range(n_instances)
-                        ]
-                else:
-                    voting_scores[k_1, :] += probabilistic_predictions[:, 0]
-                    voting_scores[k_1 + k_2 + 1, :] += probabilistic_predictions[:, 1]
-        predicted_Y = []
-        predicted_ranks = []
-        for index in range(n_instances):
-            prediction = [
-                1 if voting_scores[k, index] >= calibrated_scores[index] else 0
-                for k in range(n_labels)
-            ]
-            rank = [
-                n_labels - sorted(voting_scores[:, index]).index(x)
-                for x in voting_scores[:, index]
-            ]
-            predicted_Y.append(prediction)
-            predicted_ranks.append(rank)
-        return predicted_Y, predicted_ranks
 
     def _partialorders(self, X_test, pairwise_3classifier, calibrated_2classifier):
         indices_vector = {}
@@ -533,3 +489,75 @@ class MLCPredictor:
         ]
         predicted_preorder = []
         return hard_prediction, predicted_preorder
+
+
+class weighted_hamming_accuracy_optimizers:
+    def __init__(self, n_labels, base_learner: str):
+        self.base_learner = base_learner
+
+    def save_model(model, filename):
+        import pickle
+
+        with open(filename, "wb") as f:
+            pickle.dump(model, f)
+    pass
+
+class classifiers:
+    # Conventional classifiers, which are especially designed to predict binary vectors can be added here
+    # We currently include calibarated label ranking (CLR) and ensemble of classifier chains (ECCs)
+    def __init__(self, n_labels, base_learner: str):
+        self.base_learner = base_learner
+
+    def save_model(model, filename):
+        import pickle
+
+        with open(filename, "wb") as f:
+            pickle.dump(model, f)
+
+    def _CLR(self, X_test, pairwise_2classifier, calibrated_2classifier):
+        n_instances, _ = X_test.shape
+        calibrated_scores = np.zeros((n_instances))
+        for k in range(n_labels):
+            clf = calibrated_2classifier[k]
+            probabilistic_predictions = clf.predict_proba(X_test)
+            _, n_classes = probabilistic_predictions.shape
+            if n_classes == 1:
+                predicted_class = clf.predict(X_test[:2])
+                if predicted_class[0] == 1:
+                    calibrated_scores += probabilistic_predictions
+            else:
+                calibrated_scores += probabilistic_predictions[:, 1]
+        voting_scores = np.zeros((n_labels, n_instances))
+        for k_1 in range(n_labels - 1):
+            local_classifier = pairwise_2classifier[k_1]
+            for k_2 in range(n_labels - k_1 - 1):
+                clf = local_classifier[k_2]
+                probabilistic_predictions = clf.predict_proba(X_test)
+                _, n_classes = probabilistic_predictions.shape
+                if n_classes == 1:
+                    predicted_class = clf.predict(X_test[:2])
+                    if predicted_class[0] == 0:
+                        voting_scores[k_1, :] += [1 for n in range(n_instances)]
+                    else:
+                        voting_scores[k_1 + k_2 + 1, :] += [
+                            1 for n in range(n_instances)
+                        ]
+                else:
+                    voting_scores[k_1, :] += probabilistic_predictions[:, 0]
+                    voting_scores[k_1 + k_2 + 1, :] += probabilistic_predictions[:, 1]
+        predicted_Y = []
+        predicted_ranks = []
+        for index in range(n_instances):
+            prediction = [
+                1 if voting_scores[k, index] >= calibrated_scores[index] else 0
+                for k in range(n_labels)
+            ]
+            rank = [
+                n_labels - sorted(voting_scores[:, index]).index(x)
+                for x in voting_scores[:, index]
+            ]
+            predicted_Y.append(prediction)
+            predicted_ranks.append(rank)
+        return predicted_Y, predicted_ranks
+
+    pass

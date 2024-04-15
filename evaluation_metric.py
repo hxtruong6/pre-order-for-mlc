@@ -4,13 +4,14 @@ from sklearn.metrics import hamming_loss
 
 
 class EvaluationMetricName(Enum):
-    HAMMING_LOSS = "hamming_loss"
+    HAMMING_ACCURACY = "hamming_accuracy"
     F1 = "f1"
     JACCARD = "jaccard"
     SUBSET0_1 = "subset0_1"
     SUBSET_EXACT_MATCH = "subset_exact_match"
     RECALL = "recall"
-
+    HAMMING_ACCURACY_PL = "hamming_accuracy_PL"
+    SUBSET0_1_PL = "subset0_1_PL"
 
 class EvaluationMetric:
     def __init__(self):
@@ -21,7 +22,7 @@ class EvaluationMetric:
 
     def calculate(self, metric_name, predicted_Y, true_Y):
         if metric_name == EvaluationMetricName.HAMMING_LOSS.value:
-            return self.hamming_loss(predicted_Y, true_Y)
+            return self.hamming_accuracy(predicted_Y, true_Y)
         elif metric_name == EvaluationMetricName.F1.value:
             return self.f1(predicted_Y, true_Y)
         elif metric_name == EvaluationMetricName.JACCARD.value:
@@ -32,10 +33,14 @@ class EvaluationMetric:
             return self.subset_exact_match(predicted_Y, true_Y)
         elif metric_name == EvaluationMetricName.RECALL.value:
             return self.recall(predicted_Y, true_Y)
+        elif metric_name == EvaluationMetricName.HAMMING_LOSS_PL.value:
+            return self.hamming_accuracy_PL(predicted_O, true_Y)
+        elif metric_name == EvaluationMetricName.SUBSET0_1_PL.value:
+            return self.subset0_1_PL(predicted_O, true_Y)
         else:
             raise ValueError("Invalid metric name")
 
-    def hamming_loss(self, predicted_Y, true_Y):
+    def hamming_accuracy(self, predicted_Y, true_Y):
         return 1 - hamming_loss(predicted_Y, true_Y)
 
     def f1(self, predicted_Y, true_Y):
@@ -95,3 +100,9 @@ class EvaluationMetric:
             if np.dot(predicted_Y[index], true_Y[index]) == np.sum(true_Y[index]):
                 recall += 1
         return recall / n_instances
+    
+    def hamming_accuracy_PL(self, predicted_O, true_Y):
+        pass
+
+    def subset0_1_PL(self, predicted_O, true_Y):
+        pass
