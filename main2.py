@@ -104,9 +104,16 @@ def process_dataset(
                     #            call the pairwise classifier classifier[key_classifier] for the label pair (y_i,y_j)
                     #            which has been store when runing inference_metric.fit(X_train, Y_train)
                     #            for n in range(n_test_instance):
-                    #                key_pairwise_probabilsitic_predictions = "%i_%i_%i" % (i, j,n)
-                    #                pairwise_probabilsitic_predictions[key_pairwise_probabilsitic_predictions] = the prediction 
-                    #                of classifier[key_classifier] on the n-th test instance
+                    #                if partial_order:
+                    #                   for l in range(3)
+                    #                       key_pairwise_probabilsitic_predictions = "%i_%i_%i_%i" % (i, j, n,l)
+                    #                       pairwise_probabilsitic_predictions[key_pairwise_probabilsitic_predictions] = the l prediction
+                    #                       of classifier[key_classifier] on the n-th test instance (classifier[key_classifier] is a 3-class classifer)
+                    #                if pre_order:
+                    #                   for l in range(4)
+                    #                       key_pairwise_probabilsitic_predictions = "%i_%i_%i_%i" % (i, j, n,l)
+                    #                       pairwise_probabilsitic_predictions[key_pairwise_probabilsitic_predictions] = the l prediction
+                    #                       of classifier[key_classifier] on the n-th test instance (classifier[key_classifier] is a 4-class classifer)
 
                     results[dataset_index][f"{noisy_rate}"][base_learner] = {
                         "Y_test": Y_test,

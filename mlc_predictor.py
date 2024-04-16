@@ -3,18 +3,20 @@ import numpy as np
 # we shall add the option to predict bipartite graphs by enforcing 
 # more constraints in _partialorders_compute_parameters and _preorders_compute_parameters
 
-class Subset_0_1_optimizers:
-
+class predict_partial_order_subset:
+    MAX_HEIGHT = 2 # for case with height = 2
     def __init__(self, n_labels, base_learner: str):
         self.base_learner = base_learner
 
-    def save_model(model, filename):
-        import pickle
+    # call pairwise probabilistic information
+    # encode parameter and target function 
+    # find the Bayes-optimal partial order with respect to (w.r.t) the subset 0/1 accuracy
+    # with the option of restricting the height to at most 2
+    #  subset| weighted_Hamming
 
-        with open(filename, "wb") as f:
-            pickle.dump(model, f)
+    def _predict_PaOr_Subset(self, X_test, pairwise_3classifier, height=None):
+#    def _predict_PaOr_Subset(self, pairwise_probability_information, height=None):
 
-    def _partialorders(self, X_test, pairwise_3classifier, calibrated_2classifier):
         indices_vector = {}
         indVec = 0
         for i in range(n_labels - 1):
@@ -23,8 +25,8 @@ class Subset_0_1_optimizers:
                     key = "%i_%i_%i" % (i, j, l)
                     indices_vector[key] = indVec
                     indVec += 1
-        G, h, A, b, I, B = MLCPredictor._partialorders_compute_parameters(
-            base_learner, indices_vector, n_labels
+        G, h, A, b, I, B = self._encode_parameters_PaOr_Subset(
+            base_learner, indices_vector, n_labels, height
         )
         predicted_Y = []
         predicted_preorders = []
@@ -96,115 +98,124 @@ class Subset_0_1_optimizers:
             predicted_preorders.append(predicted_preorder)
         return predicted_Y, predicted_preorders
 
-    def _partialorders_compute_parameters(self, indices_vector, n_labels):
-        G = np.zeros(
-            (
-                int(n_labels * (n_labels - 1) * (n_labels - 2)),
-                int(n_labels * (n_labels - 1) * 1.5),
+    def _encode_parameters_PaOr_Subset(self, indices_vector, n_labels, height=None):
+        if not height:
+            G = np.zeros(
+                (
+                    int(n_labels * (n_labels - 1) * (n_labels - 2)),
+                    int(n_labels * (n_labels - 1) * 1.5),
+                )
             )
-        )
-        rowG = 0
-        for i in range(n_labels - 1):
-            for j in range(i + 1, n_labels):
-                for k in range(i):
-                    indVecs = [
-                        indices_vector[val]
-                        for val in [
-                            "%i_%i_%i" % (i, j, 0),
-                            "%i_%i_%i" % (k, i, 1),
-                            "%i_%i_%i" % (k, j, 0),
+            rowG = 0
+            for i in range(n_labels - 1):
+                for j in range(i + 1, n_labels):
+                    for k in range(i):
+                        indVecs = [
+                            indices_vector[val]
+                            for val in [
+                                "%i_%i_%i" % (i, j, 0),
+                                "%i_%i_%i" % (k, i, 1),
+                                "%i_%i_%i" % (k, j, 0),
+                            ]
                         ]
-                    ]
-                    for ind in range(1):
-                        G[rowG, indVecs[ind]] = -1
-                    for ind in range(1, 3):
-                        G[rowG, indVecs[ind]] = 1
-                    rowG += 1
-                    indVecs = [
-                        indices_vector[val]
-                        for val in [
-                            "%i_%i_%i" % (i, j, 1),
-                            "%i_%i_%i" % (k, i, 0),
-                            "%i_%i_%i" % (k, j, 1),
+                        for ind in range(1):
+                            G[rowG, indVecs[ind]] = -1
+                        for ind in range(1, 3):
+                            G[rowG, indVecs[ind]] = 1
+                        rowG += 1
+                        indVecs = [
+                            indices_vector[val]
+                            for val in [
+                                "%i_%i_%i" % (i, j, 1),
+                                "%i_%i_%i" % (k, i, 0),
+                                "%i_%i_%i" % (k, j, 1),
+                            ]
                         ]
-                    ]
-                    for ind in range(1):
-                        G[rowG, indVecs[ind]] = -1
-                    for ind in range(1, 3):
-                        G[rowG, indVecs[ind]] = 1
-                    rowG += 1
-                for k in range(i + 1, j):
-                    indVecs = [
-                        indices_vector[val]
-                        for val in [
-                            "%i_%i_%i" % (i, j, 0),
-                            "%i_%i_%i" % (i, k, 0),
-                            "%i_%i_%i" % (k, j, 0),
+                        for ind in range(1):
+                            G[rowG, indVecs[ind]] = -1
+                        for ind in range(1, 3):
+                            G[rowG, indVecs[ind]] = 1
+                        rowG += 1
+                    for k in range(i + 1, j):
+                        indVecs = [
+                            indices_vector[val]
+                            for val in [
+                                "%i_%i_%i" % (i, j, 0),
+                                "%i_%i_%i" % (i, k, 0),
+                                "%i_%i_%i" % (k, j, 0),
+                            ]
                         ]
-                    ]
-                    for ind in range(1):
-                        G[rowG, indVecs[ind]] = -1
-                    for ind in range(1, 3):
-                        G[rowG, indVecs[ind]] = 1
-                    rowG += 1
-                    indVecs = [
-                        indices_vector[val]
-                        for val in [
-                            "%i_%i_%i" % (i, j, 1),
-                            "%i_%i_%i" % (i, k, 1),
-                            "%i_%i_%i" % (k, j, 1),
+                        for ind in range(1):
+                            G[rowG, indVecs[ind]] = -1
+                        for ind in range(1, 3):
+                            G[rowG, indVecs[ind]] = 1
+                        rowG += 1
+                        indVecs = [
+                            indices_vector[val]
+                            for val in [
+                                "%i_%i_%i" % (i, j, 1),
+                                "%i_%i_%i" % (i, k, 1),
+                                "%i_%i_%i" % (k, j, 1),
+                            ]
                         ]
-                    ]
-                    for ind in range(1):
-                        G[rowG, indVecs[ind]] = -1
-                    for ind in range(1, 3):
-                        G[rowG, indVecs[ind]] = 1
-                    rowG += 1
-                for k in range(j + 1, n_labels):
-                    indVecs = [
-                        indices_vector[val]
-                        for val in [
-                            "%i_%i_%i" % (i, j, 0),
-                            "%i_%i_%i" % (i, k, 0),
-                            "%i_%i_%i" % (j, k, 1),
+                        for ind in range(1):
+                            G[rowG, indVecs[ind]] = -1
+                        for ind in range(1, 3):
+                            G[rowG, indVecs[ind]] = 1
+                        rowG += 1
+                    for k in range(j + 1, n_labels):
+                        indVecs = [
+                            indices_vector[val]
+                            for val in [
+                                "%i_%i_%i" % (i, j, 0),
+                                "%i_%i_%i" % (i, k, 0),
+                                "%i_%i_%i" % (j, k, 1),
+                            ]
                         ]
-                    ]
-                    for ind in range(1):
-                        G[rowG, indVecs[ind]] = -1
-                    for ind in range(1, 3):
-                        G[rowG, indVecs[ind]] = 1
-                    rowG += 1
-                    indVecs = [
-                        indices_vector[val]
-                        for val in [
-                            "%i_%i_%i" % (i, j, 1),
-                            "%i_%i_%i" % (i, k, 1),
-                            "%i_%i_%i" % (j, k, 0),
+                        for ind in range(1):
+                            G[rowG, indVecs[ind]] = -1
+                        for ind in range(1, 3):
+                            G[rowG, indVecs[ind]] = 1
+                        rowG += 1
+                        indVecs = [
+                            indices_vector[val]
+                            for val in [
+                                "%i_%i_%i" % (i, j, 1),
+                                "%i_%i_%i" % (i, k, 1),
+                                "%i_%i_%i" % (j, k, 0),
+                            ]
                         ]
-                    ]
-                    for ind in range(1):
-                        G[rowG, indVecs[ind]] = -1
-                    for ind in range(1, 3):
-                        G[rowG, indVecs[ind]] = 1
-                    rowG += 1
-        h = np.ones((n_labels * (n_labels - 1) * (n_labels - 2), 1))
-        A = np.zeros(
-            (int(n_labels * (n_labels - 1) * 0.5), int(n_labels * (n_labels - 1) * 1.5))
-        )
-        rowA = 0
-        for i in range(n_labels - 1):
-            for j in range(i + 1, n_labels):
-                # we can inject the information of partial labels at test time here
-                for l in range(3):
-                    indVec = indices_vector["%i_%i_%i" % (i, j, l)]
-                    A[rowA, indVec] = 1
-                rowA += 1
-        b = np.ones((int(n_labels * (n_labels - 1) * 0.5), 1))
-        I = set()
-        B = set(range(int(n_labels * (n_labels - 1) * 1.5)))
-        return G, h, A, b, I, B
+                        for ind in range(1):
+                            G[rowG, indVecs[ind]] = -1
+                        for ind in range(1, 3):
+                            G[rowG, indVecs[ind]] = 1
+                        rowG += 1
+            h = np.ones((n_labels * (n_labels - 1) * (n_labels - 2), 1))
+            A = np.zeros(
+                (int(n_labels * (n_labels - 1) * 0.5), int(n_labels * (n_labels - 1) * 1.5))
+            )
+            rowA = 0
+            for i in range(n_labels - 1):
+                for j in range(i + 1, n_labels):
+                    # we can inject the information of partial labels at test time here
+                    for l in range(3):
+                        indVec = indices_vector["%i_%i_%i" % (i, j, l)]
+                        A[rowA, indVec] = 1
+                    rowA += 1
+            b = np.ones((int(n_labels * (n_labels - 1) * 0.5), 1))
+            I = set()
+            B = set(range(int(n_labels * (n_labels - 1) * 1.5)))
+            
+            return G, h, A, b, I, B
+            
+        elif height == 2:
+            
+            pass
+            # return G, h, A, b, I, B
+        else:
+            raise ValueError("The height is not supported")
 
-    def _partialorders_reasoning_procedure(
+    def _reasoning_procedure_PaOr_Subset(
         self, vector, indices_vector, n_labels, G, h, A, b, I, B
     ):
         #                            ,
@@ -242,7 +253,24 @@ class Subset_0_1_optimizers:
         predicted_partialorder = []
         return hard_prediction, predicted_partialorder
 
-    def _preorders(self, X_test, pairwise_4classifier, calibrated_2classifier):
+    # call pairwise probabilistic information
+    # encode parameter and target function 
+    # find the Bayes-optimal partial order w.r.t the hamming accuracy 
+    # with the option of restricting the height to at most 2
+
+
+    
+
+class predict_pre_order:
+    def __init__(self, n_labels, base_learner: str):
+        self.base_learner = base_learner
+
+    def save_model(model, filename):
+        import pickle
+
+        with open(filename, "wb") as f:
+            pickle.dump(model, f)
+   def _predict_PreOr_Subset(self, X_test, pairwise_4classifier):
         indices_vector = {}
         indVec = 0
         for i in range(n_labels - 1):
@@ -329,7 +357,7 @@ class Subset_0_1_optimizers:
             predicted_preorders.append(predicted_preorder)
         return predicted_Y, predicted_preorders
 
-    def _preorders_compute_parameters(self, indices_vector, n_labels):
+    def _encode_parameters_PreOr_Subset(self, indices_vector, n_labels):
         G = np.zeros(
             (n_labels * (n_labels - 1) * (n_labels - 2), n_labels * (n_labels - 1) * 2)
         )
@@ -452,7 +480,7 @@ class Subset_0_1_optimizers:
         B = set(range(n_labels * (n_labels - 1) * 2))
         return G, h, A, b, I, B
 
-    def _preorders_reasoning_procedure(
+    def _reasoning_procedure_PreOr_Subset(
         self, vector, indices_vector, n_labels, G, h, A, b, I, B
     ):
         #                            ,
@@ -490,19 +518,7 @@ class Subset_0_1_optimizers:
         predicted_preorder = []
         return hard_prediction, predicted_preorder
 
-
-class weighted_hamming_accuracy_optimizers:
-    def __init__(self, n_labels, base_learner: str):
-        self.base_learner = base_learner
-
-    def save_model(model, filename):
-        import pickle
-
-        with open(filename, "wb") as f:
-            pickle.dump(model, f)
-    pass
-
-class classifiers:
+class baselines:
     # Conventional classifiers, which are especially designed to predict binary vectors can be added here
     # We currently include calibarated label ranking (CLR) and ensemble of classifier chains (ECCs)
     def __init__(self, n_labels, base_learner: str):
@@ -559,5 +575,8 @@ class classifiers:
             predicted_Y.append(prediction)
             predicted_ranks.append(rank)
         return predicted_Y, predicted_ranks
+ 
+    def _ECC(self, X_test):
+        pass
 
     pass
