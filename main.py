@@ -13,7 +13,7 @@ from scipy.stats import bernoulli
 from evaluation_metric import EvaluationMetric
 
 
-from pairwise_classifiers import PairwiseClassifiers
+from base_classifer import PairwiseClassifiers
 from predictor import Predictor
 from utils import load_and_preprocess_data
 
