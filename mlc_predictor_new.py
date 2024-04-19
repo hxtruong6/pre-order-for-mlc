@@ -1,5 +1,6 @@
 from inference_metric import PreferenceOrder
 from base_classifer import BaseClassifiers
+import numpy as np
 
 
 class MLCPredictor:
@@ -42,17 +43,31 @@ class PredictPartialOrder(MLCPredictor):
         for i in range(self.n_labels - 1):
             for j in range(i + 1, self.n_labels):
                 key_classifier = f"{i}_{j}"
-                probabilistic_prediction = self.pairwise_classifiers[
+                probabilistic_prediction_original = self.pairwise_classifiers[
                     key_classifier
                 ].predict_proba(
                     X_test
-                )  # --> Nx3 numpy.array
+                )
+                # --> Nx3 numpy.array
                 # It can happen that the training set of self.pairwise_classifiers[key_classifier]
                 # contains less than 3 classes. In this case, we should ensure that the unseen classes
                 # should have predicted probability equal 0.
                 # list(self.pairwise_classifiers[key_classifier].classes_) gives us the list of classes
                 # which appear on at least one training instance, which can contain either 1 or 2 or 3 classes
-
+                
+                obsevered_classes = list(self.pairwise_classifiers[
+                    key_classifier
+                ].classes_)
+                
+                if len(obsevered_classes) < 3:
+                    probabilistic_prediction = np.zeros((len(X_test), 3))
+                    for i in range(3):
+                        if i in obsevered_classes:
+                            probabilistic_prediction[:,i] = probabilistic_prediction_original[:,obsevered_classes.index(i)]
+                else:
+                    probabilistic_prediction = probabilistic_prediction_original
+                # check if this function helps to correctly insert for each unobserved class a zero colum  
+ 
                 for n in range(self.n_instances):
 
                     for l in range(3):
@@ -109,27 +124,13 @@ class PredictPartialOrder(MLCPredictor):
         predicted_Y = []
         predicted_preorders = []
         n_instances, _ = X_test.shape
-        for index in range(n_instances):
+        for n in range(n_instances):
             #            print(index, n_instances)
             vector = []
             #            indexEmpty = []
             for i in range(n_labels - 1):
-                local_classifier = pairwise_3classifier[i]
-                for k_2 in range(n_labels - i - 1):
-                    clf = local_classifier[k_2]
-                    j = i + k_2 + 1
-                    pairInfor_ori = clf.predict_proba(X_test[index].reshape(1, -1))
-                    pairInfor = pairInfor_ori[0]
-                    presented_classes = list(clf.classes_)
-                    if len(presented_classes) < 3:
-                        pairInfor = [
-                            (
-                                pairInfor[presented_classes.index(x)]
-                                if x in presented_classes
-                                else 0
-                            )
-                            for x in range(n_labels)
-                        ]
+                for j in range(i + 1, self.n_labels):
+                    pairInfor = [pairwise_probabilsitic_predictions[f"{i}_{j}_{n}_{l}"] for l in range(3)]             
                     # add a small regularization term if the probabilistic prediction is deterministic instead of probabilistic
                     if max(pairInfor) == 1:
                         pairInfor = [
