@@ -4,7 +4,9 @@ from sklearn.multioutput import ClassifierChain
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.ensemble import GradientBoostingClassifier
+from base_classifer import BaseClassifiers
 import lightgbm
+import numpy as np
 
 
 class PreferenceOrder(Enum):
@@ -40,13 +42,58 @@ class InferenceMetric:
         # it should return the predicted preference orders and predicted labels predicted_Y
         # return predicted_O, predicted_Y
 
+    def prob_predict(self, X):
+        n_test_instances, _ = X.shape
+        # Placeholder for prediction process
+        if self.preference_order == PreferenceOrder.PRE_ORDER or self.preference_order == PreferenceOrder.BIPARTITE_PRE_ORDER:
+            pairwise_probabilistic_predictions = {}
+            for i in range(n_labels - 1):
+                for j in range(i + 1, n_labels):
+                    pairwise_probabilistic_predictions = np.zeros((n_test_instances,3))
+                    key_classifier = f"{i}_{j}"
+                    original_pairwise_probabilistic_predictions = self.pairwise_classifier[key_classifier](X)
+                    presented_classes = list(self.pairwise_classifier.classes_)
+                    for l in range(4):
+                        if l in presented_classes:
+                            pairwise_probabilistic_predictions[:,l] = original_pairwise_probabilistic_predictions[:,presented_classes.index(l)]                             
+                    for n in range(n_test_instances):
+                                        
+                        # add a small regularization term if the probabilistic prediction is deterministic instead of probabilistic
+
+                        for l in range(4)
+                            key_pairwise_probabilsitic_predictions = "%i_%i_%i_%i" % (i, j, n,l)
+                            pairwise_probabilsitic_predictions[key_pairwise_probabilsitic_predictions] = pairwise_probabilistic_predictions[n]                 
+            pass
+        elif self.preference_order == PreferenceOrder.PARTIAL_ORDER or self.preference_order == PreferenceOrder.BIPARTITE_PARTIAL_ORDER:
+            pairwise_probabilistic_predictions = {}
+            for i in range(n_labels - 1):
+                for j in range(i + 1, n_labels):
+                    pairwise_probabilistic_predictions = np.zeros((n_test_instances,3))
+                    key_classifier = f"{i}_{j}"
+                    original_pairwise_probabilistic_predictions = self.pairwise_classifier[key_classifier](X)
+                    presented_classes = list(self.pairwise_classifier.classes_)
+                    for l in range(3):
+                        if l in presented_classes:
+                            pairwise_probabilistic_predictions[:,l] = original_pairwise_probabilistic_predictions[:,presented_classes.index(l)]                             
+                    for n in range(n_test_instances):
+
+                        # add a small regularization term if the probabilistic prediction is deterministic instead of probabilistic
+
+                        for l in range(3)
+                            key_pairwise_probabilsitic_predictions = "%i_%i_%i_%i" % (i, j, n,l)
+                            pairwise_probabilsitic_predictions[key_pairwise_probabilsitic_predictions] = pairwise_probabilistic_predictions[n]
+            pass
+        return pairwise_probabilsitic_predictions
+
+    #   
+
     def fit(self, X, Y):
         # TODO
         if self.preference_order == PreferenceOrder.PRE_ORDER:
-            # self.pairwise_classifier = self._pairwise_2classifier(X, Y)
+            self.pairwise_classifier = BaseClassifiers.pairwise_pre_order_classifier(X, Y)
             pass
         elif self.preference_order == PreferenceOrder.PARTIAL_ORDER:
-            # self.pairwise_classifier = self._pairwise_3classifier(X, Y)
+            self.pairwise_classifier = BaseClassifiers.pairwise_partial_order_classifer(X, Y)
             pass
         else:
             raise ValueError(f"Unknown preference order: {self.preference_order}")

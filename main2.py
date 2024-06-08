@@ -87,7 +87,8 @@ def process_dataset(
                     # For the next configurations, we re-use the pre-trained models.
 
                     # Step 2: Predict the test set
-                    predict_results = inference_metric.predict(X_test)
+                    probabilsitic_predictions = inference_metric.prob_predict(X_test)
+                    predict_results = inference_metric.predict(probabilsitic_predictions)
 
                     # Linh: Similar things might be done here.
                     # For shared configurations, i.e., experiments with the same type
@@ -97,7 +98,7 @@ def process_dataset(
                     # For the next configurations, we re-use the probabilistic information that we predicted.
 
                     # We may use dictionaries to store all the pairwise probabilsitic predictions
-                    #   pairwise_probabilsitic_predictions = {}
+                    #   pairwise_probabilistic_predictions = {}
                     #    for i in range(n_labels - 1):
                     #        for j in range(i + 1, n_labels):
                     #            key_classifier = "%i_%i" % (i, j)
@@ -180,6 +181,17 @@ if __name__ == "__main__":
         #  "ETC",
         # "XGBoost",
         # "LightGBM",
+    ]
+
+    prediction_types = [
+        "UnrPreSub",
+        # "UnrPreHam",
+        # "BipPreSub"",
+        # "BipPreHam",
+        # "UnrParSub",
+        # "UnrParHam",
+        # "BipParSub"",
+        # "BipParHam",
     ]
 
     TOTAL_REPEAT_TIMES = 1
