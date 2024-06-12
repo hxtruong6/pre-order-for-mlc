@@ -27,7 +27,7 @@ class search_BOParOs:
         pass
 
     def PARTIAL_ORDER_SUB(self.pairwise_probabilistic_predictions):
-                indices_vector = {}
+        indices_vector = {}
         indVec = 0
         # How to make sure self.n_labels is not None
         assert self.n_labels is not None
@@ -43,20 +43,13 @@ class search_BOParOs:
         predicted_preorders = []
         n_instances, _ = X_test.shape
         for n in range(n_instances):
-            #            print(index, n_instances)
             vector = []
-            #            indexEmpty = []
             for i in range(n_labels - 1):
                 for j in range(i + 1, self.n_labels):
                     pairInfor = [-np.log(pairwise_probabilistic_predictions[f"{i}_{j}_{n}_{l}"]) for l in range(3)]             
                     vector += pairInfor
-            #                    empty = [indices_vector["%i_%i_%i"%(i,j,l)] for l in range(3) if pairInfor[l] == 0]
-            #                    indexEmpty += empty
             Gtest = np.array(G)
             Atest = np.array(A)
-            #            for indCol in indexEmpty:
-            #                Gtest[:, indCol] = 0
-            #                Atest[:, indCol] = 0
             hard_prediction_indices, predicted_preorder = (
                 MLCPredictor._partialorders_reasoning_procedure(
                     base_learner,
@@ -71,7 +64,6 @@ class search_BOParOs:
                     B,
                 )
             )
-            # , indexEmpty)
             hard_prediction = [
                 1 if x in hard_prediction_indices else 0 for x in range(n_labels)
             ]
