@@ -16,7 +16,7 @@ class PreferenceOrder(Enum):
     BIPARTITE_PARTIAL_ORDER = "BipartitePartialOrder"
 
 
-class InferenceMetric:
+class PredictOBPOs:
     def __init__(
         self,
         estimator: BaseEstimator | lightgbm.LGBMClassifier,
@@ -29,7 +29,7 @@ class InferenceMetric:
 
         self.pairwise_classifier = None
 
-    def predict(self, X):
+    def predict(self, pairwise_probabilsitic_predictions):
         # Placeholder for prediction process
         if self.preference_order == PreferenceOrder.PRE_ORDER:
             pass
@@ -42,7 +42,7 @@ class InferenceMetric:
         # it should return the predicted preference orders and predicted labels predicted_Y
         # return predicted_O, predicted_Y
 
-    def prob_predict(self, X):
+    def predict_proba(self, X):
         n_test_instances, _ = X.shape
         # Placeholder for prediction process
         if self.preference_order == PreferenceOrder.PRE_ORDER or self.preference_order == PreferenceOrder.BIPARTITE_PRE_ORDER:
@@ -58,7 +58,7 @@ class InferenceMetric:
                             pairwise_probabilistic_predictions[:,l] = original_pairwise_probabilistic_predictions[:,presented_classes.index(l)]                             
                     for n in range(n_test_instances):
                                         
-                        # add a small regularization term if the probabilistic prediction is deterministic instead of probabilistic
+                        # TODO: add a small regularization term if the probabilistic prediction is deterministic instead of probabilistic
 
                         for l in range(4)
                             key_pairwise_probabilsitic_predictions = "%i_%i_%i_%i" % (i, j, n,l)
@@ -77,7 +77,7 @@ class InferenceMetric:
                             pairwise_probabilistic_predictions[:,l] = original_pairwise_probabilistic_predictions[:,presented_classes.index(l)]                             
                     for n in range(n_test_instances):
 
-                        # add a small regularization term if the probabilistic prediction is deterministic instead of probabilistic
+                        # TODO: add a small regularization term if the probabilistic prediction is deterministic instead of probabilistic
 
                         for l in range(3)
                             key_pairwise_probabilsitic_predictions = "%i_%i_%i_%i" % (i, j, n,l)

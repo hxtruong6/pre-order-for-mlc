@@ -15,7 +15,7 @@ from evaluation_metric import EvaluationMetric, EvaluationMetricName
 
 
 from experience_dataset import ExperienceDataset
-from inference_metric import InferenceMetric, PreferenceOrder
+from inference_metric import PredictOBPOs, PreferenceOrder
 
 # add logging
 from logging import basicConfig, INFO, log
@@ -72,13 +72,13 @@ def process_dataset(
                     log(INFO, f"Preference order: {order_type}")
                     continue
 
-                    inference_metric = InferenceMetric(
+                    predict_OBPOs = PredictOBPOs(
                         estimator=estimator,
                         preference_order=order_type,
                     )
 
                     # Step 1: Train the model
-                    inference_metric.fit(X_train, Y_train)
+                    predict_OBPOs.fit(X_train, Y_train)
 
                     # Linh: For shared configurations, i.e., experiments with the same type
                     # of preference orders, which can be either partial or preorders, we can
@@ -87,34 +87,8 @@ def process_dataset(
                     # For the next configurations, we re-use the pre-trained models.
 
                     # Step 2: Predict the test set
-                    probabilsitic_predictions = inference_metric.prob_predict(X_test)
-                    predict_results = inference_metric.predict(probabilsitic_predictions)
-
-                    # Linh: Similar things might be done here.
-                    # For shared configurations, i.e., experiments with the same type
-                    # of preference orders, which can be either partial or preorders, we can
-                    # put an option to call this function for the first configuration, e.g.,
-                    # with Hamming accuracy
-                    # For the next configurations, we re-use the probabilistic information that we predicted.
-
-                    # We may use dictionaries to store all the pairwise probabilsitic predictions
-                    #   pairwise_probabilistic_predictions = {}
-                    #    for i in range(n_labels - 1):
-                    #        for j in range(i + 1, n_labels):
-                    #            key_classifier = "%i_%i" % (i, j)
-                    #            call the pairwise classifier classifier[key_classifier] for the label pair (y_i,y_j)
-                    #            which has been store when runing inference_metric.fit(X_train, Y_train)
-                    #            for n in range(n_test_instance):
-                    #                if partial_order:
-                    #                   for l in range(3)
-                    #                       key_pairwise_probabilsitic_predictions = "%i_%i_%i_%i" % (i, j, n,l)
-                    #                       pairwise_probabilsitic_predictions[key_pairwise_probabilsitic_predictions] = the l prediction
-                    #                       of classifier[key_classifier] on the n-th test instance (classifier[key_classifier] is a 3-class classifer)
-                    #                if pre_order:
-                    #                   for l in range(4)
-                    #                       key_pairwise_probabilsitic_predictions = "%i_%i_%i_%i" % (i, j, n,l)
-                    #                       pairwise_probabilsitic_predictions[key_pairwise_probabilsitic_predictions] = the l prediction
-                    #                       of classifier[key_classifier] on the n-th test instance (classifier[key_classifier] is a 4-class classifer)
+                    probabilsitic_predictions = predict_OBPOs.predict_proba(X_test)
+                    predict_results = predict_OBPOs.predict(probabilsitic_predictions)
 
                     results[dataset_index][f"{noisy_rate}"][base_learner] = {
                         "Y_test": Y_test,
@@ -181,17 +155,6 @@ if __name__ == "__main__":
         #  "ETC",
         # "XGBoost",
         # "LightGBM",
-    ]
-
-    prediction_types = [
-        "UnrPreSub",
-        # "UnrPreHam",
-        # "BipPreSub"",
-        # "BipPreHam",
-        # "UnrParSub",
-        # "UnrParHam",
-        # "BipParSub"",
-        # "BipParHam",
     ]
 
     TOTAL_REPEAT_TIMES = 1
