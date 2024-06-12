@@ -5,8 +5,11 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 from base_classifer import BaseClassifiers
+from searching_algorithms import search_BOPreOs, search_BOParOs
+
 import lightgbm
 import numpy as np 
+
 
 
 class PreferenceOrder(Enum):
@@ -32,21 +35,21 @@ class PredictBOPOs:
     def predict_preference_orders(self, pairwise_probabilistic_predictions):
         # Placeholder for prediction process
         if self.preference_order == PreferenceOrder.PRE_ORDER_HAM:
-            predict_BOPOS, predict_binary_vectors = search_BOPreOs.PRE_ORDER_HAM(pairwise_probabilistic_predictions) 
+            predict_BOPOS, predict_binary_vectors = search_BOPreOs.PRE_ORDER_HAM(pairwise_probabilistic_predictions, pairwise_probabilistic_predictions, n_labels, n_instances) 
         elif self.preference_order == PreferenceOrder.BIPARTITE_PRE_ORDER_HAM:
-            predict_BOPOS, predict_binary_vectors = search_BOPreOs.BIPARTITE_PRE_ORDER_HAM(pairwise_probabilistic_predictions) 
+            predict_BOPOS, predict_binary_vectors = search_BOPreOs.PRE_ORDER_HAM(pairwise_probabilistic_predictions, pairwise_probabilistic_predictions, n_labels, n_instances, height = 2) 
         elif self.preference_order == PreferenceOrder.PRE_ORDER_SUB:
-            predict_BOPOS, predict_binary_vectors = search_BOPreOs.PRE_ORDER_SUB(pairwise_probabilistic_predictions) 
+            predict_BOPOS, predict_binary_vectors = search_BOPreOs.PRE_ORDER_SUB(pairwise_probabilistic_predictions, pairwise_probabilistic_predictions, n_labels, n_instances) 
         elif self.preference_order == PreferenceOrder.BIPARTITE_PRE_ORDER_SUB:
-            predict_BOPOS, predict_binary_vectors = search_BOPreOs.BIPARTITE_PRE_ORDER_SUB(pairwise_probabilistic_predictions) 
+            predict_BOPOS, predict_binary_vectors = search_BOPreOs.PRE_ORDER_SUB(pairwise_probabilistic_predictions, pairwise_probabilistic_predictions, n_labels, n_instances, height = 2) 
         elif self.preference_order == PreferenceOrder.PARTIAL_ORDER_HAM:
-            predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER_HAM(pairwise_probabilistic_predictions)             
+            predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER_HAM(pairwise_probabilistic_predictions, pairwise_probabilistic_predictions, n_labels, n_instances)             
         elif self.preference_order == PreferenceOrder.BIPARTITE_PARTIAL_ORDER_HAM:
-            predict_BOPOS, predict_binary_vectors = search_BOParOs.BIPARTITE_PARTIAL_ORDER_HAM(pairwise_probabilistic_predictions)             
+            predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER_HAM(pairwise_probabilistic_predictions, pairwise_probabilistic_predictions, n_labels, n_instances, height = 2)             
         elif self.preference_order == PreferenceOrder.PARTIAL_ORDER_SUB:
-            predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER_SUB(pairwise_probabilistic_predictions)             
+            predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER_SUB(pairwise_probabilistic_predictions, pairwise_probabilistic_predictions, n_labels, n_instances)             
         elif self.preference_order == PreferenceOrder.BIPARTITE_PARTIAL_ORDER_SUB:
-            predict_BOPOS, predict_binary_vectors = search_BOParOs.BIPARTITE_PARTIAL_ORDER_SUB(pairwise_probabilistic_predictions)             
+            predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER_SUB(pairwise_probabilistic_predictions, pairwise_probabilistic_predictions, n_labels, n_instances, height = 2)             
         # it should return the predicted preference orders and predicted labels predicted_Y
         # return predicted_O, predicted_Y
         return predict_BOPOS, predict_binary_vectors
@@ -70,22 +73,22 @@ class PredictBOPOs:
                         # add a small regularization term if the probabilistic prediction is deterministic instead of probabilistic
                         current_pairwise_probabilistic_predictions = pairwise_probabilistic_predictions[n]
                         if max(current_pairwise_probabilistic_predictions) == 1:
-                        current_pairwise_probabilistic_predictions = [
+                           current_pairwise_probabilistic_predictions = [
                             x - 10**-10 if x == 1 else (10**-10)/3 for x in current_pairwise_probabilistic_predictions
-                        ]
+                           ]
                         if min(current_pairwise_probabilistic_predictions) == 0:
-                        zero_indices = [ind for ind in range(4) if current_pairwise_probabilistic_predictions[ind] == 0]
-                        current_pairwise_probabilistic_predictions = [
+                            zero_indices = [ind for ind in range(4) if current_pairwise_probabilistic_predictions[ind] == 0]
+                            current_pairwise_probabilistic_predictions = [
                             (
                                 (10**-10) / len(zero_indices)
                                 if x == 0
                                 else x - (10**-10) / (4 - len(zero_indices))
                             )
                             for x in current_pairwise_probabilistic_predictions
-                        ] 
+                            ] 
                         for l in range(4)
                             key_pairwise_probabilistic_predictions = "%i_%i_%i_%i" % (i, j, n,l)
-                            pairwise_probabilsitic_predictions[key_pairwise_probabilistic_predictions] = current_pairwise_probabilistic_predictions[l]                 
+                            pairwise_probabilistic_predictions[key_pairwise_probabilistic_predictions] = current_pairwise_probabilistic_predictions[l]                 
         elif self.preference_order == PreferenceOrder.PARTIAL_ORDER or self.preference_order == PreferenceOrder.BIPARTITE_PARTIAL_ORDER:
             pairwise_probabilistic_predictions = {}
             for i in range(n_labels - 1):
@@ -102,22 +105,22 @@ class PredictBOPOs:
                         # add a small regularization term if the probabilistic prediction is deterministic instead of probabilistic
                         current_pairwise_probabilistic_predictions = pairwise_probabilistic_predictions[n]
                         if max(current_pairwise_probabilistic_predictions) == 1:
-                        current_pairwise_probabilistic_predictions = [
+                            current_pairwise_probabilistic_predictions = [
                             x - 10**-10 if x == 1 else (10**-10)/2 for x in current_pairwise_probabilistic_predictions
-                        ]
+                            ]
                         if min(current_pairwise_probabilistic_predictions) == 0:
-                        zero_indices = [ind for ind in range(3) if current_pairwise_probabilistic_predictions[ind] == 0]
-                        current_pairwise_probabilistic_predictions = [
+                            zero_indices = [ind for ind in range(3) if current_pairwise_probabilistic_predictions[ind] == 0]
+                            current_pairwise_probabilistic_predictions = [
                             (
                                 (10**-10) / len(zero_indices)
                                 if x == 0
                                 else x - (10**-10) / (3 - len(zero_indices))
                             )
                             for x in current_pairwise_probabilistic_predictions
-                        ] 
+                            ] 
                         for l in range(3)
                             key_pairwise_probabilsitic_predictions = "%i_%i_%i_%i" % (i, j, n,l)
-                            pairwise_probabilsitic_predictions[key_pairwise_probabilsitic_predictions] = current_pairwise_probabilistic_predictions[l]                 
+                            pairwise_probabilistic_predictions[key_pairwise_probabilsitic_predictions] = current_pairwise_probabilistic_predictions[l]                 
         return pairwise_probabilistic_predictions
     #   
 
