@@ -35,21 +35,21 @@ class PredictBOPOs:
     def predict_preference_orders(self, pairwise_probabilistic_predictions):
         # Placeholder for prediction process
         if self.preference_order == PreferenceOrder.PRE_ORDER_HAM:
-            predict_BOPOS, predict_binary_vectors = search_BOPreOs.PRE_ORDER_HAM(pairwise_probabilistic_predictions, pairwise_probabilistic_predictions, n_labels, n_instances) 
+            predict_BOPOS, predict_binary_vectors = search_BOPreOs.PRE_ORDER_HAM(pairwise_probabilistic_predictions, n_labels, n_instances) 
         elif self.preference_order == PreferenceOrder.BIPARTITE_PRE_ORDER_HAM:
-            predict_BOPOS, predict_binary_vectors = search_BOPreOs.PRE_ORDER_HAM(pairwise_probabilistic_predictions, pairwise_probabilistic_predictions, n_labels, n_instances, height = 2) 
+            predict_BOPOS, predict_binary_vectors = search_BOPreOs.PRE_ORDER_HAM(pairwise_probabilistic_predictions, n_labels, n_instances, height = 2) 
         elif self.preference_order == PreferenceOrder.PRE_ORDER_SUB:
-            predict_BOPOS, predict_binary_vectors = search_BOPreOs.PRE_ORDER_SUB(pairwise_probabilistic_predictions, pairwise_probabilistic_predictions, n_labels, n_instances) 
+            predict_BOPOS, predict_binary_vectors = search_BOPreOs.PRE_ORDER_SUB(pairwise_probabilistic_predictions, n_labels, n_instances) 
         elif self.preference_order == PreferenceOrder.BIPARTITE_PRE_ORDER_SUB:
-            predict_BOPOS, predict_binary_vectors = search_BOPreOs.PRE_ORDER_SUB(pairwise_probabilistic_predictions, pairwise_probabilistic_predictions, n_labels, n_instances, height = 2) 
+            predict_BOPOS, predict_binary_vectors = search_BOPreOs.PRE_ORDER_SUB(pairwise_probabilistic_predictions, n_labels, n_instances, height = 2) 
         elif self.preference_order == PreferenceOrder.PARTIAL_ORDER_HAM:
-            predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER_HAM(pairwise_probabilistic_predictions, pairwise_probabilistic_predictions, n_labels, n_instances)             
+            predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER_HAM(pairwise_probabilistic_predictions, n_labels, n_instances)             
         elif self.preference_order == PreferenceOrder.BIPARTITE_PARTIAL_ORDER_HAM:
-            predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER_HAM(pairwise_probabilistic_predictions, pairwise_probabilistic_predictions, n_labels, n_instances, height = 2)             
+            predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER_HAM(pairwise_probabilistic_predictions, n_labels, n_instances, height = 2)             
         elif self.preference_order == PreferenceOrder.PARTIAL_ORDER_SUB:
-            predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER_SUB(pairwise_probabilistic_predictions, pairwise_probabilistic_predictions, n_labels, n_instances)             
+            predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER_SUB(pairwise_probabilistic_predictions, n_labels, n_instances)             
         elif self.preference_order == PreferenceOrder.BIPARTITE_PARTIAL_ORDER_SUB:
-            predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER_SUB(pairwise_probabilistic_predictions, pairwise_probabilistic_predictions, n_labels, n_instances, height = 2)             
+            predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER_SUB(pairwise_probabilistic_predictions, n_labels, n_instances, height = 2)             
         # it should return the predicted preference orders and predicted labels predicted_Y
         # return predicted_O, predicted_Y
         return predict_BOPOS, predict_binary_vectors
