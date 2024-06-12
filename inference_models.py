@@ -65,6 +65,9 @@ class PredictBOPOs:
                     key_classifier = f"{i}_{j}"
                     original_pairwise_probabilistic_predictions = self.pairwise_classifier[key_classifier](X)
                     presented_classes = list(self.pairwise_classifier.classes_)
+                    for l in range(4):
+                        if l in presented_classes:
+                            pairwise_probabilistic_predictions[:,l] = original_pairwise_probabilistic_predictions[:,presented_classes.index(l)]                             
                     for n in range(n_test_instances):
                                         
                         # add a small regularization term if the probabilistic prediction is deterministic instead of probabilistic
@@ -94,6 +97,9 @@ class PredictBOPOs:
                     key_classifier = f"{i}_{j}"
                     original_pairwise_probabilistic_predictions = self.pairwise_classifier[key_classifier](X)
                     presented_classes = list(self.pairwise_classifier.classes_)
+                    for l in range(3):
+                        if l in presented_classes:
+                            pairwise_probabilistic_predictions[:,l] = original_pairwise_probabilistic_predictions[:,presented_classes.index(l)]                             
                     for n in range(n_test_instances):
 
                         # add a small regularization term if the probabilistic prediction is deterministic instead of probabilistic
