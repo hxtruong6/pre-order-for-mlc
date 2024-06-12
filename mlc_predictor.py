@@ -270,7 +270,7 @@ class predict_pre_order:
 
         with open(filename, "wb") as f:
             pickle.dump(model, f)
-   def _predict_PreOr_Subset(self, X_test, pairwise_4classifier):
+    def _predict_PreOr_Subset(self, X_test, pairwise_4classifier):
         indices_vector = {}
         indVec = 0
         for i in range(n_labels - 1):

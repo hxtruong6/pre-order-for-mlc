@@ -86,7 +86,7 @@ class PredictBOPOs:
                             )
                             for x in current_pairwise_probabilistic_predictions
                             ] 
-                        for l in range(4)
+                        for l in range(4):
                             key_pairwise_probabilistic_predictions = "%i_%i_%i_%i" % (i, j, n,l)
                             pairwise_probabilistic_predictions[key_pairwise_probabilistic_predictions] = current_pairwise_probabilistic_predictions[l]                 
         elif self.preference_order == PreferenceOrder.PARTIAL_ORDER or self.preference_order == PreferenceOrder.BIPARTITE_PARTIAL_ORDER:
@@ -118,7 +118,7 @@ class PredictBOPOs:
                             )
                             for x in current_pairwise_probabilistic_predictions
                             ] 
-                        for l in range(3)
+                        for l in range(3):
                             key_pairwise_probabilsitic_predictions = "%i_%i_%i_%i" % (i, j, n,l)
                             pairwise_probabilistic_predictions[key_pairwise_probabilsitic_predictions] = current_pairwise_probabilistic_predictions[l]                 
         return pairwise_probabilistic_predictions
