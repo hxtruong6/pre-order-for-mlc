@@ -6,7 +6,7 @@ from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 from base_classifer import BaseClassifiers
 import lightgbm
-import numpy as np
+import numpy as np 
 
 
 class PreferenceOrder(Enum):
@@ -29,24 +29,24 @@ class PredictBOPOs:
 
         self.pairwise_classifier = None
 
-    def predict_preference_orders(self, pairwise_probabilsitic_predictions):
+    def predict_preference_orders(self, pairwise_probabilistic_predictions):
         # Placeholder for prediction process
         if self.preference_order == PreferenceOrder.PRE_ORDER_HAM:
-            predict_BOPOS, predict_binary_vectors = search_BOPOs.PRE_ORDER_HAM(self.preference_order, pairwise_probabilsitic_predictions) 
+            predict_BOPOS, predict_binary_vectors = search_BOPreOs.PRE_ORDER_HAM(pairwise_probabilistic_predictions) 
         elif self.preference_order == PreferenceOrder.BIPARTITE_PRE_ORDER_HAM:
-            predict_BOPOS, predict_binary_vectors = search_BOPOs.BIPARTITE_PRE_ORDER_HAM(self.preference_order, pairwise_probabilsitic_predictions) 
+            predict_BOPOS, predict_binary_vectors = search_BOPreOs.BIPARTITE_PRE_ORDER_HAM(pairwise_probabilistic_predictions) 
         elif self.preference_order == PreferenceOrder.PRE_ORDER_SUB:
-            predict_BOPOS, predict_binary_vectors = search_BOPOs.PRE_ORDER_SUB(self.preference_order, pairwise_probabilsitic_predictions) 
+            predict_BOPOS, predict_binary_vectors = search_BOPreOs.PRE_ORDER_SUB(pairwise_probabilistic_predictions) 
         elif self.preference_order == PreferenceOrder.BIPARTITE_PRE_ORDER_SUB:
-            predict_BOPOS, predict_binary_vectors = search_BOPOs.BIPARTITE_PRE_ORDER_SUB(self.preference_order, pairwise_probabilsitic_predictions) 
+            predict_BOPOS, predict_binary_vectors = search_BOPreOs.BIPARTITE_PRE_ORDER_SUB(pairwise_probabilistic_predictions) 
         elif self.preference_order == PreferenceOrder.PARTIAL_ORDER_HAM:
-            predict_BOPOS, predict_binary_vectors = search_BOPOs.PARTIAL_ORDER_HAM(self.preference_order, pairwise_probabilsitic_predictions)             
+            predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER_HAM(pairwise_probabilistic_predictions)             
         elif self.preference_order == PreferenceOrder.BIPARTITE_PARTIAL_ORDER_HAM:
-            predict_BOPOS, predict_binary_vectors = search_BOPOs.BIPARTITE_PARTIAL_ORDER_HAM(self.preference_order, pairwise_probabilsitic_predictions)             
+            predict_BOPOS, predict_binary_vectors = search_BOParOs.BIPARTITE_PARTIAL_ORDER_HAM(pairwise_probabilistic_predictions)             
         elif self.preference_order == PreferenceOrder.PARTIAL_ORDER_SUB:
-            predict_BOPOS, predict_binary_vectors = search_BOPOs.PARTIAL_ORDER_SUB(self.preference_order, pairwise_probabilsitic_predictions)             
+            predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER_SUB(pairwise_probabilistic_predictions)             
         elif self.preference_order == PreferenceOrder.BIPARTITE_PARTIAL_ORDER_SUB:
-            predict_BOPOS, predict_binary_vectors = search_BOPOs.BIPARTITE_PARTIAL_ORDER_SUB(self.preference_order, pairwise_probabilsitic_predictions)             
+            predict_BOPOS, predict_binary_vectors = search_BOParOs.BIPARTITE_PARTIAL_ORDER_SUB(pairwise_probabilistic_predictions)             
         # it should return the predicted preference orders and predicted labels predicted_Y
         # return predicted_O, predicted_Y
         return predict_BOPOS, predict_binary_vectors
@@ -84,8 +84,8 @@ class PredictBOPOs:
                             for x in current_pairwise_probabilistic_predictions
                         ] 
                         for l in range(4)
-                            key_pairwise_probabilsitic_predictions = "%i_%i_%i_%i" % (i, j, n,l)
-                            pairwise_probabilsitic_predictions[key_pairwise_probabilsitic_predictions] = current_pairwise_probabilistic_predictions[l]                 
+                            key_pairwise_probabilistic_predictions = "%i_%i_%i_%i" % (i, j, n,l)
+                            pairwise_probabilsitic_predictions[key_pairwise_probabilistic_predictions] = current_pairwise_probabilistic_predictions[l]                 
         elif self.preference_order == PreferenceOrder.PARTIAL_ORDER or self.preference_order == PreferenceOrder.BIPARTITE_PARTIAL_ORDER:
             pairwise_probabilistic_predictions = {}
             for i in range(n_labels - 1):
