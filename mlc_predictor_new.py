@@ -1,4 +1,4 @@
-from inference_metric import PreferenceOrder
+from inference_models import PreferenceOrder
 from base_classifer import BaseClassifiers
 import numpy as np
 

@@ -15,7 +15,7 @@ from evaluation_metric import EvaluationMetric, EvaluationMetricName
 
 
 from experience_dataset import ExperienceDataset
-from inference_metric import PredictOBPOs, PreferenceOrder
+from inference_models import PredictBOPOs, PreferenceOrder
 
 # add logging
 from logging import basicConfig, INFO, log
@@ -72,13 +72,13 @@ def process_dataset(
                     log(INFO, f"Preference order: {order_type}")
                     continue
 
-                    predict_OBPOs = PredictOBPOs(
+                    predict_BOPOs = PredictBOPOs(
                         estimator=estimator,
                         preference_order=order_type,
                     )
 
                     # Step 1: Train the model
-                    predict_OBPOs.fit(X_train, Y_train)
+                    predict_BOPOs.fit(X_train, Y_train)
 
                     # Linh: For shared configurations, i.e., experiments with the same type
                     # of preference orders, which can be either partial or preorders, we can
@@ -87,8 +87,8 @@ def process_dataset(
                     # For the next configurations, we re-use the pre-trained models.
 
                     # Step 2: Predict the test set
-                    probabilsitic_predictions = predict_OBPOs.predict_proba(X_test)
-                    predict_results = predict_OBPOs.predict(probabilsitic_predictions)
+                    probabilsitic_predictions = predict_BOPOs.predict_proba(X_test)
+                    predict_results = predict_BOPOs.predict_preference_orders(probabilsitic_predictions)
 
                     results[dataset_index][f"{noisy_rate}"][base_learner] = {
                         "Y_test": Y_test,
