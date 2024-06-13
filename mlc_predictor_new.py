@@ -1,5 +1,5 @@
 from inference_models import PreferenceOrder
-from base_classifer import BaseClassifiers
+from base_classifiers import BaseClassifiers
 import numpy as np
 
 

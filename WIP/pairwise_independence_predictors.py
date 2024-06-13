@@ -12,7 +12,7 @@ from sklearn.model_selection import KFold
 from scipy.stats import bernoulli
 
 
-from base_classifer import PairwiseClassifiers
+from base_classifiers import PairwiseClassifiers
 
 
 class predictors:

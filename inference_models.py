@@ -4,7 +4,7 @@ from sklearn.multioutput import ClassifierChain
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.ensemble import GradientBoostingClassifier
-from base_classifer import BaseClassifiers
+from base_classifiers import BaseClassifiers
 from searching_algorithms import search_BOPreOs, search_BOParOs
 
 import lightgbm
@@ -87,8 +87,8 @@ class PredictBOPOs:
                             for x in current_pairwise_probabilistic_predictions
                             ] 
                         for l in range(4):
-                            key_pairwise_probabilistic_predictions = "%i_%i_%i_%i" % (i, j, n,l)
-                            pairwise_probabilistic_predictions[key_pairwise_probabilistic_predictions] = current_pairwise_probabilistic_predictions[l]                 
+#                            key_pairwise_probabilistic_predictions = "%i_%i_%i_%i" % (i, j, n,l)
+                            pairwise_probabilistic_predictions[f"{i}_{j}_{n}_{l}"] = current_pairwise_probabilistic_predictions[l]                 
         elif self.preference_order == PreferenceOrder.PARTIAL_ORDER or self.preference_order == PreferenceOrder.BIPARTITE_PARTIAL_ORDER:
             pairwise_probabilistic_predictions = {}
             for i in range(n_labels - 1):
@@ -119,8 +119,8 @@ class PredictBOPOs:
                             for x in current_pairwise_probabilistic_predictions
                             ] 
                         for l in range(3):
-                            key_pairwise_probabilsitic_predictions = "%i_%i_%i_%i" % (i, j, n,l)
-                            pairwise_probabilistic_predictions[key_pairwise_probabilsitic_predictions] = current_pairwise_probabilistic_predictions[l]                 
+#                            key_pairwise_probabilsitic_predictions = "%i_%i_%i_%i" % (i, j, n,l)
+                            pairwise_probabilistic_predictions[f"{i}_{j}_{n}_{l}"] = current_pairwise_probabilistic_predictions[l]                 
         return pairwise_probabilistic_predictions
     #   
 

@@ -11,7 +11,7 @@ import pandas as pd
 from scipy.stats import bernoulli
 from sklearn.model_selection import KFold
 
-from base_classifer import BaseClassifiers
+from base_classifiers import BaseClassifiers
 
 
 class predictors:

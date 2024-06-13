@@ -14,7 +14,7 @@ from sklearn.ensemble import (
 from evaluation_metric import EvaluationMetric, EvaluationMetricName
 
 
-from experience_dataset import ExperienceDataset
+from datasets4experiments import Datasets4Experiments
 from inference_models import PredictBOPOs, PreferenceOrder
 
 # add logging

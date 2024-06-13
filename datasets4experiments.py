@@ -8,7 +8,7 @@ from sklearn.preprocessing import StandardScaler
 TARGET_IN_END_FILE_DATASETS = ["emotions.arff", "scene.arff"]
 
 
-class ExperienceDataset:
+class Datasets4Experiments:
     def __init__(self, data_path, data_files, n_labels_set):
         self.data_path = data_path
         self.data_files = data_files
