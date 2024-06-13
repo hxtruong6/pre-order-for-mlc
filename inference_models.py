@@ -32,7 +32,7 @@ class PredictBOPOs:
 
         self.pairwise_classifier = None
 
-    def predict_preference_orders(self, pairwise_probabilistic_predictions):
+    def predict_preference_orders(self, pairwise_probabilistic_predictions, n_labels, n_instances):
         # Placeholder for prediction process
         if self.preference_order == PreferenceOrder.PRE_ORDER_HAM:
             predict_BOPOS, predict_binary_vectors = search_BOPreOs.PRE_ORDER_HAM(pairwise_probabilistic_predictions, n_labels, n_instances) 
@@ -54,7 +54,7 @@ class PredictBOPOs:
         # return predicted_O, predicted_Y
         return predict_BOPOS, predict_binary_vectors
 
-    def predict_proba(self, X):
+    def predict_proba(self, X, n_labels):
         n_test_instances, _ = X.shape
         # Placeholder for prediction process
         if self.preference_order == PreferenceOrder.PRE_ORDER or self.preference_order == PreferenceOrder.BIPARTITE_PRE_ORDER:

@@ -31,8 +31,8 @@ class search_BOParOs:
         for i in range(self.n_labels - 1):
             for j in range(i + 1, self.n_labels):
                 for l in range(3):
-                    key = "%i_%i_%i" % (i, j, l)
-                    indices_vector[key] = indVec
+#                    key = "%i_%i_%i" % (i, j, l)
+                    indices_vector[f"{i}_{j}_{l}"] = indVec
                     indVec += 1
         G, h, A, b, I, B = search_BOParOs._encode_parameters_PARTIAL_ORDER_SUB(indices_vector, self.height)
         predicted_Y = []
@@ -83,9 +83,12 @@ class search_BOParOs:
                         indVecs = [
                             indices_vector[val]
                             for val in [
-                                "%i_%i_%i" % (i, j, 0),
-                                "%i_%i_%i" % (k, i, 1),
-                                "%i_%i_%i" % (k, j, 0),
+                                f"{i}_{j}_{0}",
+                                f"{k}_{i}_{1}",
+                                f"{k}_{j}_{0}",
+ #                               "%i_%i_%i" % (i, j, 0),
+ #                               "%i_%i_%i" % (k, i, 1),
+ #                               "%i_%i_%i" % (k, j, 0),
                             ]
                         ]
                         for ind in range(1):
@@ -96,9 +99,12 @@ class search_BOParOs:
                         indVecs = [
                             indices_vector[val]
                             for val in [
-                                "%i_%i_%i" % (i, j, 1),
-                                "%i_%i_%i" % (k, i, 0),
-                                "%i_%i_%i" % (k, j, 1),
+                                f"{i}_{j}_{1}",
+                                f"{k}_{i}_{0}",
+                                f"{k}_{j}_{1}",
+#                                "%i_%i_%i" % (i, j, 1),
+#                                "%i_%i_%i" % (k, i, 0),
+#                                "%i_%i_%i" % (k, j, 1),
                             ]
                         ]
                         for ind in range(1):
@@ -110,9 +116,12 @@ class search_BOParOs:
                         indVecs = [
                             indices_vector[val]
                             for val in [
-                                "%i_%i_%i" % (i, j, 0),
-                                "%i_%i_%i" % (i, k, 0),
-                                "%i_%i_%i" % (k, j, 0),
+                                f"{i}_{j}_{0}",
+                                f"{i}_{k}_{0}",
+                                f"{k}_{j}_{0}",
+#                                "%i_%i_%i" % (i, j, 0),
+#                                "%i_%i_%i" % (i, k, 0),
+#                                "%i_%i_%i" % (k, j, 0),
                             ]
                         ]
                         for ind in range(1):
@@ -123,9 +132,12 @@ class search_BOParOs:
                         indVecs = [
                             indices_vector[val]
                             for val in [
-                                "%i_%i_%i" % (i, j, 1),
-                                "%i_%i_%i" % (i, k, 1),
-                                "%i_%i_%i" % (k, j, 1),
+                                f"{i}_{j}_{1}",
+                                f"{i}_{k}_{1}",
+                                f"{k}_{j}_{1}",
+#                                "%i_%i_%i" % (i, j, 1),
+#                                "%i_%i_%i" % (i, k, 1),
+#                                "%i_%i_%i" % (k, j, 1),
                             ]
                         ]
                         for ind in range(1):
@@ -137,9 +149,12 @@ class search_BOParOs:
                         indVecs = [
                             indices_vector[val]
                             for val in [
-                                "%i_%i_%i" % (i, j, 0),
-                                "%i_%i_%i" % (i, k, 0),
-                                "%i_%i_%i" % (j, k, 1),
+                                f"{i}_{j}_{0}",
+                                f"{i}_{k}_{0}",
+                                f"{j}_{k}_{1}",
+#                                "%i_%i_%i" % (i, j, 0),
+#                                "%i_%i_%i" % (i, k, 0),
+#                                "%i_%i_%i" % (j, k, 1),
                             ]
                         ]
                         for ind in range(1):
@@ -150,9 +165,12 @@ class search_BOParOs:
                         indVecs = [
                             indices_vector[val]
                             for val in [
-                                "%i_%i_%i" % (i, j, 1),
-                                "%i_%i_%i" % (i, k, 1),
-                                "%i_%i_%i" % (j, k, 0),
+                                f"{i}_{j}_{1}",
+                                f"{i}_{k}_{1}",
+                                f"{j}_{k}_{0}",
+#                                "%i_%i_%i" % (i, j, 1),
+#                                "%i_%i_%i" % (i, k, 1),
+#                                "%i_%i_%i" % (j, k, 0),
                             ]
                         ]
                         for ind in range(1):
@@ -172,7 +190,8 @@ class search_BOParOs:
                 for j in range(i + 1, self.n_labels):
                     # we can inject the information of partial labels at test time here
                     for l in range(3):
-                        indVec = indices_vector["%i_%i_%i" % (i, j, l)]
+                        indVec = indices_vector[f"{j}_{k}_{l}"]
+#                        indVec = indices_vector["%i_%i_%i" % (i, j, l)]
                         A[rowA, indVec] = 1
                     rowA += 1
             b = np.ones((int(self.n_labels * (self.n_labels - 1) * 0.5), 1))
@@ -209,11 +228,15 @@ class search_BOParOs:
         scores_n = [0 for x in range(n_labels)]  # no label dominates label i-th
         for i in range(n_labels):
             for k in range(0, i):
-                scores_d[i] += optX[indices_vector["%i_%i_%i" % (k, i, 1)], 0]
-                scores_n[i] += optX[indices_vector["%i_%i_%i" % (k, i, 0)], 0]
+                scores_d[i] += optX[indices_vector[f"{k}_{i}_{1}"], 0]
+                scores_n[i] += optX[indices_vector[f"{k}_{i}_{0}"], 0]
+#                scores_d[i] += optX[indices_vector["%i_%i_%i" % (k, i, 1)], 0]
+#                scores_n[i] += optX[indices_vector["%i_%i_%i" % (k, i, 0)], 0]
             for j in range(i + 1, n_labels):
-                scores_d[i] += optX[indices_vector["%i_%i_%i" % (i, j, 0)], 0]
-                scores_n[i] += optX[indices_vector["%i_%i_%i" % (i, j, 1)], 0]
+                scores_d[i] += optX[indices_vector[f"{i}_{j}_{0}"], 0]
+                scores_n[i] += optX[indices_vector[f"{i}_{j}_{1}"], 0]
+#                scores_d[i] += optX[indices_vector["%i_%i_%i" % (i, j, 0)], 0]
+#                scores_n[i] += optX[indices_vector["%i_%i_%i" % (i, j, 1)], 0]
         #                epist_00 += optX[indicesVector["%i_%i_%i"%(i,j,2)],0]
         #                aleat_11 += optX[indicesVector["%i_%i_%i"%(i,j,3)],0]
         hard_prediction = [
