@@ -87,7 +87,7 @@ def process_dataset(
                     # For the next configurations, we re-use the pre-trained models.
 
                     # Step 2: Predict the test set
-                    n_instances, n_labels = X_test.shape()
+                    n_instances, n_labels = X_test.shape
                     probabilsitic_predictions = predict_BOPOs.predict_proba(X_test, n_labels)
                     predict_results = predict_BOPOs.predict_preference_orders(probabilsitic_predictions, n_labels, n_instances)
 
