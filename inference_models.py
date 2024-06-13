@@ -5,7 +5,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 from base_classifiers import BaseClassifiers
-from searching_algorithms import search_BOPreOs, search_BOParOs
+from searching_algorithms import Search_BOPreOs, Search_BOParOs
 
 import lightgbm
 import numpy as np 
@@ -32,24 +32,24 @@ class PredictBOPOs:
 
         self.pairwise_classifier = None
 
-    def predict_preference_orders(self, pairwise_probabilistic_predictions, n_labels, n_instances):
+    def predict_preference_orders(self, pairwise_probabilistic_predictions, n_labels, n_instances, target_metric):
         # Placeholder for prediction process
         if self.preference_order == PreferenceOrder.PRE_ORDER_HAM:
-            predict_BOPOS, predict_binary_vectors = search_BOPreOs.PRE_ORDER_HAM(pairwise_probabilistic_predictions, n_labels, n_instances) 
+            predict_BOPOS, predict_binary_vectors = Search_BOPreOs.PRE_ORDER(pairwise_probabilistic_predictions, n_labels, n_instances, target_metric) 
         elif self.preference_order == PreferenceOrder.BIPARTITE_PRE_ORDER_HAM:
-            predict_BOPOS, predict_binary_vectors = search_BOPreOs.PRE_ORDER_HAM(pairwise_probabilistic_predictions, n_labels, n_instances, height = 2) 
+            predict_BOPOS, predict_binary_vectors = Search_BOPreOs.PRE_ORDER(pairwise_probabilistic_predictions, n_labels, n_instances, target_metric, height = 2) 
         elif self.preference_order == PreferenceOrder.PRE_ORDER_SUB:
-            predict_BOPOS, predict_binary_vectors = search_BOPreOs.PRE_ORDER_SUB(pairwise_probabilistic_predictions, n_labels, n_instances) 
+            predict_BOPOS, predict_binary_vectors = Search_BOPreOs.PRE_ORDER(pairwise_probabilistic_predictions, n_labels, n_instances, target_metric) 
         elif self.preference_order == PreferenceOrder.BIPARTITE_PRE_ORDER_SUB:
-            predict_BOPOS, predict_binary_vectors = search_BOPreOs.PRE_ORDER_SUB(pairwise_probabilistic_predictions, n_labels, n_instances, height = 2) 
+            predict_BOPOS, predict_binary_vectors = Search_BOPreOs.PRE_ORDER(pairwise_probabilistic_predictions, n_labels, n_instances, target_metric, height = 2) 
         elif self.preference_order == PreferenceOrder.PARTIAL_ORDER_HAM:
-            predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER_HAM(pairwise_probabilistic_predictions, n_labels, n_instances)             
+            predict_BOPOS, predict_binary_vectors = Search_BOParOs.PARTIAL_ORDER(pairwise_probabilistic_predictions, n_labels, n_instances, target_metric)             
         elif self.preference_order == PreferenceOrder.BIPARTITE_PARTIAL_ORDER_HAM:
-            predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER_HAM(pairwise_probabilistic_predictions, n_labels, n_instances, height = 2)             
+            predict_BOPOS, predict_binary_vectors = Search_BOParOs.PARTIAL_ORDER(pairwise_probabilistic_predictions, n_labels, n_instances, target_metric, height = 2)             
         elif self.preference_order == PreferenceOrder.PARTIAL_ORDER_SUB:
-            predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER_SUB(pairwise_probabilistic_predictions, n_labels, n_instances)             
+            predict_BOPOS, predict_binary_vectors = Search_BOParOs.PARTIAL_ORDER(pairwise_probabilistic_predictions, n_labels, n_instances, target_metric)             
         elif self.preference_order == PreferenceOrder.BIPARTITE_PARTIAL_ORDER_SUB:
-            predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER_SUB(pairwise_probabilistic_predictions, n_labels, n_instances, height = 2)             
+            predict_BOPOS, predict_binary_vectors = Search_BOParOs.PARTIAL_ORDER(pairwise_probabilistic_predictions, n_labels, n_instances, target_metric, height = 2)             
         # it should return the predicted preference orders and predicted labels predicted_Y
         # return predicted_O, predicted_Y
         return predict_BOPOS, predict_binary_vectors

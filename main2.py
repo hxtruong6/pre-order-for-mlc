@@ -89,12 +89,13 @@ def process_dataset(
                     # Step 2: Predict the test set
                     n_instances, n_labels = X_test.shape
                     probabilsitic_predictions = predict_BOPOs.predict_proba(X_test, n_labels)
-                    predict_results = predict_BOPOs.predict_preference_orders(probabilsitic_predictions, n_labels, n_instances)
+                    for target_metric in ["hamming", "subset"]:
+                        predict_results = predict_BOPOs.predict_preference_orders(probabilsitic_predictions, n_labels, n_instances, target_metric)
 
-                    results[dataset_index][f"{noisy_rate}"][base_learner] = {
-                        "Y_test": Y_test,
-                        "predict_results": predict_results,
-                    }
+                        results[dataset_index][f"{noisy_rate}"][base_learner] = {
+                            "Y_test": Y_test,
+                            "predict_results": predict_results,
+                        }
 
     return results
 
@@ -110,7 +111,7 @@ def main(
 ):
     eval_metric = EvaluationMetric()
 
-    experience_dataset = ExperienceDataset(data_path, data_files, n_labels_set)
+    experience_dataset = Datasets4Experiments(data_path, data_files, n_labels_set)
     experience_dataset.load_datasets()
 
     # Run for each dataset
