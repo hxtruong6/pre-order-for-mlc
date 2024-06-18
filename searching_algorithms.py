@@ -21,8 +21,8 @@ class Search_BOPreOs:
 #                    key = "%i_%i_%i" % (i, j, l)
                     indices_vector[f"{i}_{j}_{l}"] = indVec
                     indVec += 1
-        G, h, A, b, I, B = Search_BOPreOs._encode_parameters_PRE_ORDER(
-            indices_vector, self.n_labels
+        G, h, A, b, I, B = self._encode_parameters_PRE_ORDER(
+            indices_vector
         )
         predicted_Y = []
         predicted_preorders = []
@@ -48,7 +48,7 @@ class Search_BOPreOs:
             #                Gtest[:, indCol] = 0
             #                Atest[:, indCol] = 0
             hard_prediction_indices, predicted_preorder = (
-                Search_BOPreOs._reasoning_procedure_PRE_ORDER(
+                self._reasoning_procedure_PRE_ORDER(
                     vector,
                     indices_vector,
                     Gtest,
@@ -295,7 +295,7 @@ class Search_BOParOs:
 #                    key = "%i_%i_%i" % (i, j, l)
                     indices_vector[f"{i}_{j}_{l}"] = indVec
                     indVec += 1
-        G, h, A, b, I, B = Search_BOParOs._encode_parameters_PARTIAL_ORDER(indices_vector, self.height)
+        G, h, A, b, I, B = self._encode_parameters_PARTIAL_ORDER(indices_vector)
         predicted_Y = []
         predicted_partial_orders = []
         for n in range(self.n_instances):
@@ -315,7 +315,7 @@ class Search_BOParOs:
             Gtest = np.array(G)
             Atest = np.array(A)
             hard_prediction_indices, predicted_partial_order = (
-                Search_BOParOs._reasoning_procedure_PARTIAL_ORDER(
+                self._reasoning_procedure_PARTIAL_ORDER(
                     vector,
                     indices_vector,
                     Gtest,
