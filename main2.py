@@ -11,6 +11,8 @@ from sklearn.ensemble import (
     GradientBoostingClassifier,
     RandomForestClassifier,
 )
+from constants import RANDOM_STATE, BaseLearnerName, TargetMetric
+from estimator import Estimator
 from evaluation_metric import EvaluationMetric, EvaluationMetricName
 
 
@@ -22,42 +24,26 @@ from logging import basicConfig, INFO, log
 
 basicConfig(level=INFO)
 
-RANDOM_STATE = 42
-
-
-def get_estimator(base_learner: str):
-    if base_learner == "RF":
-        return RandomForestClassifier(random_state=RANDOM_STATE)
-    elif base_learner == "ETC":
-        return ExtraTreesClassifier(random_state=RANDOM_STATE)
-    elif base_learner == "XGBoost":
-        return GradientBoostingClassifier(random_state=RANDOM_STATE)
-    elif base_learner == "LightGBM":
-        return lightgbm.LGBMClassifier(random_state=RANDOM_STATE)
-    else:
-        raise ValueError(f"Unknown base learner: {base_learner}")
-
 
 def process_dataset(
-    experience_dataset,
+    experiment_dataset,
     dataset_index,
     noisy_rate,
     repeat_time,
     NUMBER_FOLDS,
-    base_learners,
+    base_learners: list[str],
 ):
     results = {
         # [dataset_index][noisy_rate][base_learner]: mean and std of evaluation metrics
     }
 
     for base_learner in base_learners:
-        estimator = get_estimator(base_learner)
 
         # Run fold for each dataset and each noisy rate and repeat times
         for repeat_time in range(TOTAL_REPEAT_TIMES):
             log(INFO, f"Dataset: {dataset_index}, Repeat time: {repeat_time}")
             for fold, (X_train, Y_train, X_test, Y_test) in enumerate(
-                experience_dataset.kfold_split_with_noise(
+                experiment_dataset.kfold_split_with_noise(
                     dataset_index=dataset_index,
                     n_splits=NUMBER_FOLDS,
                     noisy_rate=noisy_rate,
@@ -70,14 +56,14 @@ def process_dataset(
                 )
                 for order_type in PreferenceOrder:
                     log(INFO, f"Preference order: {order_type}")
-                    continue
 
+                    # Initialize the model with the base learner and the preference order
                     predict_BOPOs = PredictBOPOs(
-                        estimator=estimator,
+                        estimator=Estimator(base_learner),
                         preference_order=order_type,
                     )
 
-                    # Step 1: Train the model
+                    # Train the model
                     predict_BOPOs.fit(X_train, Y_train)
 
                     # Linh: For shared configurations, i.e., experiments with the same type
@@ -86,11 +72,25 @@ def process_dataset(
                     # with Hamming accuracy
                     # For the next configurations, we re-use the pre-trained models.
 
-                    # Step 2: Predict the test set
+                    # ---------------
+                    # Other step here
+
+                    # Another step here
+
+                    # ---------------
+
+                    # Predict the test set
                     n_instances, n_labels = X_test.shape
-                    probabilsitic_predictions = predict_BOPOs.predict_proba(X_test, n_labels)
-                    for target_metric in ["hamming", "subset"]:
-                        predict_results = predict_BOPOs.predict_preference_orders(probabilsitic_predictions, n_labels, n_instances, target_metric)
+                    probabilsitic_predictions = predict_BOPOs.predict_proba(
+                        X_test, n_labels
+                    )
+                    for target_metric in [TargetMetric.Hamming, TargetMetric.Subset]:
+                        predict_results = predict_BOPOs.predict_preference_orders(
+                            probabilsitic_predictions,
+                            n_labels,
+                            n_instances,
+                            target_metric,
+                        )
 
                         results[dataset_index][f"{noisy_rate}"][base_learner] = {
                             "Y_test": Y_test,
@@ -152,12 +152,7 @@ if __name__ == "__main__":
         # 0.2,
         # 0.4,
     ]
-    base_learners = [
-        "RF",
-        #  "ETC",
-        # "XGBoost",
-        # "LightGBM",
-    ]
+    base_learners = [BaseLearnerName.RF]
 
     TOTAL_REPEAT_TIMES = 1
     NUMBER_FOLDS = 2

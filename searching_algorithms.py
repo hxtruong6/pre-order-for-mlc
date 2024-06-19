@@ -3,9 +3,17 @@ import numpy as np
 from numpy import array
 from cvxopt import matrix
 
+
 class Search_BOPreOs:
 
-    def __init__(self, pairwise_probabilistic_predictions, n_labels, n_instances, target_metric, height):
+    def __init__(
+        self,
+        pairwise_probabilistic_predictions,
+        n_labels,
+        n_instances,
+        target_metric,
+        height,
+    ):
         self.pairwise_probabilistic_predictions = pairwise_probabilistic_predictions
         self.n_labels = n_labels
         self.n_instances = n_instances
@@ -18,12 +26,10 @@ class Search_BOPreOs:
         for i in range(self.n_labels - 1):
             for j in range(i + 1, self.n_labels):
                 for l in range(4):
-#                    key = "%i_%i_%i" % (i, j, l)
+                    #                    key = "%i_%i_%i" % (i, j, l)
                     indices_vector[f"{i}_{j}_{l}"] = indVec
                     indVec += 1
-        G, h, A, b, I, B = self._encode_parameters_PRE_ORDER(
-            indices_vector
-        )
+        G, h, A, b, I, B = self._encode_parameters_PRE_ORDER(indices_vector)  # type: ignore
         predicted_Y = []
         predicted_preorders = []
         for n in range(self.n_instances):
@@ -33,12 +39,22 @@ class Search_BOPreOs:
             if self.target_metric == "hamming":
                 for i in range(self.n_labels - 1):
                     for j in range(i + 1, self.n_labels):
-                        pairInfor = [-self.pairwise_probabilistic_predictions[f"{i}_{j}_{n}_{l}"] for l in range(4)]             
+                        pairInfor = [
+                            -self.pairwise_probabilistic_predictions[f"{i}_{j}_{n}_{l}"]
+                            for l in range(4)
+                        ]
                         vector += pairInfor
             elif self.target_metric == "subset":
                 for i in range(self.n_labels - 1):
                     for j in range(i + 1, self.n_labels):
-                        pairInfor = [-np.log(self.pairwise_probabilistic_predictions[f"{i}_{j}_{n}_{l}"]) for l in range(4)]             
+                        pairInfor = [
+                            -np.log(
+                                self.pairwise_probabilistic_predictions[
+                                    f"{i}_{j}_{n}_{l}"
+                                ]
+                            )
+                            for l in range(4)
+                        ]
                         vector += pairInfor
             else:
                 raise ValueError(f"Unknown target metric: {self.target_metric}")
@@ -51,6 +67,7 @@ class Search_BOPreOs:
                 self._reasoning_procedure_PRE_ORDER(
                     vector,
                     indices_vector,
+                    self.n_labels,
                     Gtest,
                     h,
                     Atest,
@@ -66,14 +83,17 @@ class Search_BOPreOs:
             predicted_Y.append(hard_prediction)
             predicted_preorders.append(predicted_preorder)
         return predicted_Y, predicted_preorders
-    
+
     def _encode_parameters_PRE_ORDER(self, indices_vector, height=None):
         assert self.n_labels is not None
 
         if not height:
 
             G = np.zeros(
-                (self.n_labels * (self.n_labels - 1) * (self.n_labels - 2), self.n_labels * (self.n_labels - 1) * 2)
+                (
+                    self.n_labels * (self.n_labels - 1) * (self.n_labels - 2),
+                    self.n_labels * (self.n_labels - 1) * 2,
+                )
             )
             rowG = 0
             for i in range(self.n_labels - 1):
@@ -84,16 +104,10 @@ class Search_BOPreOs:
                             for val in [
                                 f"{i}_{j}_{0}",
                                 f"{i}_{j}_{3}",
-                                f"{k}_{i}_{1}",                                
+                                f"{k}_{i}_{1}",
                                 f"{k}_{i}_{3}",
                                 f"{k}_{j}_{0}",
                                 f"{k}_{j}_{3}",
-#                                "%i_%i_%i" % (i, j, 0),
-#                                "%i_%i_%i" % (i, j, 3),
-#                                "%i_%i_%i" % (k, i, 1),
-#                                "%i_%i_%i" % (k, i, 3),
-#                                "%i_%i_%i" % (k, j, 0),
-#                                "%i_%i_%i" % (k, j, 3),
                             ]
                         ]
                         for ind in range(2):
@@ -106,16 +120,10 @@ class Search_BOPreOs:
                             for val in [
                                 f"{i}_{j}_{1}",
                                 f"{i}_{j}_{3}",
-                                f"{k}_{i}_{0}",                                
+                                f"{k}_{i}_{0}",
                                 f"{k}_{i}_{3}",
                                 f"{k}_{j}_{1}",
                                 f"{k}_{j}_{3}",
-#                                "%i_%i_%i" % (i, j, 1),
-#                                "%i_%i_%i" % (i, j, 3),
-#                                "%i_%i_%i" % (k, i, 0),
-#                                "%i_%i_%i" % (k, i, 3),
-#                                "%i_%i_%i" % (k, j, 1),
-#                                "%i_%i_%i" % (k, j, 3),
                             ]
                         ]
                         for ind in range(2):
@@ -129,16 +137,10 @@ class Search_BOPreOs:
                             for val in [
                                 f"{i}_{j}_{0}",
                                 f"{i}_{j}_{3}",
-                                f"{i}_{k}_{0}",                                
+                                f"{i}_{k}_{0}",
                                 f"{i}_{k}_{3}",
                                 f"{k}_{j}_{0}",
                                 f"{k}_{j}_{3}",
-#                                "%i_%i_%i" % (i, j, 0),
-#                                "%i_%i_%i" % (i, j, 3),
-#                                "%i_%i_%i" % (i, k, 0),
-#                                "%i_%i_%i" % (i, k, 3),
-#                                "%i_%i_%i" % (k, j, 0),
-#                                "%i_%i_%i" % (k, j, 3),
                             ]
                         ]
                         for ind in range(2):
@@ -151,16 +153,10 @@ class Search_BOPreOs:
                             for val in [
                                 f"{i}_{j}_{1}",
                                 f"{i}_{j}_{3}",
-                                f"{i}_{k}_{1}",                                
+                                f"{i}_{k}_{1}",
                                 f"{i}_{k}_{3}",
                                 f"{k}_{j}_{1}",
                                 f"{k}_{j}_{3}",
-#                                "%i_%i_%i" % (i, j, 1),
-#                                "%i_%i_%i" % (i, j, 3),
-#                                "%i_%i_%i" % (i, k, 1),
-#                                "%i_%i_%i" % (i, k, 3),
-#                                "%i_%i_%i" % (k, j, 1),
-#                                "%i_%i_%i" % (k, j, 3),
                             ]
                         ]
                         for ind in range(2):
@@ -174,16 +170,10 @@ class Search_BOPreOs:
                             for val in [
                                 f"{i}_{j}_{0}",
                                 f"{i}_{j}_{3}",
-                                f"{i}_{k}_{0}",                                
+                                f"{i}_{k}_{0}",
                                 f"{i}_{k}_{3}",
                                 f"{j}_{k}_{1}",
                                 f"{j}_{k}_{3}",
-#                                "%i_%i_%i" % (i, j, 0),
-#                                "%i_%i_%i" % (i, j, 3),
-#                                "%i_%i_%i" % (i, k, 0),
-#                                "%i_%i_%i" % (i, k, 3),
-#                                "%i_%i_%i" % (j, k, 1),
-#                                "%i_%i_%i" % (j, k, 3),
                             ]
                         ]
                         for ind in range(2):
@@ -196,16 +186,10 @@ class Search_BOPreOs:
                             for val in [
                                 f"{i}_{j}_{1}",
                                 f"{i}_{j}_{3}",
-                                f"{i}_{k}_{1}",                                
+                                f"{i}_{k}_{1}",
                                 f"{i}_{k}_{3}",
                                 f"{j}_{k}_{0}",
                                 f"{j}_{k}_{3}",
-#                                "%i_%i_%i" % (i, j, 1),
-#                                "%i_%i_%i" % (i, j, 3),
-#                                "%i_%i_%i" % (i, k, 1),
-#                                "%i_%i_%i" % (i, k, 3),
-#                                "%i_%i_%i" % (j, k, 0),
-#                                "%i_%i_%i" % (j, k, 3),
                             ]
                         ]
                         for ind in range(2):
@@ -215,7 +199,10 @@ class Search_BOPreOs:
                         rowG += 1
             h = np.ones((self.n_labels * (self.n_labels - 1) * (self.n_labels - 2), 1))
             A = np.zeros(
-                (int(self.n_labels * (self.n_labels - 1) * 0.5), int(self.n_labels * (self.n_labels - 1) * 2))
+                (
+                    int(self.n_labels * (self.n_labels - 1) * 0.5),
+                    int(self.n_labels * (self.n_labels - 1) * 2),
+                )
             )
             rowA = 0
             for i in range(self.n_labels - 1):
@@ -229,7 +216,7 @@ class Search_BOPreOs:
             I = set()
             B = set(range(self.n_labels * (self.n_labels - 1) * 2))
             return G, h, A, b, I, B
-        
+
         elif height == 2:
 
             pass
@@ -258,13 +245,9 @@ class Search_BOPreOs:
             for k in range(0, i):
                 scores_d[i] += optX[indices_vector[f"{k}_{i}_{1}"], 0]
                 scores_n[i] += optX[indices_vector[f"{k}_{i}_{0}"], 0]
-#                scores_d[i] += optX[indices_vector["%i_%i_%i" % (k, i, 1)], 0]
-#                scores_n[i] += optX[indices_vector["%i_%i_%i" % (k, i, 0)], 0]
             for j in range(i + 1, n_labels):
                 scores_d[i] += optX[indices_vector[f"{i}_{j}_{0}"], 0]
                 scores_n[i] += optX[indices_vector[f"{i}_{j}_{1}"], 0]
-#                scores_d[i] += optX[indices_vector["%i_%i_%i" % (i, j, 0)], 0]
-#                scores_n[i] += optX[indices_vector["%i_%i_%i" % (i, j, 1)], 0]
         #                epist_00 += optX[indicesVector["%i_%i_%i"%(i,j,2)],0]
         #                aleat_11 += optX[indicesVector["%i_%i_%i"%(i,j,3)],0]
         hard_prediction = [
@@ -272,11 +255,17 @@ class Search_BOPreOs:
         ]
         predicted_partial_order = optX
         return hard_prediction, predicted_partial_order
-    
-            
-class Search_BOParOs:
 
-    def __init__(self, pairwise_probabilistic_predictions, n_labels, n_instances, target_metric, height):
+
+class Search_BOParOs:
+    def __init__(
+        self,
+        pairwise_probabilistic_predictions,
+        n_labels,
+        n_instances,
+        target_metric,
+        height,
+    ):
         self.pairwise_probabilistic_predictions = pairwise_probabilistic_predictions
         self.n_labels = n_labels
         self.n_instances = n_instances
@@ -292,10 +281,10 @@ class Search_BOParOs:
         for i in range(self.n_labels - 1):
             for j in range(i + 1, self.n_labels):
                 for l in range(3):
-#                    key = "%i_%i_%i" % (i, j, l)
+                    #                    key = "%i_%i_%i" % (i, j, l)
                     indices_vector[f"{i}_{j}_{l}"] = indVec
                     indVec += 1
-        G, h, A, b, I, B = self._encode_parameters_PARTIAL_ORDER(indices_vector)
+        G, h, A, b, I, B = self._encode_parameters_PARTIAL_ORDER(indices_vector)  # type: ignore
         predicted_Y = []
         predicted_partial_orders = []
         for n in range(self.n_instances):
@@ -303,12 +292,22 @@ class Search_BOParOs:
             if self.target_metric == "hamming":
                 for i in range(self.n_labels - 1):
                     for j in range(i + 1, self.n_labels):
-                        pairInfor = [-self.pairwise_probabilistic_predictions[f"{i}_{j}_{n}_{l}"] for l in range(3)]             
+                        pairInfor = [
+                            -self.pairwise_probabilistic_predictions[f"{i}_{j}_{n}_{l}"]
+                            for l in range(3)
+                        ]
                         vector += pairInfor
             elif self.target_metric == "subset":
                 for i in range(self.n_labels - 1):
                     for j in range(i + 1, self.n_labels):
-                        pairInfor = [-np.log(self.pairwise_probabilistic_predictions[f"{i}_{j}_{n}_{l}"]) for l in range(3)]             
+                        pairInfor = [
+                            -np.log(
+                                self.pairwise_probabilistic_predictions[
+                                    f"{i}_{j}_{n}_{l}"
+                                ]
+                            )
+                            for l in range(3)
+                        ]
                         vector += pairInfor
             else:
                 raise ValueError(f"Unknown target metric: {self.target_metric}")
@@ -332,9 +331,8 @@ class Search_BOParOs:
             predicted_Y.append(hard_prediction)
             predicted_partial_orders.append(predicted_partial_order)
         return predicted_Y, predicted_partial_orders
-    
-    def _encode_parameters_PARTIAL_ORDER(self, indices_vector, height=None):
 
+    def _encode_parameters_PARTIAL_ORDER(self, indices_vector, height=None):
         assert self.n_labels is not None
 
         if not height:
@@ -354,9 +352,6 @@ class Search_BOParOs:
                                 f"{i}_{j}_{0}",
                                 f"{k}_{i}_{1}",
                                 f"{k}_{j}_{0}",
- #                               "%i_%i_%i" % (i, j, 0),
- #                               "%i_%i_%i" % (k, i, 1),
- #                               "%i_%i_%i" % (k, j, 0),
                             ]
                         ]
                         for ind in range(1):
@@ -370,9 +365,6 @@ class Search_BOParOs:
                                 f"{i}_{j}_{1}",
                                 f"{k}_{i}_{0}",
                                 f"{k}_{j}_{1}",
-#                                "%i_%i_%i" % (i, j, 1),
-#                                "%i_%i_%i" % (k, i, 0),
-#                                "%i_%i_%i" % (k, j, 1),
                             ]
                         ]
                         for ind in range(1):
@@ -387,9 +379,6 @@ class Search_BOParOs:
                                 f"{i}_{j}_{0}",
                                 f"{i}_{k}_{0}",
                                 f"{k}_{j}_{0}",
-#                                "%i_%i_%i" % (i, j, 0),
-#                                "%i_%i_%i" % (i, k, 0),
-#                                "%i_%i_%i" % (k, j, 0),
                             ]
                         ]
                         for ind in range(1):
@@ -403,9 +392,6 @@ class Search_BOParOs:
                                 f"{i}_{j}_{1}",
                                 f"{i}_{k}_{1}",
                                 f"{k}_{j}_{1}",
-#                                "%i_%i_%i" % (i, j, 1),
-#                                "%i_%i_%i" % (i, k, 1),
-#                                "%i_%i_%i" % (k, j, 1),
                             ]
                         ]
                         for ind in range(1):
@@ -420,9 +406,6 @@ class Search_BOParOs:
                                 f"{i}_{j}_{0}",
                                 f"{i}_{k}_{0}",
                                 f"{j}_{k}_{1}",
-#                                "%i_%i_%i" % (i, j, 0),
-#                                "%i_%i_%i" % (i, k, 0),
-#                                "%i_%i_%i" % (j, k, 1),
                             ]
                         ]
                         for ind in range(1):
@@ -436,9 +419,6 @@ class Search_BOParOs:
                                 f"{i}_{j}_{1}",
                                 f"{i}_{k}_{1}",
                                 f"{j}_{k}_{0}",
-#                                "%i_%i_%i" % (i, j, 1),
-#                                "%i_%i_%i" % (i, k, 1),
-#                                "%i_%i_%i" % (j, k, 0),
                             ]
                         ]
                         for ind in range(1):
@@ -459,7 +439,6 @@ class Search_BOParOs:
                     # we can inject the information of partial labels at test time here
                     for l in range(3):
                         indVec = indices_vector[f"{i}_{j}_{l}"]
-#                        indVec = indices_vector["%i_%i_%i" % (i, j, l)]
                         A[rowA, indVec] = 1
                     rowA += 1
             b = np.ones((int(self.n_labels * (self.n_labels - 1) * 0.5), 1))
@@ -478,9 +457,6 @@ class Search_BOParOs:
     def _reasoning_procedure_PARTIAL_ORDER(
         self, vector, indices_vector, G, h, A, b, I, B
     ):
-        #                            ,
-        #                            indexEmpty):
-
         c = np.zeros((self.n_labels * (self.n_labels - 1) * 2, 1))
         for ind in range(len(vector)):
             c[ind, 0] = vector[ind]
@@ -498,17 +474,15 @@ class Search_BOParOs:
             for k in range(0, i):
                 scores_d[i] += optX[indices_vector[f"{k}_{i}_{1}"], 0]
                 scores_n[i] += optX[indices_vector[f"{k}_{i}_{0}"], 0]
-#                scores_d[i] += optX[indices_vector["%i_%i_%i" % (k, i, 1)], 0]
-#                scores_n[i] += optX[indices_vector["%i_%i_%i" % (k, i, 0)], 0]
             for j in range(i + 1, self.n_labels):
                 scores_d[i] += optX[indices_vector[f"{i}_{j}_{0}"], 0]
                 scores_n[i] += optX[indices_vector[f"{i}_{j}_{1}"], 0]
-#                scores_d[i] += optX[indices_vector["%i_%i_%i" % (i, j, 0)], 0]
-#                scores_n[i] += optX[indices_vector["%i_%i_%i" % (i, j, 1)], 0]
         #                epist_00 += optX[indicesVector["%i_%i_%i"%(i,j,2)],0]
         #                aleat_11 += optX[indicesVector["%i_%i_%i"%(i,j,3)],0]
         hard_prediction = [
-            ind for ind in range(self.n_labels) if scores_d[ind] > 0 or scores_n[ind] == 0
+            ind
+            for ind in range(self.n_labels)
+            if scores_d[ind] > 0 or scores_n[ind] == 0
         ]
 
         predicted_partial_order = optX

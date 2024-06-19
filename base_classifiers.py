@@ -5,13 +5,19 @@ Created on Mon Oct 23 14:02:21 2023
 @author: nguyenli_admin
 """
 
+import lightgbm
 import numpy as np
 from estimator import Estimator
+from logging import INFO, log
 
 
 class BaseClassifiers:
-    def __init__(self, base_learner_name: str):
-        self.base_learner = Estimator(base_learner_name)
+    def __init__(self, estimator: Estimator):
+        log(
+            INFO,
+            f"BaseClassifiers: Initializing base learner: {estimator.name}",
+        )
+        self.base_learner = estimator
 
     # We may use dictionaries to store all the pairwise classifiers
     #   classifier = {}
@@ -20,12 +26,10 @@ class BaseClassifiers:
     #            key = "%i_%i" % (i, j)
     #            classifier[key] = the pairwise_classifier for the label pair (y_i,y_j)
 
-    def pairwise_calibrated_classifier(self, n_labels, X, Y):
+    def pairwise_calibrated_classifier(self, X, Y):
         # This BaseClassifier provides pairwise_probability_information for learning calibrated label rankings
 
         """_summary_
-            !! Remove n_labels from the arguments
-
             MCC: multi-class classification
         Args:
             n_labels (_type_): _description_
@@ -39,9 +43,7 @@ class BaseClassifiers:
         Returns:
             _type_: _description_
         """
-        n_labels = len(Y[0])
-
-        n_instances, _ = Y.shape
+        n_instances, n_labels = Y.shape
 
         # calibrated_classifiers is in fact is a (inverse) BR classifier
         calibrated_classifiers = []
@@ -109,9 +111,10 @@ class BaseClassifiers:
 
         # return classifiers
 
-    def pairwise_pre_order_classifier(self, n_labels, X, Y):
+    def pairwise_pre_order_classifier(self, X, Y):
         # This BaseClassifier provides pairwise_probability_information for learning preorders
-        n_instances, _ = Y.shape
+        # TODO: Check n_instances and n_labels is correct or not
+        n_instances, n_labels = Y.shape
         pairwise_classifiers = {}
         for i in range(n_labels - 1):
             for j in range(i + 1, n_labels):
@@ -129,9 +132,10 @@ class BaseClassifiers:
                 pairwise_classifiers[key] = self.base_learner.fit(X, MCC_y)
         return pairwise_classifiers
 
-    def binary_relevance_classifer(self, n_labels, X, Y):
+    def binary_relevance_classifer(self, X, Y):
         # This is to learn a Binary relevance (BR)
         classifiers = []
+        _, n_labels = Y.shape
         for k in range(n_labels):
             classifiers.append(self.base_learner.fit(X, Y[:, k]))
         return classifiers
