@@ -6,6 +6,9 @@ from cvxopt import matrix
 
 class Search_BOPreOs:
 
+    
+# For ilp with cvxopt.glpk, see https://gist.github.com/nipunbatra/7059160?fbclid=IwY2xjawEgKndleHRuA2FlbQIxMAABHfelujAwksDZjWb9Pn-Nfakv52P-ltg295HO8m0F_XnTjbp9_TvAlZxcjA_aem_ZA3BrIWlMvWu2HlK8bKKaA
+
     def __init__(
         self,
         pairwise_probabilistic_predictions,
@@ -86,6 +89,24 @@ class Search_BOPreOs:
 
     def _encode_parameters_PRE_ORDER(self, indices_vector, height=None):
         assert self.n_labels is not None
+        h = np.ones((self.n_labels * (self.n_labels - 1) * (self.n_labels - 2), 1))
+        A = np.zeros(
+            (
+                int(self.n_labels * (self.n_labels - 1) * 0.5),
+                int(self.n_labels * (self.n_labels - 1) * 2),
+            )
+        )
+        rowA = 0
+        for i in range(self.n_labels - 1):
+            for j in range(i + 1, self.n_labels):
+                # we can inject the information of partial labels at test time here
+                for l in range(4):
+                    indVec = indices_vector["%i_%i_%i" % (i, j, l)]
+                    A[rowA, indVec] = 1
+                rowA += 1
+        b = np.ones((int(self.n_labels * (self.n_labels - 1) * 0.5), 1))
+        I = set()
+        B = set(range(self.n_labels * (self.n_labels - 1) * 2))
 
         if not height:
 
@@ -197,30 +218,96 @@ class Search_BOPreOs:
                         for ind in range(2, 6):
                             G[rowG, indVecs[ind]] = 1
                         rowG += 1
-            h = np.ones((self.n_labels * (self.n_labels - 1) * (self.n_labels - 2), 1))
-            A = np.zeros(
-                (
-                    int(self.n_labels * (self.n_labels - 1) * 0.5),
-                    int(self.n_labels * (self.n_labels - 1) * 2),
-                )
-            )
-            rowA = 0
-            for i in range(self.n_labels - 1):
-                for j in range(i + 1, self.n_labels):
-                    # we can inject the information of partial labels at test time here
-                    for l in range(4):
-                        indVec = indices_vector["%i_%i_%i" % (i, j, l)]
-                        A[rowA, indVec] = 1
-                    rowA += 1
-            b = np.ones((int(self.n_labels * (self.n_labels - 1) * 0.5), 1))
-            I = set()
-            B = set(range(self.n_labels * (self.n_labels - 1) * 2))
             return G, h, A, b, I, B
 
         elif height == 2:
 
-            pass
-            # return G, h, A, b, I, B
+            G = np.zeros(
+                (
+                    self.n_labels * (self.n_labels - 1) * (self.n_labels - 2),
+                    self.n_labels * (self.n_labels - 1) * 2,
+                )
+            )
+            rowG = 0
+            for i in range(self.n_labels - 1):
+                for j in range(i + 1, self.n_labels):
+                    for k in range(i):
+                        indVecs = [
+                            indices_vector[val]
+                            for val in [
+                                f"{k}_{i}_{1}",
+                                f"{k}_{i}_{3}",
+                                f"{k}_{j}_{0}",
+                                f"{k}_{j}_{3}",
+                            ]
+                        ]
+                        for ind_tupe in indVecs:
+                            G[rowG, ind_tupe] = 1
+                        rowG += 1
+
+                        indVecs = [
+                            indices_vector[val]
+                            for val in [
+                                f"{k}_{i}_{0}",
+                                f"{k}_{i}_{3}",
+                                f"{k}_{j}_{1}",
+                                f"{k}_{j}_{3}",
+                            ]
+                        ]
+                        for ind_tupe in indVecs:
+                            G[rowG, ind_tupe] = 1
+                        rowG += 1
+                    for k in range(i + 1, j):
+                        indVecs = [
+                            indices_vector[val]
+                            for val in [
+                                f"{i}_{k}_{0}",
+                                f"{i}_{k}_{3}",
+                                f"{k}_{j}_{0}",
+                                f"{k}_{j}_{3}",
+                            ]
+                        ]
+                        for ind_tupe in indVecs:
+                            G[rowG, ind_tupe] = 1
+                        rowG += 1
+                        indVecs = [
+                            indices_vector[val]
+                            for val in [
+                                f"{i}_{k}_{1}",
+                                f"{i}_{k}_{3}",
+                                f"{k}_{j}_{1}",
+                                f"{k}_{j}_{3}",
+                            ]
+                        ]
+                        for ind_tupe in indVecs:
+                            G[rowG, ind_tupe] = 1
+                        rowG += 1
+                    for k in range(j + 1, self.n_labels):
+                        indVecs = [
+                            indices_vector[val]
+                            for val in [
+                                f"{i}_{k}_{0}",
+                                f"{i}_{k}_{3}",
+                                f"{j}_{k}_{1}",
+                                f"{j}_{k}_{3}",
+                            ]
+                        ]
+                        for ind_tupe in indVecs:
+                            G[rowG, ind_tupe] = 1
+                        rowG += 1
+                        indVecs = [
+                            indices_vector[val]
+                            for val in [
+                                f"{i}_{k}_{1}",
+                                f"{i}_{k}_{3}",
+                                f"{j}_{k}_{0}",
+                                f"{j}_{k}_{3}",
+                            ]
+                        ]
+                        for ind_tupe in indVecs:
+                            G[rowG, ind_tupe] = 1
+                        rowG += 1
+            return G, h, A, b, I, B
         else:
             raise ValueError("The height is not supported")
 
