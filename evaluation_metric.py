@@ -164,11 +164,11 @@ class EvaluationMetric:
             ham_acc_PAR_ORDER += ham_acc/ int(self.n_labels * (self.n_labels - 1) * 0.5)
         return ham_acc_PAR_ORDER / n_instances
 
-    def subset0_1_accuracy_PAR_ORDER(self, current_predicted_partialorders, true_Y, indices_vector):
+    def subset0_1_accuracy_PAR_ORDER(self, predicted_partialorders, true_Y, indices_vector):
         subset0_1_PAR_ORDER = 0
-        n_instances = len(current_predicted_partialorders)
+        n_instances = len(predicted_partialorders)
         for index in range(n_instances):
-            current_partialorders = current_predicted_partialorders[index]
+            current_predicted_partialorders = predicted_partialorders[index]
             current_true_Y = true_Y[index]
             subset0_1_PAR_ORDER += self.subset0_1_PAR_ORDER_instance(self, current_predicted_partialorders, current_true_Y, indices_vector)
         return subset0_1_PAR_ORDER / n_instances
