@@ -101,8 +101,88 @@ class EvaluationMetric:
                 recall += 1
         return recall / n_instances
     
-    def hamming_accuracy_PL(self, predicted_O, true_Y):
-        pass
+    def hamming_accuracy_PRE_ORDER(self, predicted_preorders, true_Y, indices_vector):
+        ham_acc_PRE_ORDER = 0
+        n_instances = len(predicted_preorders)
+        for index in range(n_instances):
+            current_predicted_preorder = predicted_preorders[index]
+            ham_acc = 0
+            for i in range(self.n_labels - 1):
+                for j in range(i + 1, self.n_labels):
+                    if true_Y[index,i] == 1 and true_Y[index,j] == 0: 
+                        ham_acc += current_predicted_preorder[indices_vector[f"{i}_{j}_{0}"]]
+                    elif true_Y[index,i] == 0 and true_Y[index,j] == 1: 
+                        ham_acc += current_predicted_preorder[indices_vector[f"{i}_{j}_{1}"]]
+                    elif true_Y[index,i] == 0 and true_Y[index,j] == 0: 
+                        ham_acc += current_predicted_preorder[indices_vector[f"{i}_{j}_{2}"]]
+                    else:
+                        ham_acc += current_predicted_preorder[indices_vector[f"{i}_{j}_{3}"]]
+            ham_acc_PRE_ORDER += ham_acc/ int(self.n_labels * (self.n_labels - 1) * 0.5)
+        return ham_acc_PRE_ORDER / n_instances
 
-    def subset0_1_PL(self, predicted_O, true_Y):
-        pass
+    def subset0_1_accuracy_PRE_ORDER(self, predicted_preorders, true_Y, indices_vector):
+        subset0_1_PRE_ORDER = 0
+        n_instances = len(predicted_preorders)
+        for index in range(n_instances):
+            current_predicted_preorder = predicted_preorders[index]
+            current_true_Y = true_Y[index]
+            subset0_1_PRE_ORDER += self.subset0_1_PRE_ORDER_instance(self, current_predicted_preorder, current_true_Y, indices_vector)
+        return subset0_1_PRE_ORDER / n_instances
+    
+    def subset0_1_PRE_ORDER_instance(self, current_predicted_preorder, current_true_Y, indices_vector):
+        for i in range(self.n_labels - 1):
+            for j in range(i + 1, self.n_labels):
+                if current_true_Y[i] == 1 and current_true_Y[j] == 0: 
+                    if current_predicted_preorder[indices_vector[f"{i}_{j}_{0}"]] == 0:
+                        return 0
+                elif current_true_Y[i] == 0 and current_true_Y[j] == 1: 
+                    if current_predicted_preorder[indices_vector[f"{i}_{j}_{1}"]] == 0:
+                        return 0
+                elif current_true_Y[i] == 0 and current_true_Y[j] == 0: 
+                    if current_predicted_preorder[indices_vector[f"{i}_{j}_{2}"]] == 0:
+                        return 0
+                else:
+                    if current_predicted_preorder[indices_vector[f"{i}_{j}_{3}"]] == 0:
+                        return 0
+        return 1
+
+
+    def hamming_accuracy_PAR_ORDER(self, predicted_partialorders, true_Y, indices_vector):
+        ham_acc_PAR_ORDER = 0
+        n_instances = len(predicted_partialorders)
+        for index in range(n_instances):
+            current_predicted_partialorders = predicted_partialorders[index]
+            ham_acc = 0
+            for i in range(self.n_labels - 1):
+                for j in range(i + 1, self.n_labels):
+                    if true_Y[index,i] == 1 and true_Y[index,j] == 0: 
+                        ham_acc += current_predicted_partialorders[indices_vector[f"{i}_{j}_{0}"]]
+                    elif true_Y[index,i] == 0 and true_Y[index,j] == 1: 
+                        ham_acc += current_predicted_partialorders[indices_vector[f"{i}_{j}_{1}"]]
+                    else:
+                        ham_acc += current_predicted_partialorders[indices_vector[f"{i}_{j}_{3}"]]
+            ham_acc_PAR_ORDER += ham_acc/ int(self.n_labels * (self.n_labels - 1) * 0.5)
+        return ham_acc_PAR_ORDER / n_instances
+
+    def subset0_1_accuracy_PAR_ORDER(self, current_predicted_partialorders, true_Y, indices_vector):
+        subset0_1_PAR_ORDER = 0
+        n_instances = len(current_predicted_partialorders)
+        for index in range(n_instances):
+            current_partialorders = current_predicted_partialorders[index]
+            current_true_Y = true_Y[index]
+            subset0_1_PAR_ORDER += self.subset0_1_PAR_ORDER_instance(self, current_predicted_partialorders, current_true_Y, indices_vector)
+        return subset0_1_PAR_ORDER / n_instances
+    
+    def subset0_1_PAR_ORDER_instance(self, current_predicted_partialorders, current_true_Y, indices_vector):
+        for i in range(self.n_labels - 1):
+            for j in range(i + 1, self.n_labels):
+                if current_true_Y[i] == 1 and current_true_Y[j] == 0: 
+                    if current_predicted_partialorders[indices_vector[f"{i}_{j}_{0}"]] == 0:
+                        return 0
+                elif current_true_Y[i] == 0 and current_true_Y[j] == 1: 
+                    if current_predicted_partialorders[indices_vector[f"{i}_{j}_{1}"]] == 0:
+                        return 0
+                else:
+                    if current_predicted_partialorders[indices_vector[f"{i}_{j}_{2}"]] == 0:
+                        return 0
+        return 1
