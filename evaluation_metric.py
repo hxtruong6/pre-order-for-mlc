@@ -160,7 +160,7 @@ class EvaluationMetric:
                     elif true_Y[index,i] == 0 and true_Y[index,j] == 1: 
                         ham_acc += current_predicted_partialorders[indices_vector[f"{i}_{j}_{1}"]]
                     else:
-                        ham_acc += current_predicted_partialorders[indices_vector[f"{i}_{j}_{3}"]]
+                        ham_acc += current_predicted_partialorders[indices_vector[f"{i}_{j}_{2}"]]
             ham_acc_PAR_ORDER += ham_acc/ int(self.n_labels * (self.n_labels - 1) * 0.5)
         return ham_acc_PAR_ORDER / n_instances
 
