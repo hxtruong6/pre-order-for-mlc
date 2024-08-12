@@ -6,8 +6,7 @@ from cvxopt import matrix
 
 class Search_BOPreOs:
 
-    
-# For ilp with cvxopt.glpk, see https://gist.github.com/nipunbatra/7059160?fbclid=IwY2xjawEgKndleHRuA2FlbQIxMAABHfelujAwksDZjWb9Pn-Nfakv52P-ltg295HO8m0F_XnTjbp9_TvAlZxcjA_aem_ZA3BrIWlMvWu2HlK8bKKaA
+    # For ilp with cvxopt.glpk, see https://gist.github.com/nipunbatra/7059160?fbclid=IwY2xjawEgKndleHRuA2FlbQIxMAABHfelujAwksDZjWb9Pn-Nfakv52P-ltg295HO8m0F_XnTjbp9_TvAlZxcjA_aem_ZA3BrIWlMvWu2HlK8bKKaA
 
     def __init__(
         self,
