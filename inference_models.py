@@ -140,52 +140,52 @@ class PredictBOPOs:
             pairwise_probabilistic_predictions = {}
             for i in range(n_labels - 1):
                 for j in range(i + 1, n_labels):
-                    pairwise_probabilistic_predictions = np.zeros((n_test_instances, 4))
+                    pairwise_probabilistic_predictions_ij = np.zeros((n_test_instances, 4))
                     key_classifier = f"{i}_{j}"
 
                     # TODO: recheck this line
-                    original_pairwise_probabilistic_predictions = (
+                    original_pairwise_probabilistic_predictions_ij = (
                         self.pairwise_classifier[key_classifier](X)
                     )
 
                     # TODO: "classes_" is not defined. Check type of pairwise_classifier later
-                    presented_classes = list(self.pairwise_classifier.classes_)
+                    presented_classes = list(self.pairwise_classifier[key_classifier].classes_)
                     for l in range(4):
                         if l in presented_classes:
-                            pairwise_probabilistic_predictions[:, l] = (
-                                original_pairwise_probabilistic_predictions[
+                            pairwise_probabilistic_predictions_ij[:, l] = (
+                                original_pairwise_probabilistic_predictions_ij[
                                     :, presented_classes.index(l)
                                 ]
                             )
                     for n in range(n_test_instances):
 
                         # add a small regularization term if the probabilistic prediction is deterministic instead of probabilistic
-                        current_pairwise_probabilistic_predictions = (
-                            pairwise_probabilistic_predictions[n]
+                        current_pairwise_probabilistic_predictions_ij = (
+                            pairwise_probabilistic_predictions_ij[n]
                         )
-                        if max(current_pairwise_probabilistic_predictions) == 1:
-                            current_pairwise_probabilistic_predictions = [
+                        if max(current_pairwise_probabilistic_predictions_ij) == 1:
+                            current_pairwise_probabilistic_predictions_ij = [
                                 x - 10**-10 if x == 1 else (10**-10) / 3
-                                for x in current_pairwise_probabilistic_predictions
+                                for x in current_pairwise_probabilistic_predictions_ij
                             ]
-                        if min(current_pairwise_probabilistic_predictions) == 0:
+                        if min(current_pairwise_probabilistic_predictions_ij) == 0:
                             zero_indices = [
                                 ind
                                 for ind in range(4)
-                                if current_pairwise_probabilistic_predictions[ind] == 0
+                                if current_pairwise_probabilistic_predictions_ij[ind] == 0
                             ]
-                            current_pairwise_probabilistic_predictions = [
+                            current_pairwise_probabilistic_predictions_ij = [
                                 (
                                     (10**-10) / len(zero_indices)
                                     if x == 0
                                     else x - (10**-10) / (4 - len(zero_indices))
                                 )
-                                for x in current_pairwise_probabilistic_predictions
+                                for x in current_pairwise_probabilistic_predictions_ij
                             ]
                         for l in range(4):
                             #                            key_pairwise_probabilistic_predictions = "%i_%i_%i_%i" % (i, j, n,l)
                             pairwise_probabilistic_predictions[f"{i}_{j}_{n}_{l}"] = (
-                                current_pairwise_probabilistic_predictions[l]
+                                current_pairwise_probabilistic_predictions_ij[l]
                             )
         elif (
             self.preference_order == PreferenceOrder.PARTIAL_ORDER
@@ -194,51 +194,192 @@ class PredictBOPOs:
             pairwise_probabilistic_predictions = {}
             for i in range(n_labels - 1):
                 for j in range(i + 1, n_labels):
-                    pairwise_probabilistic_predictions = np.zeros((n_test_instances, 3))
+                    pairwise_probabilistic_predictions_ij = np.zeros((n_test_instances, 3))
                     key_classifier = f"{i}_{j}"
-                    original_pairwise_probabilistic_predictions = (
+                    original_pairwise_probabilistic_predictions_ij = (
                         self.pairwise_classifier[key_classifier](X)
                     )
-                    presented_classes = list(self.pairwise_classifier.classes_)
+                    presented_classes = list(self.pairwise_classifier[key_classifier].classes_)
                     for l in range(3):
                         if l in presented_classes:
-                            pairwise_probabilistic_predictions[:, l] = (
-                                original_pairwise_probabilistic_predictions[
+                            pairwise_probabilistic_predictions_ij[:, l] = (
+                                original_pairwise_probabilistic_predictions_ij[
                                     :, presented_classes.index(l)
                                 ]
                             )
                     for n in range(n_test_instances):
 
                         # add a small regularization term if the probabilistic prediction is deterministic instead of probabilistic
-                        current_pairwise_probabilistic_predictions = (
-                            pairwise_probabilistic_predictions[n]
+                        current_pairwise_probabilistic_predictions_ij = (
+                            pairwise_probabilistic_predictions_ij[n]
                         )
-                        if max(current_pairwise_probabilistic_predictions) == 1:
-                            current_pairwise_probabilistic_predictions = [
+                        if max(current_pairwise_probabilistic_predictions_ij) == 1:
+                            current_pairwise_probabilistic_predictions_ij = [
                                 x - 10**-10 if x == 1 else (10**-10) / 2
-                                for x in current_pairwise_probabilistic_predictions
+                                for x in current_pairwise_probabilistic_predictions_ij
                             ]
-                        if min(current_pairwise_probabilistic_predictions) == 0:
+                        if min(current_pairwise_probabilistic_predictions_ij) == 0:
                             zero_indices = [
                                 ind
                                 for ind in range(3)
-                                if current_pairwise_probabilistic_predictions[ind] == 0
+                                if current_pairwise_probabilistic_predictions_ij[ind] == 0
                             ]
-                            current_pairwise_probabilistic_predictions = [
+                            current_pairwise_probabilistic_predictions_ij = [
                                 (
                                     (10**-10) / len(zero_indices)
                                     if x == 0
                                     else x - (10**-10) / (3 - len(zero_indices))
                                 )
-                                for x in current_pairwise_probabilistic_predictions
+                                for x in current_pairwise_probabilistic_predictions_ij
                             ]
                         for l in range(3):
                             #                            key_pairwise_probabilsitic_predictions = "%i_%i_%i_%i" % (i, j, n,l)
                             pairwise_probabilistic_predictions[f"{i}_{j}_{n}_{l}"] = (
-                                current_pairwise_probabilistic_predictions[l]
+                                current_pairwise_probabilistic_predictions_ij[l]
                             )
         return pairwise_probabilistic_predictions
 
+
+    def predict_proba_BR(self, X, n_labels):
+        # TODO We need to train a binary relevance classifier and store its K binary classifiers in a dictionary
+        n_test_instances, _ = X.shape
+        # Placeholder for prediction process
+        if (
+            self.preference_order == PreferenceOrder.PRE_ORDER
+            or self.preference_order == PreferenceOrder.BIPARTITE_PRE_ORDER
+        ):
+            pairwise_probabilistic_predictions = {}
+            for i in range(n_labels - 1):
+                key_classifier_i = f"{i}"
+                original_probabilistic_predictions_i = (
+                        self.pairwise_classifier[key_classifier_i](X)
+                    )
+                presented_classes = list(self.pairwise_classifier[key_classifier_i].classes_)
+                probabilistic_predictions_i = np.zeros((n_test_instances, 2))
+                for c in range(2):
+                    if c in presented_classes:
+                        probabilistic_predictions_i[:, c] = (
+                            original_probabilistic_predictions_i[
+                                :, presented_classes.index(c)
+                            ]
+                        )
+                for j in range(i + 1, n_labels):
+                    key_classifier_j = f"{j}"
+                    original_probabilistic_predictions_j = (
+                            self.pairwise_classifier[key_classifier_j](X)
+                        )
+                    presented_classes = list(self.pairwise_classifier[key_classifier_j].classes_)
+                    probabilistic_predictions_j = np.zeros((n_test_instances, 2))
+                    for c in range(2):
+                        if c in presented_classes:
+                            probabilistic_predictions_j[:, c] = (
+                                original_probabilistic_predictions_j[
+                                    :, presented_classes.index(c)
+                                ]
+                            )
+                    for n in range(n_test_instances):
+
+                        current_pairwise_probabilistic_predictions_ij = [
+                            probabilistic_predictions_i[n,1]*probabilistic_predictions_j[n,0],
+                            probabilistic_predictions_i[n,0]*probabilistic_predictions_j[n,1],
+                            probabilistic_predictions_i[n,0]*probabilistic_predictions_j[n,0],
+                            probabilistic_predictions_i[n,1]*probabilistic_predictions_j[n,1]
+                        ]
+
+                        # add a small regularization term if the probabilistic prediction is deterministic instead of probabilistic
+
+                        if max(current_pairwise_probabilistic_predictions_ij) == 1:
+                            current_pairwise_probabilistic_predictions_ij = [
+                                x - 10**-10 if x == 1 else (10**-10) / 3
+                                for x in current_pairwise_probabilistic_predictions_ij
+                            ]
+                        if min(current_pairwise_probabilistic_predictions_ij) == 0:
+                            zero_indices = [
+                                ind
+                                for ind in range(4)
+                                if current_pairwise_probabilistic_predictions_ij[ind] == 0
+                            ]
+                            current_pairwise_probabilistic_predictions_ij = [
+                                (
+                                    (10**-10) / len(zero_indices)
+                                    if x == 0
+                                    else x - (10**-10) / (4 - len(zero_indices))
+                                )
+                                for x in current_pairwise_probabilistic_predictions_ij
+                            ]
+                        for l in range(4):
+                            #                            key_pairwise_probabilistic_predictions = "%i_%i_%i_%i" % (i, j, n,l)
+                            pairwise_probabilistic_predictions[f"{i}_{j}_{n}_{l}"] = (
+                                current_pairwise_probabilistic_predictions_ij[l]
+                            )
+        elif (
+            self.preference_order == PreferenceOrder.PARTIAL_ORDER
+            or self.preference_order == PreferenceOrder.BIPARTITE_PARTIAL_ORDER
+        ):
+            pairwise_probabilistic_predictions = {}
+            for i in range(n_labels - 1):
+                key_classifier_i = f"{i}"
+                original_probabilistic_predictions_i = (
+                        self.pairwise_classifier[key_classifier_i](X)
+                    )
+                presented_classes = list(self.pairwise_classifier[key_classifier_i].classes_)
+                probabilistic_predictions_i = np.zeros((n_test_instances, 2))
+                for c in range(2):
+                    if c in presented_classes:
+                        probabilistic_predictions_i[:, c] = (
+                            original_probabilistic_predictions_i[
+                                :, presented_classes.index(c)
+                            ]
+                        )
+                for j in range(i + 1, n_labels):
+                    key_classifier_j = f"{j}"
+                    original_probabilistic_predictions_j = (
+                            self.pairwise_classifier[key_classifier_j](X)
+                        )
+                    presented_classes = list(self.pairwise_classifier[key_classifier_j].classes_)
+                    probabilistic_predictions_j = np.zeros((n_test_instances, 2))
+                    for c in range(2):
+                        if c in presented_classes:
+                            probabilistic_predictions_j[:, c] = (
+                                original_probabilistic_predictions_j[
+                                    :, presented_classes.index(c)
+                                ]
+                            )
+                    for n in range(n_test_instances):
+
+                        current_pairwise_probabilistic_predictions_ij = [
+                            probabilistic_predictions_i[n,1]*probabilistic_predictions_j[n,0],
+                            probabilistic_predictions_i[n,0]*probabilistic_predictions_j[n,1],
+                            probabilistic_predictions_i[n,0]*probabilistic_predictions_j[n,0] + probabilistic_predictions_i[n,1]*probabilistic_predictions_j[n,1]
+                        ]
+                        
+                        # add a small regularization term if the probabilistic prediction is deterministic instead of probabilistic
+
+                        if max(current_pairwise_probabilistic_predictions_ij) == 1:
+                            current_pairwise_probabilistic_predictions_ij = [
+                                x - 10**-10 if x == 1 else (10**-10) / 2
+                                for x in current_pairwise_probabilistic_predictions_ij
+                            ]
+                        if min(current_pairwise_probabilistic_predictions_ij) == 0:
+                            zero_indices = [
+                                ind
+                                for ind in range(3)
+                                if current_pairwise_probabilistic_predictions_ij[ind] == 0
+                            ]
+                            current_pairwise_probabilistic_predictions_ij = [
+                                (
+                                    (10**-10) / len(zero_indices)
+                                    if x == 0
+                                    else x - (10**-10) / (3 - len(zero_indices))
+                                )
+                                for x in current_pairwise_probabilistic_predictions_ij
+                            ]
+                        for l in range(3):
+                            #                            key_pairwise_probabilistic_predictions = "%i_%i_%i_%i" % (i, j, n,l)
+                            pairwise_probabilistic_predictions[f"{i}_{j}_{n}_{l}"] = (
+                                current_pairwise_probabilistic_predictions_ij[l]
+                            )
+        return pairwise_probabilistic_predictions       
     #
 
     def fit(self, X, Y):
