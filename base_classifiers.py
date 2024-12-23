@@ -7,6 +7,7 @@ Created on Mon Oct 23 14:02:21 2023
 
 import lightgbm
 import numpy as np
+from sklearn.base import BaseEstimator
 from estimator import Estimator
 from logging import INFO, log
 from typing import Dict, List, Tuple, Optional
@@ -81,8 +82,8 @@ class BaseClassifiers:
                     elif Y[n, i] == 0 and Y[n, j] == 1:
                         MCC_X.append(X[n])
                         MCC_y.append(1)
-
-                pairwise_classifiers[key] = self.base_learner.fit(MCC_X, MCC_y)
+                # TODO: check this
+                pairwise_classifiers[key] = self.base_learner.fit(MCC_X, MCC_y)  # type: ignore
 
         return pairwise_classifiers, calibrated_classifiers
 
@@ -102,7 +103,8 @@ class BaseClassifiers:
                         MCC_y.append(0)
                     elif Y[n, i] == 0 and Y[n, j] == 1:
                         MCC_y.append(1)
-                pairwise_classifiers[key] = self.base_learner.fit(X, MCC_y)
+                # TODO: check this
+                pairwise_classifiers[key] = self.base_learner.fit(X, MCC_y)  # type: ignore
         return pairwise_classifiers
         # classifiers = []
         # for k_1 in range(n_labels - 1):
@@ -139,7 +141,8 @@ class BaseClassifiers:
                         MCC_y.append(0)
                     elif Y[n, i] == 0 and Y[n, j] == 1:
                         MCC_y.append(1)
-                pairwise_classifiers[key] = self.base_learner.fit(X, MCC_y)
+                # TODO: check this
+                pairwise_classifiers[key] = self.base_learner.fit(X, MCC_y)  # type: ignore
         return pairwise_classifiers
 
     def binary_relevance_classifer(self, X, Y):

@@ -72,18 +72,13 @@ def process_dataset(
                     # with Hamming accuracy
                     # For the next configurations, we re-use the pre-trained models.
 
-                    # ---------------
-                    # Other step here
-
-                    # Another step here
-
-                    # ---------------
-
                     # Predict the test set
                     n_instances, n_labels = X_test.shape
+
                     probabilsitic_predictions = predict_BOPOs.predict_proba(
                         X_test, n_labels
                     )
+
                     for target_metric in [TargetMetric.Hamming, TargetMetric.Subset]:
                         predict_results = predict_BOPOs.predict_preference_orders(
                             probabilsitic_predictions,
@@ -116,7 +111,10 @@ def main(
 
     # Run for each dataset
     for dataset_index in range(experience_dataset.get_length()):
-        log(INFO, f"Dataset: {dataset_index}")
+        log(
+            INFO,
+            f"Dataset: {dataset_index}: {experience_dataset.get_dataset_name(dataset_index)}",
+        )
         # Run for each noisy rate
         for noisy_rate in noisy_rates:
             log(INFO, f"Noisy rate: {noisy_rate}")

@@ -13,9 +13,9 @@ from constants import RANDOM_STATE
 class Estimator:
     def __init__(self, name: str):
         self.name = name
-        self.clf: Optional[BaseEstimator] = None
+        self.clf: BaseEstimator | LGBMClassifier = self.get_classifier()
 
-    def get_classifier(self) -> BaseEstimator:
+    def get_classifier(self) -> BaseEstimator | LGBMClassifier:
         """Get the classifier based on name with proper error handling."""
         try:
             if self.name == "RF":
@@ -32,11 +32,13 @@ class Estimator:
         except Exception as e:
             raise ValueError(f"Error initializing {self.name}: {str(e)}")
 
-    def fit(self, X: NDArray, Y: NDArray) -> BaseEstimator:
+    def fit(self, X: NDArray, Y: NDArray) -> BaseEstimator | LGBMClassifier:
         """Fit the classifier with proper error handling."""
         try:
             if self.clf is None:
                 self.clf = self.get_classifier()
+            assert isinstance(self.clf, BaseEstimator | LGBMClassifier)
+
             return self.clf.fit(X, Y)
         except Exception as e:
             raise ValueError(f"Error training {self.name}: {str(e)}")

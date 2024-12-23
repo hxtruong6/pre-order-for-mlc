@@ -45,8 +45,6 @@ class PredictBOPOs:
         n_instances,
         target_metric: TargetMetric,
     ):
-        # TODO: Refactor this func later
-
         # 1. Initialize a search BOPreOs model
         search_BOPrerOs = Search_BOPreOs(
             pairwise_probabilistic_predictions,
@@ -59,29 +57,13 @@ class PredictBOPOs:
         # 2. Fit the model with the input data
         # Placeholder for prediction process
         if self.preference_order == PreferenceOrder.PRE_ORDER_HAM:
-            predict_BOPOS, predict_binary_vectors = search_BOPrerOs.PRE_ORDER(
-                pairwise_probabilistic_predictions, n_labels, n_instances, target_metric
-            )
+            predict_BOPOS, predict_binary_vectors = search_BOPrerOs.PRE_ORDER()
         elif self.preference_order == PreferenceOrder.BIPARTITE_PRE_ORDER_HAM:
-            predict_BOPOS, predict_binary_vectors = search_BOPrerOs.PRE_ORDER(
-                pairwise_probabilistic_predictions,
-                n_labels,
-                n_instances,
-                target_metric,
-                height=2,
-            )
+            predict_BOPOS, predict_binary_vectors = search_BOPrerOs.PRE_ORDER()
         elif self.preference_order == PreferenceOrder.PRE_ORDER_SUB:
-            predict_BOPOS, predict_binary_vectors = search_BOPrerOs.PRE_ORDER(
-                pairwise_probabilistic_predictions, n_labels, n_instances, target_metric
-            )
+            predict_BOPOS, predict_binary_vectors = search_BOPrerOs.PRE_ORDER()
         elif self.preference_order == PreferenceOrder.BIPARTITE_PRE_ORDER_SUB:
-            predict_BOPOS, predict_binary_vectors = search_BOPrerOs.PRE_ORDER(
-                pairwise_probabilistic_predictions,
-                n_labels,
-                n_instances,
-                target_metric,
-                height=2,
-            )
+            predict_BOPOS, predict_binary_vectors = search_BOPrerOs.PRE_ORDER()
         else:
             search_BOParOs = Search_BOParOs(
                 pairwise_probabilistic_predictions,
@@ -92,35 +74,13 @@ class PredictBOPOs:
             )
 
             if self.preference_order == PreferenceOrder.PARTIAL_ORDER_HAM:
-                predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER(
-                    pairwise_probabilistic_predictions,
-                    n_labels,
-                    n_instances,
-                    target_metric,
-                )
+                predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER()
             elif self.preference_order == PreferenceOrder.BIPARTITE_PARTIAL_ORDER_HAM:
-                predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER(
-                    pairwise_probabilistic_predictions,
-                    n_labels,
-                    n_instances,
-                    target_metric,
-                    height=2,
-                )
+                predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER()
             elif self.preference_order == PreferenceOrder.PARTIAL_ORDER_SUB:
-                predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER(
-                    pairwise_probabilistic_predictions,
-                    n_labels,
-                    n_instances,
-                    target_metric,
-                )
+                predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER()
             elif self.preference_order == PreferenceOrder.BIPARTITE_PARTIAL_ORDER_SUB:
-                predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER(
-                    pairwise_probabilistic_predictions,
-                    n_labels,
-                    n_instances,
-                    target_metric,
-                    height=2,
-                )
+                predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER()
             else:
                 raise ValueError(f"Unknown preference order: {self.preference_order}")
 
@@ -239,7 +199,6 @@ class PredictBOPOs:
                             )
         return pairwise_probabilistic_predictions
 
-
     def predict_proba_BR(self, X, n_labels):
         # TODO We need to train a binary relevance classifier and store its K binary classifiers in a dictionary
         n_test_instances, _ = X.shape
@@ -352,7 +311,7 @@ class PredictBOPOs:
                             probabilistic_predictions_i[n,0]*probabilistic_predictions_j[n,1],
                             probabilistic_predictions_i[n,0]*probabilistic_predictions_j[n,0] + probabilistic_predictions_i[n,1]*probabilistic_predictions_j[n,1]
                         ]
-                        
+
                         # add a small regularization term if the probabilistic prediction is deterministic instead of probabilistic
 
                         if max(current_pairwise_probabilistic_predictions_ij) == 1:
