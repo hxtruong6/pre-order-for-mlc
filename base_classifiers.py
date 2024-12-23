@@ -9,9 +9,18 @@ import lightgbm
 import numpy as np
 from estimator import Estimator
 from logging import INFO, log
+from typing import Dict, List, Tuple, Optional
+from numpy.typing import NDArray
 
 
 class BaseClassifiers:
+    """Base classifiers for multi-label classification with different order types.
+
+    Attributes:
+        base_learner (Estimator): The base learning algorithm
+        logger (logging.Logger): Logger instance
+    """
+
     def __init__(self, estimator: Estimator):
         log(
             INFO,
@@ -26,22 +35,23 @@ class BaseClassifiers:
     #            key = "%i_%i" % (i, j)
     #            classifier[key] = the pairwise_classifier for the label pair (y_i,y_j)
 
-    def pairwise_calibrated_classifier(self, X, Y):
-        # This BaseClassifier provides pairwise_probability_information for learning calibrated label rankings
+    def pairwise_calibrated_classifier(
+        self, X: NDArray[np.float64], Y: NDArray[np.int32]
+    ) -> Tuple[Dict[str, BaseEstimator], List[BaseEstimator]]:
+        """Train pairwise calibrated classifiers.
 
-        """_summary_
-            MCC: multi-class classification
         Args:
-            n_labels (_type_): _description_
-            X (_type_): _description_
-            Y (_type_): _description_
+            X: Input features of shape (n_samples, n_features)
+            Y: Binary label matrix of shape (n_samples, n_labels)
 
             X_train = [[1, 2, 3, 0], [3, 2, 4, 1], [4, 5, 3, 3], [7, 6, 3, 1]]
             Y_train = [[1, 1, 0], [0, 1, 0], [1, 0, 0], [0, 0, 1]]
             n_labels = 3
 
         Returns:
-            _type_: _description_
+            Tuple containing:
+                - Dictionary of pairwise classifiers
+                - List of calibrated classifiers
         """
         n_instances, n_labels = Y.shape
 

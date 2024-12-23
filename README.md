@@ -38,6 +38,18 @@ python main.py
 The project includes the following classes.
 These classes implement various prediction algorithms and evaluation metrics.
 
+```mermaid
+graph TD
+    A[Main Entry Point] --> B[Dataset Processing]
+    B --> C[Base Classifiers]
+    C --> D[Order Prediction]
+    D --> E[Evaluation]
+
+    B --> F[Data Splitting & Noise Injection]
+    C --> G[Multiple Base Learners]
+    D --> H[Different Order Types]
+```
+
 ## Datasets
 
 The scripts use datasets in ARFF format. The datasets should be placed in the [`./data/`](command:_github.copilot.openRelativePath?%5B%22.%2Fdata%2F%22%5D "./data/") directory. The scripts are currently configured to use the following datasets:

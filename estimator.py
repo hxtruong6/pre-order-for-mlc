@@ -1,8 +1,11 @@
+from typing import Optional
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 import lightgbm as lgb
 from sklearn.base import BaseEstimator
+from numpy.typing import NDArray
+from lightgbm import LGBMClassifier
 
 from constants import RANDOM_STATE
 
@@ -10,55 +13,30 @@ from constants import RANDOM_STATE
 class Estimator:
     def __init__(self, name: str):
         self.name = name
+        self.clf: Optional[BaseEstimator] = None
 
-        if self.name == "RF":
-            clf = RandomForestClassifier(random_state=RANDOM_STATE)
-        elif self.name == "ET":
-            clf = ExtraTreesClassifier(random_state=RANDOM_STATE)
-        elif self.name == "XGBoost":
-            clf = GradientBoostingClassifier(random_state=RANDOM_STATE)
-        elif self.name == "LightGBM":
-            clf = lgb.LGBMClassifier(random_state=RANDOM_STATE)
-        else:
-            raise ValueError(f"Unknown base learner: {self.name}")
-        self.clf: BaseEstimator | lgb.LGBMClassifier = clf  # type: ignore
+    def get_classifier(self) -> BaseEstimator:
+        """Get the classifier based on name with proper error handling."""
+        try:
+            if self.name == "RF":
+                return RandomForestClassifier(random_state=RANDOM_STATE)
+            elif self.name == "ET":
+                return ExtraTreesClassifier(random_state=RANDOM_STATE)
+            elif self.name == "XGBoost":
+                return GradientBoostingClassifier(random_state=RANDOM_STATE)
+            elif self.name == "LightGBM":
+                # TODO: check this
+                return LGBMClassifier(random_state=RANDOM_STATE)
+            else:
+                raise ValueError(f"Unknown base learner: {self.name}")
+        except Exception as e:
+            raise ValueError(f"Error initializing {self.name}: {str(e)}")
 
-    def fit(self, X, Y):
-        self.clf.fit(X, Y)  # type: ignore
-        return self.clf
-
-    # def _2classifier(self, X, Y):
-    #     if self.name == "RF":
-    #         clf = RandomForestClassifier(random_state=RANDOM_STATE)
-    #     if self.name == "ET":
-    #         clf = ExtraTreesClassifier(random_state=RANDOM_STATE)
-    #     if self.name == "XGBoost":
-    #         clf = GradientBoostingClassifier(random_state=RANDOM_STATE)
-    #     if self.name == "LightGBM":
-    #         clf = lgb.LGBMClassifier(random_state=RANDOM_STATE)
-    #     clf.fit(X, Y)
-    #     return clf
-
-    # def _3classifier(self, X, Y):
-    #     if self.name == "RF":
-    #         clf = RandomForestClassifier(random_state=RANDOM_STATE)
-    #     if self.name == "ET":
-    #         clf = ExtraTreesClassifier(random_state=RANDOM_STATE)
-    #     if self.name == "XGBoost":
-    #         clf = GradientBoostingClassifier(random_state=RANDOM_STATE)
-    #     if self.name == "LightGBM":
-    #         clf = lgb.LGBMClassifier(random_state=RANDOM_STATE)
-    #     clf.fit(X, Y)
-    #     return clf
-
-    # def _4classifier(self, X, Y):
-    #     if self.name == "RF":
-    #         clf = RandomForestClassifier(random_state=RANDOM_STATE)
-    #     if self.name == "ET":
-    #         clf = ExtraTreesClassifier(random_state=RANDOM_STATE)
-    #     if self.name == "XGBoost":
-    #         clf = GradientBoostingClassifier(random_state=RANDOM_STATE)
-    #     if self.name == "LightGBM":
-    #         clf = lgb.LGBMClassifier(random_state=RANDOM_STATE)
-    #     clf.fit(X, Y)
-    #     return clf
+    def fit(self, X: NDArray, Y: NDArray) -> BaseEstimator:
+        """Fit the classifier with proper error handling."""
+        try:
+            if self.clf is None:
+                self.clf = self.get_classifier()
+            return self.clf.fit(X, Y)
+        except Exception as e:
+            raise ValueError(f"Error training {self.name}: {str(e)}")

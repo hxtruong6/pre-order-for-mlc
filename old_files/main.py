@@ -15,7 +15,7 @@ from evaluation_metric import EvaluationMetric
 
 from base_classifiers import PairwiseClassifiers
 from predictor import Predictor
-from utils import load_and_preprocess_data
+from utils.utils import load_and_preprocess_data
 
 
 # for a quick test
