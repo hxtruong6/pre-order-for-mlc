@@ -25,7 +25,7 @@ def process_dataset(
     noisy_rate: float,
     repeat_time: int,
     NUMBER_FOLDS: int,
-    base_learners: list[str],
+    base_learners: list[BaseLearnerName],
 ):
     results = {
         # [dataset_index][noisy_rate][base_learner]: mean and std of evaluation metrics
@@ -53,12 +53,14 @@ def process_dataset(
 
                     # Initialize the model with the base learner and the preference order
                     predict_BOPOs = PredictBOPOs(
-                        base_classifier_name=base_learner_name,  # --> Get classifier
+                        base_classifier_name=base_learner_name.value,  # --> Get classifier
                         preference_order=order_type,
                     )
 
                     # Train the model
                     predict_BOPOs.fit(X_train, Y_train)
+
+                    log(INFO, f"PredictBOPOs: {predict_BOPOs}")
 
                     # Linh: For shared configurations, i.e., experiments with the same type
                     # of preference orders, which can be either partial or preorders, we can
@@ -120,6 +122,8 @@ def main(
                 NUMBER_FOLDS,
                 base_learners,
             )
+
+            log(INFO, f"Results: {results}")
 
             # For each evaluation metric
             for metric in EvaluationMetricName:
