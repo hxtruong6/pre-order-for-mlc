@@ -9,7 +9,8 @@ TARGET_IN_END_FILE_DATASETS = ["emotions.arff", "scene.arff"]
 
 
 class Datasets4Experiments:
-    def __init__(self, data_path, data_files, n_labels_set):
+
+    def __init__(self, data_path: str, data_files: list[str], n_labels_set: list[int]):
         self.data_path = data_path
         self.data_files = data_files
         self.n_labels_set = n_labels_set

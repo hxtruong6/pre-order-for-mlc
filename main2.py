@@ -5,12 +5,6 @@ Created on Mon Oct 23 20:54:40 2023
 @author: nguyenli_admin
 """
 
-import lightgbm
-from sklearn.ensemble import (
-    ExtraTreesClassifier,
-    GradientBoostingClassifier,
-    RandomForestClassifier,
-)
 from constants import RANDOM_STATE, BaseLearnerName, TargetMetric
 from estimator import Estimator
 from evaluation_metric import EvaluationMetric, EvaluationMetricName
@@ -26,18 +20,18 @@ basicConfig(level=INFO)
 
 
 def process_dataset(
-    experiment_dataset,
-    dataset_index,
-    noisy_rate,
-    repeat_time,
-    NUMBER_FOLDS,
+    experiment_dataset: Datasets4Experiments,
+    dataset_index: int,
+    noisy_rate: float,
+    repeat_time: int,
+    NUMBER_FOLDS: int,
     base_learners: list[str],
 ):
     results = {
         # [dataset_index][noisy_rate][base_learner]: mean and std of evaluation metrics
     }
 
-    for base_learner in base_learners:
+    for base_learner_name in base_learners:
 
         # Run fold for each dataset and each noisy rate and repeat times
         for repeat_time in range(TOTAL_REPEAT_TIMES):
@@ -59,7 +53,7 @@ def process_dataset(
 
                     # Initialize the model with the base learner and the preference order
                     predict_BOPOs = PredictBOPOs(
-                        estimator=Estimator(base_learner),
+                        base_classifier_name=base_learner_name,  # --> Get classifier
                         preference_order=order_type,
                     )
 
@@ -87,7 +81,7 @@ def process_dataset(
                             target_metric,
                         )
 
-                        results[dataset_index][f"{noisy_rate}"][base_learner] = {
+                        results[dataset_index][f"{noisy_rate}"][base_learner_name] = {
                             "Y_test": Y_test,
                             "predict_results": predict_results,
                         }
@@ -118,7 +112,7 @@ def main(
         # Run for each noisy rate
         for noisy_rate in noisy_rates:
             log(INFO, f"Noisy rate: {noisy_rate}")
-            process_dataset(
+            results = process_dataset(
                 experience_dataset,
                 dataset_index,
                 noisy_rate,
@@ -131,6 +125,7 @@ def main(
             for metric in EvaluationMetricName:
                 log(INFO, f"Evaluation metric: {metric}")
                 # Do evaluation here
+                # TODO: Do this evaluation
 
 
 # for a quick test

@@ -22,12 +22,15 @@ class BaseClassifiers:
         logger (logging.Logger): Logger instance
     """
 
-    def __init__(self, estimator: Estimator):
+    def __init__(self, name: str):
         log(
             INFO,
-            f"BaseClassifiers: Initializing base learner: {estimator.name}",
+            f"BaseClassifiers: Initializing base learner: {name}",
         )
-        self.base_learner = estimator
+        self.name = name
+
+        # Store all the pairwise classifiers for each pair of labels
+        self.pairwise_classifiers: dict[str, Estimator] = {}
 
     # We may use dictionaries to store all the pairwise classifiers
     #   classifier = {}
@@ -66,7 +69,9 @@ class BaseClassifiers:
             MCC_y = np.logical_not(MCC_y).astype(int)
 
             # Learning for each label k
-            calibrated_classifiers.append(self.base_learner.fit(X, MCC_y))
+            classifier = Estimator(self.name)
+            classifier.fit(X, MCC_y)
+            calibrated_classifiers.append(classifier)
 
         pairwise_classifiers = {}
         for i in range(n_labels - 1):
@@ -123,11 +128,12 @@ class BaseClassifiers:
 
         # return classifiers
 
-    def pairwise_pre_order_classifier(self, X, Y):
-        # This BaseClassifier provides pairwise_probability_information for learning preorders
-        # TODO: Check n_instances and n_labels is correct or not
+    def pairwise_pre_order_classifier_fit(self, X, Y) -> dict[str, Estimator]:
+        """
+        This BaseClassifier provides pairwise_probability_information for learning preorders
+        For each pair of labels, we will train a classifier to predict the probability of the label
+        """
         n_instances, n_labels = Y.shape
-        pairwise_classifiers = {}
         for i in range(n_labels - 1):
             for j in range(i + 1, n_labels):
                 key = f"{i}_{j}"
@@ -141,14 +147,28 @@ class BaseClassifiers:
                         MCC_y.append(0)
                     elif Y[n, i] == 0 and Y[n, j] == 1:
                         MCC_y.append(1)
-                # TODO: check this
-                pairwise_classifiers[key] = self.base_learner.fit(X, MCC_y)  # type: ignore
-        return pairwise_classifiers
 
-    def binary_relevance_classifer(self, X, Y):
+                # Init classifier
+                classifier = Estimator(self.name)
+                log(
+                    INFO,
+                    f"BaseClassifiers: Fitting classifier: {classifier.name} for pair of labels: {key}",
+                )
+                classifier.fit(X, MCC_y)  # type: ignore
+                # Store the classifier for each pair of labels
+                self.pairwise_classifiers[key] = classifier
+
+        # This is a dictionary of pairwise classifiers. [key] is a string of the form "i_j"
+        # where i and j are the indices of the labels in the label matrix Y
+        return self.pairwise_classifiers
+        # TODO: Do this `fit` trained or not? should return value or a classifier?
+
+    def binary_relevance_classifer(self, X, Y) -> list[BaseEstimator]:
         # This is to learn a Binary relevance (BR)
         classifiers = []
         _, n_labels = Y.shape
         for k in range(n_labels):
-            classifiers.append(self.base_learner.fit(X, Y[:, k]))
+            classifier = Estimator(self.name)
+            classifier.fit(X, Y[:, k])
+            classifiers.append(classifier)
         return classifiers
