@@ -69,7 +69,8 @@ def process_dataset(
                     # For the next configurations, we re-use the pre-trained models.
 
                     # Predict the test set
-                    n_instances, n_labels = X_test.shape
+                    n_instances = X_test.shape[0]
+                    n_labels = Y_test.shape[1]
 
                     probabilsitic_predictions = predict_BOPOs.predict_proba(
                         X_test, n_labels

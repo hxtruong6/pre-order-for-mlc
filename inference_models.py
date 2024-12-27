@@ -1,3 +1,4 @@
+from logging import INFO, log
 import numpy as np
 from enum import Enum
 
@@ -62,6 +63,24 @@ class PredictBOPOs:
             height=2,
         )
 
+        if target_metric == TargetMetric.Hamming:
+            if self.preference_order == PreferenceOrder.PRE_ORDER:
+                predict_BOPOS, predict_binary_vectors = search_BOPrerOs.PRE_ORDER()
+            elif (
+                self.preference_order == PreferenceOrder.BIPARTITE_PRE_ORDER_HAM
+            ):  # Fix later
+                pass
+            else:
+                raise ValueError(f"Unknown preference order: {self.preference_order}")
+
+        elif target_metric == TargetMetric.Subset:
+            pass
+
+        else:
+            raise ValueError(f"Unknown target metric: {target_metric}")
+
+        return predict_BOPOS, predict_binary_vectors
+
         # 2. Fit the model with the input data
         # Placeholder for prediction process
         if self.preference_order == PreferenceOrder.PRE_ORDER_HAM:
@@ -81,6 +100,8 @@ class PredictBOPOs:
                 height=2,
             )
 
+            log(INFO, f"Search_BOParOs preference_order: {self.preference_order}")
+
             if self.preference_order == PreferenceOrder.PARTIAL_ORDER_HAM:
                 predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER()
             elif self.preference_order == PreferenceOrder.BIPARTITE_PARTIAL_ORDER_HAM:
@@ -89,6 +110,7 @@ class PredictBOPOs:
                 predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER()
             elif self.preference_order == PreferenceOrder.BIPARTITE_PARTIAL_ORDER_SUB:
                 predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER()
+
             else:
                 raise ValueError(f"Unknown preference order: {self.preference_order}")
 

@@ -3,6 +3,8 @@ import numpy as np
 from numpy import array
 from cvxopt import matrix
 
+from constants import TargetMetric
+
 
 class Search_BOPreOs:
     """
@@ -16,7 +18,7 @@ class Search_BOPreOs:
         pairwise_probabilistic_predictions,
         n_labels,
         n_instances,
-        target_metric,
+        target_metric: TargetMetric,
         height,
     ):
         self.pairwise_probabilistic_predictions = pairwise_probabilistic_predictions
@@ -26,6 +28,8 @@ class Search_BOPreOs:
         self.target_metric = target_metric
 
     def PRE_ORDER(self):
+        print(f"Search_BOPreOs: {self.target_metric}")
+
         indices_vector = {}
         indVec = 0
         for i in range(self.n_labels - 1):
@@ -41,7 +45,7 @@ class Search_BOPreOs:
             #            print(index, n_instances)
             vector = []
             #           indexEmpty = []
-            if self.target_metric == "hamming":
+            if self.target_metric == TargetMetric.Hamming:
                 for i in range(self.n_labels - 1):
                     for j in range(i + 1, self.n_labels):
                         pairInfor = [
@@ -49,7 +53,7 @@ class Search_BOPreOs:
                             for l in range(4)
                         ]
                         vector += pairInfor
-            elif self.target_metric == "subset":
+            elif self.target_metric == TargetMetric.Subset:
                 for i in range(self.n_labels - 1):
                     for j in range(i + 1, self.n_labels):
                         pairInfor = [
