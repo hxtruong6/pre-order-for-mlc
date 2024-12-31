@@ -374,7 +374,7 @@ class Search_BOParOs:
         predicted_partial_orders = []
         for n in range(self.n_instances):
             vector = []
-            if self.target_metric == "hamming":
+            if self.target_metric == TargetMetric.Hamming:
                 for i in range(self.n_labels - 1):
                     for j in range(i + 1, self.n_labels):
                         pairInfor = [
@@ -382,7 +382,7 @@ class Search_BOParOs:
                             for l in range(3)
                         ]
                         vector += pairInfor
-            elif self.target_metric == "subset":
+            elif self.target_metric == TargetMetric.Subset:
                 for i in range(self.n_labels - 1):
                     for j in range(i + 1, self.n_labels):
                         pairInfor = [

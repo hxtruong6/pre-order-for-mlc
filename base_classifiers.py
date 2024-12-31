@@ -92,7 +92,7 @@ class BaseClassifiers:
 
         return pairwise_classifiers, calibrated_classifiers
 
-    def pairwise_partial_order_classifer(self, X, Y):
+    def pairwise_partial_order_classifier_fit(self, X, Y):
         # This BaseClassifier provides pairwise_probability_information for learning partial orders
         n_labels = len(Y[0])
         n_instances, _ = Y.shape
@@ -109,7 +109,9 @@ class BaseClassifiers:
                     elif Y[n, i] == 0 and Y[n, j] == 1:
                         MCC_y.append(1)
                 # TODO: check this
-                pairwise_classifiers[key] = self.base_learner.fit(X, MCC_y)  # type: ignore
+                classifier = Estimator(self.name)
+                classifier.fit(X, MCC_y)  # type: ignore
+                pairwise_classifiers[key] = classifier
         return pairwise_classifiers
         # classifiers = []
         # for k_1 in range(n_labels - 1):
@@ -150,10 +152,6 @@ class BaseClassifiers:
 
                 # Init classifier
                 classifier = Estimator(self.name)
-                log(
-                    INFO,
-                    f"BaseClassifiers: Fitting classifier: {classifier.name} for pair of labels: {key}",
-                )
                 classifier.fit(X, MCC_y)  # type: ignore
                 # Store the classifier for each pair of labels
                 self.pairwise_classifiers[key] = classifier

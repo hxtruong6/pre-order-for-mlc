@@ -5,6 +5,7 @@ Created on Mon Oct 23 20:54:40 2023
 @author: nguyenli_admin
 """
 
+import json
 from constants import RANDOM_STATE, BaseLearnerName, TargetMetric
 from estimator import Estimator
 from evaluation_metric import EvaluationMetric, EvaluationMetricName
@@ -17,6 +18,44 @@ from inference_models import PredictBOPOs, PreferenceOrder
 from logging import basicConfig, INFO, log
 
 basicConfig(level=INFO)
+
+
+def update_results(
+    Y_test,
+    results,
+    dataset_index,
+    repeat_time,
+    fold,
+    noisy_rate,
+    base_learner_name,
+    predict_results,
+    target_metric,
+    order_type,
+):
+    if dataset_index not in results:
+        results[dataset_index] = {}
+    if f"{noisy_rate}" not in results[dataset_index]:
+        results[dataset_index][f"{noisy_rate}"] = {}
+    if base_learner_name not in results[dataset_index][f"{noisy_rate}"]:
+        results[dataset_index][f"{noisy_rate}"][base_learner_name] = {}
+    if (
+        f"{repeat_time}_{fold}"
+        not in results[dataset_index][f"{noisy_rate}"][base_learner_name]
+    ):
+        results[dataset_index][f"{noisy_rate}"][base_learner_name][
+            f"{repeat_time}_{fold}"
+        ] = {}
+
+    results[dataset_index][f"{noisy_rate}"][base_learner_name][
+        f"{repeat_time}_{fold}"
+    ] = {
+        "Y_test": list(Y_test),
+        "predict_results": list(predict_results),
+        "target_metric": target_metric,
+        "preference_order": order_type,
+    }
+
+    return results
 
 
 def process_dataset(
@@ -48,7 +87,11 @@ def process_dataset(
                     INFO,
                     f"Fold: {fold}/{NUMBER_FOLDS} - {noisy_rate}",
                 )
-                for order_type in PreferenceOrder:
+                for order_type in [
+                    PreferenceOrder.PRE_ORDER,
+                    # PreferenceOrder.PARTIAL_ORDER,
+                ]:
+                    # TODO: how to handle other preference orders?
                     log(INFO, f"Preference order: {order_type}")
 
                     # Initialize the model with the base learner and the preference order
@@ -84,10 +127,18 @@ def process_dataset(
                             target_metric,
                         )
 
-                        results[dataset_index][f"{noisy_rate}"][base_learner_name] = {
-                            "Y_test": Y_test,
-                            "predict_results": predict_results,
-                        }
+                        results = update_results(
+                            Y_test,
+                            results,
+                            dataset_index,
+                            repeat_time,
+                            fold,
+                            noisy_rate,
+                            base_learner_name.value,
+                            predict_results,
+                            target_metric.value,
+                            order_type.value,
+                        )
 
     return results
 
@@ -125,6 +176,9 @@ def main(
             )
 
             log(INFO, f"Results: {results}")
+            # Save to file
+            with open(f"results_1.txt", "w") as f:
+                f.write(str(results))
 
             # For each evaluation metric
             for metric in EvaluationMetricName:

@@ -10,19 +10,19 @@ from searching_algorithms import Search_BOPreOs, Search_BOParOs
 
 class PreferenceOrder(Enum):
     PRE_ORDER = "PreOrder"
-    BIPARTITE_PRE_ORDER = "BipartitePreOrder"
+    # BIPARTITE_PRE_ORDER = "BipartitePreOrder"
     PARTIAL_ORDER = "PartialOrder"
-    BIPARTITE_PARTIAL_ORDER = "BipartitePartialOrder"
+    # BIPARTITE_PARTIAL_ORDER = "BipartitePartialOrder"
 
-    PRE_ORDER_HAM = "PreOrderHam"
-    BIPARTITE_PRE_ORDER_HAM = "BipartitePreOrderHam"
-    PARTIAL_ORDER_HAM = "PartialOrderHam"
-    BIPARTITE_PARTIAL_ORDER_HAM = "BipartitePartialOrderHam"
+    # PRE_ORDER_HAM = "PreOrderHam"
+    # BIPARTITE_PRE_ORDER_HAM = "BipartitePreOrderHam"
+    # PARTIAL_ORDER_HAM = "PartialOrderHam"
+    # BIPARTITE_PARTIAL_ORDER_HAM = "BipartitePartialOrderHam"
 
-    PRE_ORDER_SUB = "PreOrderSub"
-    BIPARTITE_PRE_ORDER_SUB = "BipartitePreOrderSub"
-    PARTIAL_ORDER_SUB = "PartialOrderSub"
-    BIPARTITE_PARTIAL_ORDER_SUB = "BipartitePartialOrderSub"
+    # PRE_ORDER_SUB = "PreOrderSub"
+    # BIPARTITE_PRE_ORDER_SUB = "BipartitePreOrderSub"
+    # PARTIAL_ORDER_SUB = "PartialOrderSub"
+    # BIPARTITE_PARTIAL_ORDER_SUB = "BipartitePartialOrderSub"
 
 """
 1. Predict probability
@@ -53,29 +53,44 @@ class PredictBOPOs:
         n_instances,
         target_metric: TargetMetric,
     ):
-        # Using after training the model.
-        # 1. Initialize a search BOPreOs model
-        search_BOPrerOs = Search_BOPreOs(
-            pairwise_probabilistic_predictions,
-            n_labels,
-            n_instances,
-            target_metric,
-            height=2,
-        )
 
+        # Using after training the model.
         if target_metric == TargetMetric.Hamming:
+            # 1. Initialize a search BOPreOs model
+            search_BOPrerOs = Search_BOPreOs(
+                pairwise_probabilistic_predictions,
+                n_labels,
+                n_instances,
+                target_metric,
+                height=2,
+            )
+
             if self.preference_order == PreferenceOrder.PRE_ORDER:
                 predict_BOPOS, predict_binary_vectors = search_BOPrerOs.PRE_ORDER()
-            elif (
-                self.preference_order == PreferenceOrder.BIPARTITE_PRE_ORDER_HAM
-            ):  # Fix later
-                pass
+            # elif (
+            #     self.preference_order == PreferenceOrder.BIPARTITE_PRE_ORDER_HAM
+            # ):
+            #     predict_BOPOS, predict_binary_vectors = search_BOPrerOs.PRE_ORDER()
             else:
+                # TODO: Unknown preference order: PreferenceOrder.BIPARTITE_PRE_ORDER
                 raise ValueError(f"Unknown preference order: {self.preference_order}")
 
         elif target_metric == TargetMetric.Subset:
-            pass
-
+            search_BOParOs = Search_BOParOs(
+                pairwise_probabilistic_predictions,
+                n_labels,
+                n_instances,
+                target_metric,
+                height=2,
+            )
+            if self.preference_order == PreferenceOrder.PRE_ORDER:
+                predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER()
+            # elif (
+            #     self.preference_order == PreferenceOrder.BIPARTITE_PRE_ORDER_SUB
+            # ):
+            #     predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER()
+            else:
+                raise ValueError(f"Unknown preference order: {self.preference_order}")
         else:
             raise ValueError(f"Unknown target metric: {target_metric}")
 
@@ -124,8 +139,9 @@ class PredictBOPOs:
         n_test_instances, _ = X.shape
         # Placeholder for prediction process
         if (
-            self.preference_order == PreferenceOrder.PRE_ORDER
-            or self.preference_order == PreferenceOrder.BIPARTITE_PRE_ORDER
+            self.preference_order
+            == PreferenceOrder.PRE_ORDER
+            # or self.preference_order == PreferenceOrder.BIPARTITE_PRE_ORDER
         ):
             pairwise_probabilistic_predictions = {}
             for i in range(n_labels - 1):
@@ -182,8 +198,9 @@ class PredictBOPOs:
                                 current_pairwise_probabilistic_predictions_ij[l]
                             )
         elif (
-            self.preference_order == PreferenceOrder.PARTIAL_ORDER
-            or self.preference_order == PreferenceOrder.BIPARTITE_PARTIAL_ORDER
+            self.preference_order
+            == PreferenceOrder.PARTIAL_ORDER
+            # or self.preference_order == PreferenceOrder.BIPARTITE_PARTIAL_ORDER
         ):
             pairwise_probabilistic_predictions = {}
             for i in range(n_labels - 1):
@@ -240,8 +257,9 @@ class PredictBOPOs:
         n_test_instances, _ = X.shape
         # Placeholder for prediction process
         if (
-            self.preference_order == PreferenceOrder.PRE_ORDER
-            or self.preference_order == PreferenceOrder.BIPARTITE_PRE_ORDER
+            self.preference_order
+            == PreferenceOrder.PRE_ORDER
+            # or self.preference_order == PreferenceOrder.BIPARTITE_PRE_ORDER
         ):
             pairwise_probabilistic_predictions = {}
             for i in range(n_labels - 1):
@@ -312,8 +330,9 @@ class PredictBOPOs:
                                 current_pairwise_probabilistic_predictions_ij[l]
                             )
         elif (
-            self.preference_order == PreferenceOrder.PARTIAL_ORDER
-            or self.preference_order == PreferenceOrder.BIPARTITE_PARTIAL_ORDER
+            self.preference_order
+            == PreferenceOrder.PARTIAL_ORDER
+            # or self.preference_order == PreferenceOrder.BIPARTITE_PARTIAL_ORDER
         ):
             pairwise_probabilistic_predictions = {}
             for i in range(n_labels - 1):
@@ -395,16 +414,17 @@ class PredictBOPOs:
         Raises:
             ValueError: _description_
         """
-        if self.preference_order == PreferenceOrder.PRE_ORDER:
+        log(INFO, f"Fitting model for preference order: {self.preference_order}")
+        if "PRE_ORDER" in self.preference_order.name:
             self.pairwise_classifier = (
                 self.base_classifier.pairwise_pre_order_classifier_fit(X, Y)
             )
         # TODO: add partial order
-        # elif self.preference_order == PreferenceOrder.PARTIAL_ORDER:
-        #     self.pairwise_classifier = (
-        #         self.base_classifier.pairwise_partial_order_classifier_fit(X, Y)
-        #     )
-        #     pass
+        elif "PARTIAL_ORDER" in self.preference_order.name:
+            self.pairwise_classifier = (
+                self.base_classifier.pairwise_partial_order_classifier_fit(X, Y)
+            )
+            pass
         else:
             raise ValueError(f"Unknown preference order: {self.preference_order}")
 
