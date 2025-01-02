@@ -10,19 +10,8 @@ from searching_algorithms import Search_BOPreOs, Search_BOParOs
 
 class PreferenceOrder(Enum):
     PRE_ORDER = "PreOrder"
-    # BIPARTITE_PRE_ORDER = "BipartitePreOrder"
     PARTIAL_ORDER = "PartialOrder"
-    # BIPARTITE_PARTIAL_ORDER = "BipartitePartialOrder"
 
-    # PRE_ORDER_HAM = "PreOrderHam"
-    # BIPARTITE_PRE_ORDER_HAM = "BipartitePreOrderHam"
-    # PARTIAL_ORDER_HAM = "PartialOrderHam"
-    # BIPARTITE_PARTIAL_ORDER_HAM = "BipartitePartialOrderHam"
-
-    # PRE_ORDER_SUB = "PreOrderSub"
-    # BIPARTITE_PRE_ORDER_SUB = "BipartitePreOrderSub"
-    # PARTIAL_ORDER_SUB = "PartialOrderSub"
-    # BIPARTITE_PARTIAL_ORDER_SUB = "BipartitePartialOrderSub"
 
 """
 1. Predict probability
@@ -52,87 +41,51 @@ class PredictBOPOs:
         n_labels,
         n_instances,
         target_metric: TargetMetric,
+        height: int | None = None,
     ):
+        # 4 cases for pre-order and 4 cases for partial-order
+        log(
+            INFO,
+            f"--Target metric: {target_metric}, Preference order: {self.preference_order}, Height: {height}",
+        )
+        # 1. Initialize a search BOPreOs model
+        search_BOPrerOs = Search_BOPreOs(
+            pairwise_probabilistic_predictions,
+            n_labels,
+            n_instances,
+            target_metric,
+            height=height,
+        )
+        search_BOParOs = Search_BOParOs(
+            pairwise_probabilistic_predictions,
+            n_labels,
+            n_instances,
+            target_metric,
+            height=height,
+        )
 
         # Using after training the model.
         if target_metric == TargetMetric.Hamming:
-            # 1. Initialize a search BOPreOs model
-            search_BOPrerOs = Search_BOPreOs(
-                pairwise_probabilistic_predictions,
-                n_labels,
-                n_instances,
-                target_metric,
-                height=2,
-            )
-
             if self.preference_order == PreferenceOrder.PRE_ORDER:
                 predict_BOPOS, predict_binary_vectors = search_BOPrerOs.PRE_ORDER()
-            # elif (
-            #     self.preference_order == PreferenceOrder.BIPARTITE_PRE_ORDER_HAM
-            # ):
-            #     predict_BOPOS, predict_binary_vectors = search_BOPrerOs.PRE_ORDER()
+            elif self.preference_order == PreferenceOrder.PARTIAL_ORDER:
+                predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER()
             else:
-                # TODO: Unknown preference order: PreferenceOrder.BIPARTITE_PRE_ORDER
-                raise ValueError(f"Unknown preference order: {self.preference_order}")
+                raise ValueError(
+                    f"[Hamming] Unknown preference order: {self.preference_order}"
+                )
 
         elif target_metric == TargetMetric.Subset:
-            search_BOParOs = Search_BOParOs(
-                pairwise_probabilistic_predictions,
-                n_labels,
-                n_instances,
-                target_metric,
-                height=2,
-            )
             if self.preference_order == PreferenceOrder.PRE_ORDER:
-                predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER()
-            # elif (
-            #     self.preference_order == PreferenceOrder.BIPARTITE_PRE_ORDER_SUB
-            # ):
-            #     predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER()
-            else:
-                raise ValueError(f"Unknown preference order: {self.preference_order}")
-        else:
-            raise ValueError(f"Unknown target metric: {target_metric}")
-
-        return predict_BOPOS, predict_binary_vectors
-
-        # 2. Fit the model with the input data
-        # Placeholder for prediction process
-        if self.preference_order == PreferenceOrder.PRE_ORDER_HAM:
-            predict_BOPOS, predict_binary_vectors = search_BOPrerOs.PRE_ORDER()
-        elif self.preference_order == PreferenceOrder.BIPARTITE_PRE_ORDER_HAM:
-            predict_BOPOS, predict_binary_vectors = search_BOPrerOs.PRE_ORDER()
-        elif self.preference_order == PreferenceOrder.PRE_ORDER_SUB:
-            predict_BOPOS, predict_binary_vectors = search_BOPrerOs.PRE_ORDER()
-        elif self.preference_order == PreferenceOrder.BIPARTITE_PRE_ORDER_SUB:
-            predict_BOPOS, predict_binary_vectors = search_BOPrerOs.PRE_ORDER()
-        else:
-            search_BOParOs = Search_BOParOs(
-                pairwise_probabilistic_predictions,
-                n_labels,
-                n_instances,
-                target_metric,
-                height=2,
-            )
-
-            log(INFO, f"Search_BOParOs preference_order: {self.preference_order}")
-
-            if self.preference_order == PreferenceOrder.PARTIAL_ORDER_HAM:
-                predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER()
-            elif self.preference_order == PreferenceOrder.BIPARTITE_PARTIAL_ORDER_HAM:
-                predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER()
-            elif self.preference_order == PreferenceOrder.PARTIAL_ORDER_SUB:
-                predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER()
-            elif self.preference_order == PreferenceOrder.BIPARTITE_PARTIAL_ORDER_SUB:
+                predict_BOPOS, predict_binary_vectors = search_BOPrerOs.PRE_ORDER()
+            elif self.preference_order == PreferenceOrder.PARTIAL_ORDER:
                 predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER()
 
             else:
-                raise ValueError(f"Unknown preference order: {self.preference_order}")
+                raise ValueError(
+                    f"[Subset] Unknown preference order: {self.preference_order}"
+                )
 
-        # 3. Return the predicted preference orders and predicted labels
-
-        # it should return the predicted preference orders and predicted labels predicted_Y
-        # return predicted_O, predicted_Y
         return predict_BOPOS, predict_binary_vectors
 
     def predict_proba(self, X, n_labels):

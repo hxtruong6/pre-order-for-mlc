@@ -27,6 +27,18 @@ class Search_BOPreOs:
         self.height = height
         self.target_metric = target_metric
 
+    # PRE-ORDER
+    # subset - height = 2
+    # subset - height = None
+    # hamming - height = 2
+    # hamming - height = None
+
+    # PARTIAL-ORDER
+    # subset - height = 2
+    # subset - height = None
+    # hamming - height = 2
+    # hamming - height = None
+
     def PRE_ORDER(self):
         print(f"Search_BOPreOs: {self.target_metric}")
 
@@ -93,7 +105,7 @@ class Search_BOPreOs:
             predicted_preorders.append(predicted_preorder)
         return predicted_Y, predicted_preorders
 
-    def _encode_parameters_PRE_ORDER(self, indices_vector, height=None):
+    def _encode_parameters_PRE_ORDER(self, indices_vector):
         assert self.n_labels is not None
         h = np.ones((self.n_labels * (self.n_labels - 1) * (self.n_labels - 2), 1))
         A = np.zeros(
@@ -120,7 +132,7 @@ class Search_BOPreOs:
             )
         )
 
-        if not height:
+        if not self.height:
             rowG = 0
             for i in range(self.n_labels - 1):
                 for j in range(i + 1, self.n_labels):
@@ -225,7 +237,7 @@ class Search_BOPreOs:
                         rowG += 1
             return G, h, A, b, I, B
 
-        elif height == 2:
+        elif self.height == 2:
             rowG = 0
             for i in range(self.n_labels - 1):
                 for j in range(i + 1, self.n_labels):
@@ -417,7 +429,7 @@ class Search_BOParOs:
             predicted_partial_orders.append(predicted_partial_order)
         return predicted_Y, predicted_partial_orders
 
-    def _encode_parameters_PARTIAL_ORDER(self, indices_vector, height=None):
+    def _encode_parameters_PARTIAL_ORDER(self, indices_vector):
         assert self.n_labels is not None
 
         h = np.ones((self.n_labels * (self.n_labels - 1) * (self.n_labels - 2), 1))
@@ -445,7 +457,7 @@ class Search_BOParOs:
             )
         )
 
-        if not height:
+        if not self.height:
             rowG = 0
             for i in range(self.n_labels - 1):
                 for j in range(i + 1, self.n_labels):
@@ -533,7 +545,7 @@ class Search_BOParOs:
 
             return G, h, A, b, I, B
 
-        elif height == 2:
+        elif self.height == 2:
             rowG = 0
             for i in range(self.n_labels - 1):
                 for j in range(i + 1, self.n_labels):
