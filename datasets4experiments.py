@@ -14,7 +14,7 @@ class Datasets4Experiments:
         self.data_path = data_path
         self.data_files = data_files
         self.n_labels_set = n_labels_set
-        self.datasets = []
+        self.datasets: list[tuple[np.ndarray, np.ndarray, str]] = []
 
     def load_datasets(self):
         for file_name, n_labels in zip(self.data_files, self.n_labels_set):

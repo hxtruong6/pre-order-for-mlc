@@ -7,12 +7,12 @@ Created on Mon Oct 23 20:54:40 2023
 
 import json
 from constants import RANDOM_STATE, BaseLearnerName, TargetMetric
-from estimator import Estimator
-from evaluation_metric import EvaluationMetric, EvaluationMetricName
+from evaluation_metric import EvaluationMetric
 
 
 from datasets4experiments import Datasets4Experiments
 from inference_models import PredictBOPOs, PreferenceOrder
+from utils.results_manager import ExperimentResults
 
 # add logging
 from logging import basicConfig, INFO, log
@@ -23,10 +23,8 @@ basicConfig(level=INFO)
 def update_results(
     Y_test,
     results,
-    dataset_index,
     repeat_time,
     fold,
-    noisy_rate,
     base_learner_name,
     predict_results,
     target_metric,
@@ -38,50 +36,31 @@ def update_results(
         f"Target metric: {target_metric}, Order type: {order_type}, Height: {height}",
     )
 
+    repeat_fold = f"repeat_{repeat_time}__fold_{fold}"
+
     metric_preferenceOrder_height = (
-        f"{target_metric}__{order_type}__{height if height else 'None'}"
+        f"{target_metric}__{order_type}__height_{height if height else 'None'}"
     )
 
-    if dataset_index not in results:
-        results[dataset_index] = {}
-    if f"{noisy_rate}" not in results[dataset_index]:
-        results[dataset_index][f"{noisy_rate}"] = {}
-    if base_learner_name not in results[dataset_index][f"{noisy_rate}"]:
-        results[dataset_index][f"{noisy_rate}"][base_learner_name] = {}
-    if (
-        f"{repeat_time}_{fold}"
-        not in results[dataset_index][f"{noisy_rate}"][base_learner_name]
-    ):
-        results[dataset_index][f"{noisy_rate}"][base_learner_name][
-            f"{repeat_time}_{fold}"
-        ] = {}
+    if base_learner_name not in results:
+        results[base_learner_name] = {}
+    if repeat_fold not in results[base_learner_name]:
+        results[base_learner_name][repeat_fold] = {}
 
-    if (
-        metric_preferenceOrder_height
-        not in results[dataset_index][f"{noisy_rate}"][base_learner_name][
-            f"{repeat_time}_{fold}"
-        ]
-    ):
-        results[dataset_index][f"{noisy_rate}"][base_learner_name][
-            f"{repeat_time}_{fold}"
-        ][metric_preferenceOrder_height] = []
+    if metric_preferenceOrder_height not in results[base_learner_name][repeat_fold]:
+        results[base_learner_name][repeat_fold][metric_preferenceOrder_height] = []
 
     data = {
-        "Y_test": list(Y_test),
-        "predict_results": list(predict_results),
+        "Y_test": Y_test,
+        "predict_results": predict_results,
         "target_metric": target_metric,
         "preference_order": order_type,
         "height": height,
         "repeat_time": repeat_time,
         "fold": fold,
-        # "dataset_index": dataset_index,
-        # "noisy_rate": noisy_rate,
-        # "base_learner_name": base_learner_name,
     }
 
-    results[dataset_index][f"{noisy_rate}"][base_learner_name][f"{repeat_time}_{fold}"][
-        metric_preferenceOrder_height
-    ].append(data)
+    results[base_learner_name][repeat_fold][metric_preferenceOrder_height].append(data)
 
     return results
 
@@ -94,9 +73,7 @@ def process_dataset(
     NUMBER_FOLDS: int,
     base_learners: list[BaseLearnerName],
 ):
-    results = {
-        # [dataset_index][noisy_rate][base_learner]: mean and std of evaluation metrics
-    }
+    results = {}
 
     for base_learner_name in base_learners:
 
@@ -119,7 +96,6 @@ def process_dataset(
                     PreferenceOrder.PRE_ORDER,
                     PreferenceOrder.PARTIAL_ORDER,
                 ]:
-                    # TODO: how to handle other preference orders?
                     log(INFO, f"Preference order: {order_type}")
 
                     # Initialize the model with the base learner and the preference order
@@ -133,13 +109,6 @@ def process_dataset(
 
                     log(INFO, f"PredictBOPOs: {predict_BOPOs}")
 
-                    # Linh: For shared configurations, i.e., experiments with the same type
-                    # of preference orders, which can be either partial or preorders, we can
-                    # put an option to call this function for the first configuration, e.g.,
-                    # with Hamming accuracy
-                    # For the next configurations, we re-use the pre-trained models.
-
-                    # Predict the test set
                     n_instances = X_test.shape[0]
                     n_labels = Y_test.shape[1]
 
@@ -160,10 +129,8 @@ def process_dataset(
                             results = update_results(
                                 Y_test,
                                 results,
-                                dataset_index,
                                 repeat_time,
                                 fold,
-                                noisy_rate,
                                 base_learner_name.value,
                                 predict_results,
                                 target_metric.value,
@@ -173,7 +140,7 @@ def process_dataset(
     return results
 
 
-def trainining(
+def training(
     data_path,
     data_files,
     n_labels_set,
@@ -186,8 +153,6 @@ def trainining(
 
     experience_dataset = Datasets4Experiments(data_path, data_files, n_labels_set)
     experience_dataset.load_datasets()
-
-    results = []
 
     # Run for each dataset
     for dataset_index in range(experience_dataset.get_length()):
@@ -207,17 +172,11 @@ def trainining(
                 base_learners,
             )
 
-            results.append(res)
-
-            # For each evaluation metric
-            for metric in EvaluationMetricName:
-                log(INFO, f"Evaluation metric: {metric}")
-                # Do evaluation here
-                # TODO: Do this evaluation
-
-    # Save to file
-    with open(f"results_{TOTAL_REPEAT_TIMES}_{NUMBER_FOLDS}.txt", "w") as f:
-        f.write(str(results))
+            ExperimentResults.save_results(
+                res,
+                experience_dataset.get_dataset_name(dataset_index),
+                noisy_rate,
+            )
 
 
 def evaluating(saved_path):
@@ -225,7 +184,11 @@ def evaluating(saved_path):
         results = json.load(f)
 
     # TODO: Do evaluation here
-
+    # For each evaluation metric
+    # for metric in EvaluationMetricName:
+    #     log(INFO, f"Evaluation metric: {metric}")
+    #     # Do evaluation here
+    #     # TODO: Do this evaluation
 
 # for a quick test
 if __name__ == "__main__":
@@ -249,7 +212,7 @@ if __name__ == "__main__":
     TOTAL_REPEAT_TIMES = 1
     NUMBER_FOLDS = 2
 
-    trainining(
+    training(
         data_path,
         data_files,
         n_labels_set,
@@ -259,5 +222,5 @@ if __name__ == "__main__":
         NUMBER_FOLDS,
     )
 
-    saved_path = "./results/results_1_2.txt"
-    evaluating(saved_path)
+    # saved_path = "./results/results_1_2.txt"
+    # evaluating(saved_path)
