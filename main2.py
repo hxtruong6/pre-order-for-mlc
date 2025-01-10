@@ -182,13 +182,28 @@ def training(
 def evaluating(saved_path):
     with open(saved_path, "r") as f:
         results = json.load(f)
+    """
+    TODO: Create a dictionary of possible configuration (8 inference algorithms, 2 prediction types, 7 evaluation metrics)
+    8 inference algorithms: 
+       - IA1: Preorders + Hamming + Height = None
+       - IA2: Preorders + Hamming + Height = 2
+       - IA3: Preorders + Subset + Height = None
+       - IA4: Preorders + Subset + Height = 2
 
-    # TODO: Do evaluation here
-    # For each evaluation metric
-    # for metric in EvaluationMetricName:
-    #     log(INFO, f"Evaluation metric: {metric}")
-    #     # Do evaluation here
-    #     # TODO: Do this evaluation
+       - IA5: Partial_orders + Hamming + Height = None
+       - IA6: Partial_orders + Hamming + Height = 2
+       - IA7: Partial_orders + Subset + Height = None
+       - IA8: Partial_orders + Subset + Height = 2
+
+    2 prediction types per inference algorithms:
+       - PT1: Preference order   
+       - PT2: Binary vector
+
+    7 evaluation metrics:      
+       - PT1: Hamming or Subset or F measure
+       - IA1 - IA4: Hamming or Subset for preorder
+       - IA5 - IA8: Hamming or Subset for partial_order
+    """
 
 # for a quick test
 if __name__ == "__main__":
