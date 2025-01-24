@@ -179,12 +179,51 @@ def training(
             )
 
 
+def evaluate_dataset(dataset_name, noisy_rate, results):
+    inference_algorithms = {
+        "IA1": "Preorders + Hamming + Height = None",
+        "IA2": "Preorders + Hamming + Height = 2",
+        "IA3": "Preorders + Subset + Height = None",
+        "IA4": "Preorders + Subset + Height = 2",
+        "IA5": "Partial_orders + Hamming + Height = None",
+        "IA6": "Partial_orders + Hamming + Height = 2",
+        "IA7": "Partial_orders + Subset + Height = None",
+        "IA8": "Partial_orders + Subset + Height = 2",
+    }
+
+    prediction_types = {
+        "PT1": "Preference order",
+        "PT2": "Binary vector",
+    }
+
+    evaluation_metrics = {
+        "EM1": "Hamming",
+        "EM2": "Subset",
+        "EM3": "F measure",
+    }
+
+    for inference_algorithm in inference_algorithms:
+        for prediction_type in prediction_types:
+            if prediction_type == "PT1":
+                for evaluation_metric in evaluation_metrics:
+                    log(
+                        INFO,
+                        f"Inference algorithm: {inference_algorithm}, Prediction type: {prediction_type}, Evaluation metric: {evaluation_metric}",
+                    )
+            elif inference_algorithm in ["IA1", "IA2", "IA3", "IA4"]:
+                for evaluation_metric in [TargetMetric.Hamming, TargetMetric.Subset]:
+                    pass
+            elif inference_algorithm in ["IA5", "IA6", "IA7", "IA8"]:
+                for evaluation_metric in [TargetMetric.Hamming, TargetMetric.Subset]:
+                    pass
+
+
 def evaluating(saved_path):
     with open(saved_path, "r") as f:
         results = json.load(f)
     """
     TODO: Create a dictionary of possible configuration (8 inference algorithms, 2 prediction types, 7 evaluation metrics)
-    8 inference algorithms: 
+    8 inference algorithms:
        - IA1: Preorders + Hamming + Height = None
        - IA2: Preorders + Hamming + Height = 2
        - IA3: Preorders + Subset + Height = None
@@ -196,13 +235,23 @@ def evaluating(saved_path):
        - IA8: Partial_orders + Subset + Height = 2
 
     2 prediction types per inference algorithms:
-       - PT1: Preference order   
+       - PT1: Preference order
        - PT2: Binary vector
 
-    7 evaluation metrics:      
-       - PT1: Hamming or Subset or F measure
-       - IA1 - IA4: Hamming or Subset for preorder
-       - IA5 - IA8: Hamming or Subset for partial_order
+    7 evaluation metrics:
+       - PT2: Hamming or Subset or F measure: hamming_accuracy, subset0_1, f1
+       - PT1:
+            - IA1 - IA4: Hamming or Subset for preorder: hamming_accuracy_PRE_ORDER, subset0_1_accuracy_PRE_ORDER
+            - IA5 - IA8: Hamming or Subset for partial_order: hamming_accuracy_PARTIAL_ORDER, subset0_1_accuracy_PARTIAL_ORDER
+    
+    We have table:
+        - 1 dataset X number of BASE_LEARNER X number of NOISY_RATE:
+            - PT2: 1 table (8 inference algorithms * 3 evaluation metrics ( hamming_accuracy, subset0_1, f1))
+            - PT1: 2 table:
+                - PRE_ORDER: 4 inference algorithms * 2 evaluation metrics ( hamming_accuracy_PRE_ORDER, subset0_1_accuracy_PRE_ORDER)
+                - PARTIAL_ORDER: 4 inference algorithms * 2 evaluation metrics ( hamming_accuracy_PARTIAL_ORDER, subset0_1_accuracy_PARTIAL_ORDER)
+
+    Fold: np.mean(), np.std()
     """
 
 # for a quick test
