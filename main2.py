@@ -30,25 +30,27 @@ def update_results(
     target_metric,
     order_type,
     height,
+    dataset_name,
+    noisy_rate,
 ):
-    log(
-        INFO,
-        f"Target metric: {target_metric}, Order type: {order_type}, Height: {height}",
-    )
+    # log(
+    #     INFO,
+    #     f"Target metric: {target_metric}, Order type: {order_type}, Height: {height}",
+    # )
 
-    repeat_fold = f"repeat_{repeat_time}__fold_{fold}"
+    # repeat_fold = f"repeat_{repeat_time}__fold_{fold}"
 
-    metric_preferenceOrder_height = (
-        f"{target_metric}__{order_type}__height_{height if height else 'None'}"
-    )
+    # metric_preferenceOrder_height = (
+    #     f"{target_metric}__{order_type}__height_{height if height else 'None'}"
+    # )
 
-    if base_learner_name not in results:
-        results[base_learner_name] = {}
-    if repeat_fold not in results[base_learner_name]:
-        results[base_learner_name][repeat_fold] = {}
+    # if base_learner_name not in results:
+    #     results[base_learner_name] = {}
+    # if repeat_fold not in results[base_learner_name]:
+    #     results[base_learner_name][repeat_fold] = {}
 
-    if metric_preferenceOrder_height not in results[base_learner_name][repeat_fold]:
-        results[base_learner_name][repeat_fold][metric_preferenceOrder_height] = []
+    # if metric_preferenceOrder_height not in results[base_learner_name][repeat_fold]:
+    #     results[base_learner_name][repeat_fold][metric_preferenceOrder_height] = []
 
     data = {
         "Y_test": Y_test,
@@ -58,9 +60,12 @@ def update_results(
         "height": height,
         "repeat_time": repeat_time,
         "fold": fold,
+        "dataset_name": dataset_name,
+        "noisy_rate": noisy_rate,
+        "base_learner_name": base_learner_name,
     }
 
-    results[base_learner_name][repeat_fold][metric_preferenceOrder_height].append(data)
+    results.append(data)
 
     return results
 
@@ -268,10 +273,10 @@ if __name__ == "__main__":
     n_labels_set = [6, 6, 6, 14, 14]  # number of labels in each dataset
     noisy_rates = [
         0.0,
-        # 0.2,
+        0.2,
         # 0.4,
     ]
-    base_learners = [BaseLearnerName.RF]
+    base_learners = [BaseLearnerName.RF, BaseLearnerName.XGBoost]
 
     TOTAL_REPEAT_TIMES = 1
     NUMBER_FOLDS = 2

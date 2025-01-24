@@ -1,9 +1,14 @@
 import csv
 import json
-from logging import INFO, WARNING, log
+from logging import ERROR, basicConfig, INFO, log
+
+import os
 import pickle
 import numpy as np
 from collections import defaultdict
+
+
+basicConfig(level=INFO)
 
 # Define inference algorithms
 INFERENCE_ALGORITHMS = [
@@ -175,15 +180,42 @@ class EvaluationFramework:
 
 # Running the evaluation
 if __name__ == "__main__":
-    dataset = "sample_dataset"
-    base_learners = ["Learner1", "Learner2"]
-    noisy_rates = [0.0, 0.1]
-
+    print("Hello")
+    # dataset = "sample_dataset"
+    # base_learners = ["Learner1", "Learner2"]
+    # noisy_rates = [0.0, 0.1]
     #  Read prediction results from pickle file
-    with open("results/new/dataset_emotions__noisy_0.0.pkl", "rb") as f:
-        prediction_results = pickle.load(f)
+    path = "results/new/dataset_emotions__noisy_0.0.pkl"
+    if not os.path.exists(path):
+        log(ERROR, f"File not found: {path}")
+        exit(1)
 
-    log(INFO, f"prediction_results: {prediction_results}")
+    try:
+        with open(path, "rb") as file:
+            results = pickle.load(file)
+
+        for i, base_learner in enumerate(results):
+
+            print("base: ", base_learner)
+            for repeat_time in results[base_learner].keys():
+                print("repeat_time: ", repeat_time)
+                repeat, fold = repeat_time.split("__")
+                print("repeat: ", repeat)
+                print("fold: ", fold)
+                for algo in results[base_learner][repeat_time].keys():
+                    metric, order_type, height = algo.split("__")
+                    print("metric: ", metric)
+                    print("order_type: ", order_type)
+                    print("height: ", height)
+                    # for fold in results[base_learner][repeat_time].keys():
+                    #     print("fold: ", fold)
+                    #     # for algo in results[base_learner][repeat_time][fold].keys():
+                    #     #     print("algo: ", algo)
+
+            break
+
+    except (FileNotFoundError, pickle.UnpicklingError) as e:
+        print(f"Error loading pickle file: {e}")
 
     # return 0
 
