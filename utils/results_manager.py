@@ -5,6 +5,10 @@ import json
 import pickle
 import pandas as pd
 
+import logging
+
+logging.basicConfig(level=logging.INFO)
+
 
 @dataclass
 class ExperimentResults:
@@ -13,23 +17,51 @@ class ExperimentResults:
     @staticmethod
     def save_results(results, dataset_name, noisy_rate):
         """
-        Saves the results dictionary to a JSON file for easy reloading.
-        """
-        dataset_name = dataset_name.lower().replace(" ", "_")
-        filename = f"./results/new/dataset_{dataset_name}__noisy_{noisy_rate}"
-        # with open(f"{filename}.json", "w") as f:
-        #     json.dump(results, f, indent=4)
+        Saves the results dictionary to both pickle and CSV formats.
 
-        with open(f"{filename}.pkl", "wb") as f:
+        Args:
+            results: List of dictionaries containing experiment results
+            dataset_name: Name of the dataset
+            noisy_rate: Noise rate used in the experiment
+        """
+        # Create results directory if it doesn't exist
+        Path("./results").mkdir(parents=True, exist_ok=True)
+
+        # Clean filename
+        dataset_name = dataset_name.lower().replace(" ", "_")
+        base_filename = f"./results/dataset_{dataset_name}_noisy_{noisy_rate}"
+
+        # Save as pickle for exact Python object preservation
+        with open(f"{base_filename}.pkl", "wb") as f:
             pickle.dump(results, f)
 
-        with open(f"{filename}.txt", "w") as f:
-            f.write(str(results))
+        # Save as CSV for human readability and easy importing
+        df = pd.DataFrame(results)
+        df.to_csv(f"{base_filename}.csv", index=False)
 
-        log(INFO, f"Results saved to {filename}")
+        log(INFO, f"Results saved to {base_filename}.pkl and {base_filename}.csv")
 
-    def load_results(self, path: Path) -> None:
-        """Load results from specified path."""
+    @staticmethod
+    def load_results(path, dataset_name, noisy_rate):
+        """
+        Loads results from pickle file.
+
+        Args:
+            dataset_name: Name of the dataset
+            noisy_rate: Noise rate used in the experiment
+
+        Returns:
+            List of dictionaries containing experiment results
+        """
+        dataset_name = dataset_name.lower().replace(" ", "_")
+        filename = f"{path}/dataset_{dataset_name}_noisy_{noisy_rate}.pkl"
+
+        log(INFO, f"Loading results from {filename}")
+
+        with open(filename, "rb") as f:
+            results = pickle.load(f)
+
+        return results
 
     def to_dataframe(self) -> pd.DataFrame | None:
         """Convert results to pandas DataFrame."""

@@ -21,53 +21,33 @@ basicConfig(level=INFO)
 
 
 def update_results(
-    Y_test,
     results,
+    Y_test,
+    predict_results,
     repeat_time,
     fold,
     base_learner_name,
-    predict_results,
     target_metric,
     order_type,
     height,
     dataset_name,
     noisy_rate,
 ):
-    # log(
-    #     INFO,
-    #     f"Target metric: {target_metric}, Order type: {order_type}, Height: {height}",
-    # )
-
-    # repeat_fold = f"repeat_{repeat_time}__fold_{fold}"
-
-    # metric_preferenceOrder_height = (
-    #     f"{target_metric}__{order_type}__height_{height if height else 'None'}"
-    # )
-
-    # if base_learner_name not in results:
-    #     results[base_learner_name] = {}
-    # if repeat_fold not in results[base_learner_name]:
-    #     results[base_learner_name][repeat_fold] = {}
-
-    # if metric_preferenceOrder_height not in results[base_learner_name][repeat_fold]:
-    #     results[base_learner_name][repeat_fold][metric_preferenceOrder_height] = []
-
     data = {
-        "Y_test": Y_test,
-        "predict_results": predict_results,
+        "Y_test": Y_test.tolist(),
+        "Y_predicted": list(predict_results[0]),
+        "Y_BOPOs": list(predict_results[1]),
         "target_metric": target_metric,
         "preference_order": order_type,
         "height": height,
         "repeat_time": repeat_time,
         "fold": fold,
         "dataset_name": dataset_name,
-        "noisy_rate": noisy_rate,
         "base_learner_name": base_learner_name,
+        "noisy_rate": noisy_rate,
     }
 
     results.append(data)
-
-    return results
 
 
 def process_dataset(
@@ -77,8 +57,9 @@ def process_dataset(
     repeat_time: int,
     NUMBER_FOLDS: int,
     base_learners: list[BaseLearnerName],
+    dataset_name: str,
 ):
-    results = {}
+    results: list[dict] = []
 
     for base_learner_name in base_learners:
 
@@ -131,17 +112,29 @@ def process_dataset(
                                 height,
                             )
 
-                            results = update_results(
-                                Y_test,
+                            update_results(
                                 results,
+                                Y_test,
+                                predict_results,
                                 repeat_time,
                                 fold,
                                 base_learner_name.value,
-                                predict_results,
                                 target_metric.value,
                                 order_type.value,
                                 height,
+                                dataset_name,
+                                noisy_rate,
                             )
+
+                # Support CLR
+                # TODO: run code to get results of CLR
+                # clr = PredictBOPOs(
+                #     base_classifier_name=base_learner_name.value,  # --> Get classifier
+                # )
+                # pairwise_calibrated_classifier to get the calibrated classifier
+                # predict: probabilsitic_predictions = clr.predict_proba_BR(X_test, n_labels)
+                # predict 2 times, pairwise and threshold
+
     return results
 
 
@@ -161,9 +154,10 @@ def training(
 
     # Run for each dataset
     for dataset_index in range(experience_dataset.get_length()):
+        dataset_name = experience_dataset.get_dataset_name(dataset_index)
         log(
             INFO,
-            f"Dataset: {dataset_index}: {experience_dataset.get_dataset_name(dataset_index)}",
+            f"Dataset: {dataset_index}: {dataset_name}",
         )
         # Run for each noisy rate
         for noisy_rate in noisy_rates:
@@ -175,11 +169,14 @@ def training(
                 TOTAL_REPEAT_TIMES,
                 NUMBER_FOLDS,
                 base_learners,
+                dataset_name,
             )
+
+            log(INFO, f"Result length: {len(res)}")
 
             ExperimentResults.save_results(
                 res,
-                experience_dataset.get_dataset_name(dataset_index),
+                dataset_name,
                 noisy_rate,
             )
 
@@ -273,10 +270,13 @@ if __name__ == "__main__":
     n_labels_set = [6, 6, 6, 14, 14]  # number of labels in each dataset
     noisy_rates = [
         0.0,
-        0.2,
+        # 0.2,
         # 0.4,
     ]
-    base_learners = [BaseLearnerName.RF, BaseLearnerName.XGBoost]
+    base_learners = [
+        BaseLearnerName.RF,
+        #  BaseLearnerName.XGBoost
+    ]
 
     TOTAL_REPEAT_TIMES = 1
     NUMBER_FOLDS = 2

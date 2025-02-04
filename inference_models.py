@@ -381,6 +381,9 @@ class PredictBOPOs:
         else:
             raise ValueError(f"Unknown preference order: {self.preference_order}")
 
+    def fit_CLR(self, X, Y):
+        outpit = self.base_classifier.pairwise_calibrated_classifier(X, Y)
+
 
 #  These functions can be moved to another separate class
 #    def classifier_chains(self, *args, **kwargs):
