@@ -4,10 +4,33 @@ from pathlib import Path
 import json
 import pickle
 import pandas as pd
+import numpy as np
+import ast
 
 import logging
 
 logging.basicConfig(level=logging.INFO)
+
+
+class ResultProcessor:
+    """Class to handle processing of list-type columns in results DataFrame."""
+
+    @staticmethod
+    def convert_string_to_array(value: str) -> np.ndarray:
+        """Convert string representation of list to numpy array."""
+        if isinstance(value, str):
+            return np.array(ast.literal_eval(value))
+        return np.array(value)
+
+    @staticmethod
+    def process_predictions(df: pd.DataFrame) -> pd.DataFrame:
+        """Process Y_predicted, Y_true, and Y_BOPOs columns."""
+        # Convert string representations to numpy arrays if needed
+        for col in ["Y_test", "Y_predicted", "Y_BOPOs"]:
+            if col in df.columns:
+                df[col] = df[col].apply(ResultProcessor.convert_string_to_array)  # type: ignore
+
+        return df
 
 
 @dataclass
@@ -61,7 +84,7 @@ class ExperimentResults:
         with open(filename, "rb") as f:
             results = pickle.load(f)
 
-        return results
+        return ResultProcessor.process_predictions(pd.DataFrame(results))
 
     def to_dataframe(self) -> pd.DataFrame | None:
         """Convert results to pandas DataFrame."""
