@@ -128,11 +128,14 @@ def process_dataset(
 
                 # Support CLR
                 # TODO: run code to get results of CLR
-                # clr = PredictBOPOs(
-                #     base_classifier_name=base_learner_name.value,  # --> Get classifier
-                # )
+                clr = PredictBOPOs(
+                    base_classifier_name=base_learner_name.value,  # --> Get classifier
+                )
                 # pairwise_calibrated_classifier to get the calibrated classifier
-                # predict: probabilsitic_predictions = clr.predict_proba_BR(X_test, n_labels)
+                clr.fit_CLR(X_train, Y_train)
+                # predict:
+                # TODO: Do we need to order type (preorder/partial order) for CLR?
+                probabilsitic_predictions = clr.predict_proba_BR(X_test, n_labels)
                 # predict 2 times, pairwise and threshold
 
     return results
@@ -261,8 +264,8 @@ if __name__ == "__main__":
     # Configuration
     data_path = "./data/"
     data_files = [
-        "emotions.arff",
-        # "CHD_49.arff",
+        # "emotions.arff",
+        "CHD_49.arff",
         # "scene.arff",
         # "Yeast.arff",
         # "Water-quality.arff",

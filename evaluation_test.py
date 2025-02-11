@@ -25,8 +25,8 @@ class MetricType(Enum):
 
 
 class PredictionType(Enum):
-    # PREFERENCE_ORDER = "PreferenceOrder"
     BINARY_VECTOR = "BinaryVector"
+    PREFERENCE_ORDER = "PreferenceOrder"
 
 
 @dataclass
@@ -56,19 +56,19 @@ class EvaluationConfig:
     EVALUATION_METRICS = {
         PredictionType.BINARY_VECTOR: [
             EvaluationMetricName.HAMMING_ACCURACY,
-            # "subset0_1",
-            # "f1",
+            EvaluationMetricName.SUBSET0_1,
+            EvaluationMetricName.F1,
         ],
-        # PredictionType.PREFERENCE_ORDER: {
-        #     OrderType.PRE_ORDER: [
-        #         "hamming_accuracy_PRE_ORDER",
-        #         "subset0_1_accuracy_PRE_ORDER",
-        #     ],
-        #     OrderType.PARTIAL_ORDER: [
-        #         "hamming_accuracy_PARTIAL_ORDER",
-        #         "subset0_1_accuracy_PARTIAL_ORDER",
-        #     ],
-        # },
+        PredictionType.PREFERENCE_ORDER: {
+            OrderType.PRE_ORDER: [
+                EvaluationMetricName.HAMMING_ACCURACY_PRE_ORDER,
+                # EvaluationMetricName.SUBSET0_1_PRE_ORDER,
+            ],
+            # OrderType.PARTIAL_ORDER: [
+            #     "hamming_accuracy_PARTIAL_ORDER",
+            #     "subset0_1_accuracy_PARTIAL_ORDER",
+            # ],
+        },
     }
 
 
@@ -96,22 +96,31 @@ class EvaluationFramework:
         prediction_type: PredictionType,
         predictions: np.ndarray,
         true_labels: np.ndarray,
-    ) -> float:
+        indices_vector: np.ndarray | None,
+    ) -> float:  # type: ignore
         """Calculate specific evaluation metric."""
         try:
-            # print(
-            #     f"Evaluating metric: {metric_name} for {prediction_type}: {prediction_type==PredictionType.BINARY_VECTOR} and {metric_name==EvaluationMetricName.HAMMING_ACCURACY}"
-            # )
+            print(f"*** Evaluating metric: {metric_name} for {prediction_type}")
             if prediction_type == PredictionType.BINARY_VECTOR:
                 if metric_name == EvaluationMetricName.HAMMING_ACCURACY:
-                    print(
-                        f"*** Evaluating metric: {metric_name} for {prediction_type}: \nPredictions: \n{predictions} \nTrue labels: \n{true_labels}"
-                    )
                     return self.evaluation_metric.hamming_accuracy(
                         predictions, true_labels
                     )
+                elif metric_name == EvaluationMetricName.SUBSET0_1:
+                    return self.evaluation_metric.subset0_1(predictions, true_labels)
+                elif metric_name == EvaluationMetricName.F1:
+                    return self.evaluation_metric.f1(predictions, true_labels)
                 else:
                     raise ValueError(f"Unknown metric: {metric_name}")
+            elif prediction_type == PredictionType.PREFERENCE_ORDER:
+                if metric_name == EvaluationMetricName.HAMMING_ACCURACY_PRE_ORDER:
+                    return self.evaluation_metric.hamming_accuracy_PRE_ORDER(
+                        predictions, true_labels, indices_vector
+                    )
+                elif metric_name == EvaluationMetricName.SUBSET0_1_PRE_ORDER:
+                    return self.evaluation_metric.subset0_1_accuracy_PRE_ORDER(
+                        predictions, true_labels, indices_vector
+                    )
             else:
                 raise ValueError(f"Unknown prediction type: {prediction_type}")
         except Exception as e:
@@ -148,6 +157,30 @@ class EvaluationFramework:
             # )
         ]
 
+    def _evaluate(self, data_df, df1, eval_metric, prediction_type):
+        for repeat_time in data_df["repeat_time"].unique():
+            log(INFO, f"Repeat time: {repeat_time}")
+
+            result_folds = []
+            for fold in data_df["fold"].unique():
+                log(INFO, f"Fold: {fold}")
+                df2 = df1[(df1["repeat_time"] == repeat_time) & (df1["fold"] == fold)]
+                print("df2", df2["Y_predicted"].values)
+
+                result_folds.append(
+                    self.evaluate_metric(
+                        eval_metric,
+                        prediction_type,
+                        df2["Y_predicted"].values[0],  # type: ignore
+                        df2["Y_test"].values[0],  # type: ignore
+                        df2["Y_BOPOs"].values[0],  # type: ignore
+                    )
+                )
+
+        # print(result_folds, "result_folds")
+        res = self.aggregate_results(result_folds)
+        return res
+
     def evaluate_dataset(self, dataset_name: str, noisy_rate: float):
         """
         Evaluate results for a specific dataset and noise rate.
@@ -167,19 +200,16 @@ class EvaluationFramework:
             for base_learner_name in self.df["base_learner_name"].unique():
                 log(INFO, f"Processing results for {base_learner_name}")
 
+                # Get the data values
+                data_df = self.get_data_df(
+                    dataset_name,
+                    base_learner_name,
+                )
+
                 # With each evaluation metric, we need to get the data values
                 for prediction_type in PredictionType:
                     log(INFO, f"Prediction type: {prediction_type}")
 
-                    # Get the data values
-                    data_df = self.get_data_df(
-                        dataset_name,
-                        base_learner_name,
-                    )
-                    print(data_df)
-                    print(data_df.columns)
-
-                    results = {}
                     # With each inference algorithm, we need to evaluate by repeat_time and fold then aggregate the results
                     for inference_algorithm in EvaluationConfig.INFERENCE_ALGORITHMS:
                         log(INFO, f"Inference algorithm: {inference_algorithm.key}")
@@ -202,45 +232,86 @@ class EvaluationFramework:
                             )
                         ]  # [["repeat_time", "fold", "Y_predicted", "Y_test"]]
 
-                        for eval_metric in EvaluationConfig.EVALUATION_METRICS[
-                            prediction_type
-                        ]:
-                            log(INFO, f"Evaluation metric: {eval_metric}")
-
-                            for repeat_time in data_df["repeat_time"].unique():
-                                log(INFO, f"Repeat time: {repeat_time}")
-
-                                result_folds = []
-                                for fold in data_df["fold"].unique():
-                                    log(INFO, f"Fold: {fold}")
-                                    df2 = df1[
-                                        (df1["repeat_time"] == repeat_time)
-                                        & (df1["fold"] == fold)
-                                    ]
-                                    print("df2", df2)
-
-                                    result_folds.append(
-                                        self.evaluate_metric(
-                                            eval_metric,
-                                            prediction_type,
-                                            df2["Y_predicted"].values[0],  # type: ignore
-                                            df2["Y_test"].values[0],  # type: ignore
-                                        )
+                        if prediction_type == PredictionType.PREFERENCE_ORDER:
+                            for order_type in EvaluationConfig.EVALUATION_METRICS[
+                                PredictionType.PREFERENCE_ORDER
+                            ].keys():
+                                log(INFO, f"Order type: {order_type}")
+                                for eval_metric in EvaluationConfig.EVALUATION_METRICS[
+                                    PredictionType.PREFERENCE_ORDER
+                                ][order_type]:
+                                    log(INFO, f"Evaluation metric: {eval_metric}")
+                                    res = self._evaluate(
+                                        data_df,
+                                        df1,
+                                        eval_metric,
+                                        prediction_type,
+                                    )
+                                    # Add the results to the evaluation dataframe
+                                    self.eval_results.append(
+                                        {
+                                            "Base_Learner": base_learner_name,
+                                            "Algorithm": inference_algorithm.key,
+                                            "Algorithm_Metric": inference_algorithm.metric.value,
+                                            "Algorithm_Height": inference_algorithm.height,
+                                            "Algorithm_Order": inference_algorithm.order_type.value,
+                                            "Prediction_Type": prediction_type.value,
+                                            "Metric": eval_metric.value,
+                                            "Mean": res["mean"],
+                                            "Std": res["std"],
+                                        },
                                     )
 
-                            print(result_folds, "result_folds")
-                            res = self.aggregate_results(result_folds)
-                            # Add the results to the evaluation dataframe
-                            self.eval_results.append(
-                                {
-                                    "Base_Learner": base_learner_name,
-                                    "Algorithm": inference_algorithm.key,
-                                    "Prediction_Type": prediction_type.value,
-                                    "Metric": eval_metric.value,
-                                    "Mean": res["mean"],
-                                    "Std": res["std"],
-                                },
-                            )
+                        else:
+                            log(INFO, f"Prediction type: {prediction_type}")
+                            for eval_metric in EvaluationConfig.EVALUATION_METRICS[
+                                prediction_type
+                            ]:
+                                log(INFO, f"Evaluation metric: {eval_metric}")
+
+                                # for repeat_time in data_df["repeat_time"].unique():
+                                #     log(INFO, f"Repeat time: {repeat_time}")
+
+                                #     result_folds = []
+                                #     for fold in data_df["fold"].unique():
+                                #         log(INFO, f"Fold: {fold}")
+                                #         df2 = df1[
+                                #             (df1["repeat_time"] == repeat_time)
+                                #             & (df1["fold"] == fold)
+                                #         ]
+                                #         print("df2", df2["Y_predicted"].values)
+
+                                #         result_folds.append(
+                                #             self.evaluate_metric(
+                                #                 eval_metric,
+                                #                 prediction_type,
+                                #                 df2["Y_predicted"].values[0],  # type: ignore
+                                #                 df2["Y_test"].values[0],  # type: ignore
+                                #             )
+                                #         )
+
+                                # # print(result_folds, "result_folds")
+                                # res = self.aggregate_results(result_folds)
+                                res = self._evaluate(
+                                    data_df,
+                                    df1,
+                                    eval_metric,
+                                    prediction_type,
+                                )
+                                # Add the results to the evaluation dataframe
+                                self.eval_results.append(
+                                    {
+                                        "Base_Learner": base_learner_name,
+                                        "Algorithm": inference_algorithm.key,
+                                        "Algorithm_Metric": inference_algorithm.metric.value,
+                                        "Algorithm_Height": inference_algorithm.height,
+                                        "Algorithm_Order": inference_algorithm.order_type.value,
+                                        "Prediction_Type": prediction_type.value,
+                                        "Metric": eval_metric.value,
+                                        "Mean": res["mean"],
+                                        "Std": res["std"],
+                                    },
+                                )
 
             log(INFO, f"Evaluation completed for {dataset_name}")
 

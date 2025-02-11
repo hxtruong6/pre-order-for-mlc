@@ -8,10 +8,13 @@ class EvaluationMetricName(Enum):
     F1 = "f1"
     JACCARD = "jaccard"
     SUBSET0_1 = "subset0_1"
-    SUBSET_EXACT_MATCH = "subset_exact_match"
-    RECALL = "recall"
-    HAMMING_ACCURACY_PL = "hamming_accuracy_PL"
-    SUBSET0_1_PL = "subset0_1_PL"
+    # SUBSET_EXACT_MATCH = "subset_exact_match"
+    # RECALL = "recall"
+    # HAMMING_ACCURACY_PL = "hamming_accuracy_PL"
+    # SUBSET0_1_PL = "subset0_1_PL"
+
+    HAMMING_ACCURACY_PRE_ORDER = "hamming_accuracy_PRE_ORDER"
+    SUBSET0_1_PRE_ORDER = "subset0_1_PRE_ORDER"
 
 
 class EvaluationMetric:
@@ -27,12 +30,12 @@ class EvaluationMetric:
     ) -> float:
         if metric_name == EvaluationMetricName.HAMMING_ACCURACY.value:
             return self.hamming_accuracy(predicted_Y, true_Y)
-        # elif metric_name == EvaluationMetricName.F1.value:
-        #     return self.f1(predicted_Y, true_Y)
+        elif metric_name == EvaluationMetricName.F1.value:
+            return self.f1(predicted_Y, true_Y)
         # elif metric_name == EvaluationMetricName.JACCARD.value:
         #     return self.jaccard(predicted_Y, true_Y)
-        # elif metric_name == EvaluationMetricName.SUBSET0_1.value:
-        #     return self.subset0_1(predicted_Y, true_Y)
+        elif metric_name == EvaluationMetricName.SUBSET0_1.value:
+            return self.subset0_1(predicted_Y, true_Y)
         # elif metric_name == EvaluationMetricName.SUBSET_EXACT_MATCH.value:
         #     return self.subset_exact_match(predicted_Y, true_Y)
         # elif metric_name == EvaluationMetricName.RECALL.value:
@@ -116,6 +119,10 @@ class EvaluationMetric:
             for i in range(n_labels - 1):
                 for j in range(i + 1, n_labels):
                     if true_Y[index, i] == 1 and true_Y[index, j] == 0:
+                        print(
+                            'indices_vector[f"{i}_{j}_{0}"]',
+                            indices_vector[f"{i}_{j}_{0}"],
+                        )
                         ham_acc += current_predicted_preorder[
                             indices_vector[f"{i}_{j}_{0}"]
                         ]

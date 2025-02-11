@@ -35,6 +35,8 @@ class PredictBOPOs:
 
         self.pairwise_classifier: dict[str, Estimator] = {}
 
+        self.calibrated_classifier: list[Estimator] = []
+
     def predict_preference_orders(
         self,
         pairwise_probabilistic_predictions,
@@ -382,7 +384,9 @@ class PredictBOPOs:
             raise ValueError(f"Unknown preference order: {self.preference_order}")
 
     def fit_CLR(self, X, Y):
-        outpit = self.base_classifier.pairwise_calibrated_classifier(X, Y)
+        self.pairwise_classifier, self.calibrated_classifier = (
+            self.base_classifier.pairwise_calibrated_classifier(X, Y)
+        )
 
 
 #  These functions can be moved to another separate class

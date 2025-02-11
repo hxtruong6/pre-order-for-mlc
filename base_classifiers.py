@@ -41,7 +41,7 @@ class BaseClassifiers:
 
     def pairwise_calibrated_classifier(
         self, X: NDArray[np.float64], Y: NDArray[np.int32]
-    ) -> Tuple[Dict[str, BaseEstimator], List[BaseEstimator]]:
+    ):
         """Train pairwise calibrated classifiers.
 
         Args:
@@ -88,7 +88,9 @@ class BaseClassifiers:
                         MCC_X.append(X[n])
                         MCC_y.append(1)
                 # TODO: check this
-                pairwise_classifiers[key] = self.base_learner.fit(MCC_X, MCC_y)  # type: ignore
+                classifier = Estimator(self.name)
+                classifier.fit(MCC_X, MCC_y)  # type: ignore
+                pairwise_classifiers[key] = classifier
 
         return pairwise_classifiers, calibrated_classifiers
 
@@ -113,22 +115,6 @@ class BaseClassifiers:
                 classifier.fit(X, MCC_y)  # type: ignore
                 pairwise_classifiers[key] = classifier
         return pairwise_classifiers
-        # classifiers = []
-        # for k_1 in range(n_labels - 1):
-        #     local_classifier = []
-        #     for k_2 in range(k_1 + 1, n_labels):
-        #         MCC_y = []
-        #         for n in range(n_instances):
-        #             if Y[n, k_1] == Y[n, k_2]:
-        #                 MCC_y.append(2)
-        #             elif Y[n, k_1] == 1:
-        #                 MCC_y.append(0)
-        #             elif Y[n, k_2] == 1:
-        #                 MCC_y.append(1)
-        #         local_classifier.append(self.[base_learner]._3classifier(X, MCC_y))
-        #     classifiers.append(local_classifier)
-
-        # return classifiers
 
     def pairwise_pre_order_classifier_fit(self, X, Y) -> dict[str, Estimator]:
         """
