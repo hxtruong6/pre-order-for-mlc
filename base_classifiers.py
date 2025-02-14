@@ -67,6 +67,8 @@ class BaseClassifiers:
             # ex: k = 0 ->  Y[:,k] = [1, 0, 1, 0] --> MCC_y = [0, 1, 0, 1]
             # If the label is 1, then the MCC_y is 0
             MCC_y = np.logical_not(MCC_y).astype(int)
+            # np.logical_not = reverse the boolean values.
+            # The is score to support for class 0.
 
             # Learning for each label k
             classifier = Estimator(self.name)
@@ -87,7 +89,6 @@ class BaseClassifiers:
                     elif Y[n, i] == 0 and Y[n, j] == 1:
                         MCC_X.append(X[n])
                         MCC_y.append(1)
-                # TODO: check this
                 classifier = Estimator(self.name)
                 classifier.fit(MCC_X, MCC_y)  # type: ignore
                 pairwise_classifiers[key] = classifier
@@ -110,7 +111,6 @@ class BaseClassifiers:
                         MCC_y.append(0)
                     elif Y[n, i] == 0 and Y[n, j] == 1:
                         MCC_y.append(1)
-                # TODO: check this
                 classifier = Estimator(self.name)
                 classifier.fit(X, MCC_y)  # type: ignore
                 pairwise_classifiers[key] = classifier

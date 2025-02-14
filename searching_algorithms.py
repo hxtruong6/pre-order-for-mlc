@@ -103,7 +103,7 @@ class Search_BOPreOs:
             ]
             predicted_Y.append(hard_prediction)
             predicted_preorders.append(predicted_preorder)
-        return predicted_Y, predicted_preorders
+        return predicted_Y, predicted_preorders, indices_vector
 
     def _encode_parameters_PRE_ORDER(self, indices_vector):
         assert self.n_labels is not None
@@ -325,6 +325,7 @@ class Search_BOPreOs:
         self, vector, indices_vector, n_labels, G, h, A, b, I, B
     ):
         c = np.zeros((n_labels * (n_labels - 1) * 2, 1))
+
         for ind in range(len(vector)):
             c[ind, 0] = vector[ind]
         (_, x) = ilp(matrix(c), matrix(G), matrix(h), matrix(A), matrix(b), I, B)
@@ -351,6 +352,9 @@ class Search_BOPreOs:
             ind for ind in range(n_labels) if scores_d[ind] > 0 or scores_n[ind] == 0
         ]
         predicted_partial_order = optX
+        # optX: [n*(n-1)*2, 1] -> [1]
+        #  [[0.1], [0.2],] => [0.1, 0.2]
+        # #TODO: convert this to [0.1, 0.2]
         return hard_prediction, predicted_partial_order
 
 
@@ -427,7 +431,7 @@ class Search_BOParOs:
             ]
             predicted_Y.append(hard_prediction)
             predicted_partial_orders.append(predicted_partial_order)
-        return predicted_Y, predicted_partial_orders
+        return predicted_Y, predicted_partial_orders, indices_vector
 
     def _encode_parameters_PARTIAL_ORDER(self, indices_vector):
         assert self.n_labels is not None
@@ -649,4 +653,7 @@ class Search_BOParOs:
         ]
 
         predicted_partial_order = optX
+        # optX: [n*(n-1)*2, 1] -> [1]
+        #  [[0.1], [0.2],] => [0.1, 0.2]
+        # #TODO: convert this to [0.1, 0.2]
         return hard_prediction, predicted_partial_order

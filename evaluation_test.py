@@ -62,12 +62,12 @@ class EvaluationConfig:
         PredictionType.PREFERENCE_ORDER: {
             OrderType.PRE_ORDER: [
                 EvaluationMetricName.HAMMING_ACCURACY_PRE_ORDER,
-                # EvaluationMetricName.SUBSET0_1_PRE_ORDER,
+                EvaluationMetricName.SUBSET0_1_PRE_ORDER,
             ],
-            # OrderType.PARTIAL_ORDER: [
-            #     "hamming_accuracy_PARTIAL_ORDER",
-            #     "subset0_1_accuracy_PARTIAL_ORDER",
-            # ],
+            OrderType.PARTIAL_ORDER: [
+                EvaluationMetricName.HAMMING_ACCURACY_PARTIAL_ORDER,
+                EvaluationMetricName.SUBSET0_1_PARTIAL_ORDER,
+            ],
         },
     }
 
@@ -145,9 +145,10 @@ class EvaluationFramework:
             INFO,
             f"Getting data values for {dataset_name}, {base_learner_name}",
         )
+
         return self.df[
-            (self.df["dataset_name"] == dataset_name)
-            & (self.df["base_learner_name"] == base_learner_name)
+            (self.df["dataset_name"].str.lower() == dataset_name.lower())
+            & (self.df["base_learner_name"].str.lower() == base_learner_name.lower())
             # & (self.results_df["target_metric"] == target_metric)
             # & (self.results_df["preference_order"] == preference_order)
             # & (
@@ -205,6 +206,7 @@ class EvaluationFramework:
                     dataset_name,
                     base_learner_name,
                 )
+                print("data_df", data_df)
 
                 # With each evaluation metric, we need to get the data values
                 for prediction_type in PredictionType:
@@ -231,6 +233,7 @@ class EvaluationFramework:
                                 else data_df["height"].isna()
                             )
                         ]  # [["repeat_time", "fold", "Y_predicted", "Y_test"]]
+                        print("df1", df1)
 
                         if prediction_type == PredictionType.PREFERENCE_ORDER:
                             break
@@ -371,8 +374,8 @@ def main():
     # ]
 
     # Parameters
-    dataset_name = "emotions"
-    # dataset_name = "chd_49"
+    # dataset_name = "emotions"
+    dataset_name = "chd_49"
     noisy_rates = [0.0, 0.2, 0.4]
 
     for noisy_rate in noisy_rates:

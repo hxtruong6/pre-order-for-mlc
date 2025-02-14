@@ -102,6 +102,8 @@ def process_dataset(
                         X_test, n_labels
                     )
 
+                    # Save indices_vector from predict_BOPOs
+
                     for target_metric in [TargetMetric.Hamming, TargetMetric.Subset]:
                         for height in [2, None]:
                             predict_results = predict_BOPOs.predict_preference_orders(
@@ -128,15 +130,16 @@ def process_dataset(
 
                 # Support CLR
                 # TODO: run code to get results of CLR
-                # clr = PredictBOPOs(
-                #     base_classifier_name=base_learner_name.value,  # --> Get classifier
-                # )
+                clr = PredictBOPOs(
+                    base_classifier_name=base_learner_name.value,  # --> Get classifier
+                )
                 # # pairwise_calibrated_classifier to get the calibrated classifier
-                # clr.fit_CLR(X_train, Y_train)
+                clr.fit_CLR(X_train, Y_train)
                 # # predict:
                 # # TODO: Do we need to order type (preorder/partial order) for CLR?
-                # probabilsitic_predictions = clr.predict_proba_BR(X_test, n_labels)
+                predicted_Y, _ = clr.predict_CLR(X_test, n_labels)
                 # predict 2 times, pairwise and threshold
+                # TODO: Save new file then run evaluate
 
     return results
 

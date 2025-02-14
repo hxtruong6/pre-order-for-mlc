@@ -15,6 +15,8 @@ class EvaluationMetricName(Enum):
 
     HAMMING_ACCURACY_PRE_ORDER = "hamming_accuracy_PRE_ORDER"
     SUBSET0_1_PRE_ORDER = "subset0_1_PRE_ORDER"
+    HAMMING_ACCURACY_PARTIAL_ORDER = "hamming_accuracy_PARTIAL_ORDER"
+    SUBSET0_1_PARTIAL_ORDER = "subset0_1_PARTIAL_ORDER"
 
 
 class EvaluationMetric:
@@ -155,6 +157,7 @@ class EvaluationMetric:
     def subset0_1_PRE_ORDER_instance(
         self, current_predicted_preorder, current_true_Y, indices_vector
     ):
+        # predicted_partial_orders =
         n_labels = len(current_true_Y)
         for i in range(n_labels - 1):
             for j in range(i + 1, n_labels):
@@ -172,7 +175,7 @@ class EvaluationMetric:
                         return 0
         return 1
 
-    def hamming_accuracy_PAR_ORDER(
+    def hamming_accuracy_PARTIAL_ORDER(
         self, predicted_partialorders, true_Y, indices_vector
     ):
         n_labels = len(true_Y[0])
@@ -198,7 +201,7 @@ class EvaluationMetric:
             ham_acc_PAR_ORDER += ham_acc / int(n_labels * (n_labels - 1) * 0.5)
         return ham_acc_PAR_ORDER / n_instances
 
-    def subset0_1_accuracy_PAR_ORDER(
+    def subset0_1_accuracy_PARTIAL_ORDER(
         self, predicted_partialorders, true_Y, indices_vector
     ):
         subset0_1_PAR_ORDER = 0
@@ -206,12 +209,12 @@ class EvaluationMetric:
         for index in range(n_instances):
             current_predicted_partialorders = predicted_partialorders[index]
             current_true_Y = true_Y[index]
-            subset0_1_PAR_ORDER += self.subset0_1_PAR_ORDER_instance(
+            subset0_1_PAR_ORDER += self.subset0_1_PARTIAL_ORDER_instance(
                 current_predicted_partialorders, current_true_Y, indices_vector
             )
         return subset0_1_PAR_ORDER / n_instances
 
-    def subset0_1_PAR_ORDER_instance(
+    def subset0_1_PARTIAL_ORDER_instance(
         self, current_predicted_partialorders, current_true_Y, indices_vector
     ):
         n_labels = len(current_true_Y)

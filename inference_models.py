@@ -69,9 +69,13 @@ class PredictBOPOs:
         # Using after training the model.
         if target_metric == TargetMetric.Hamming:
             if self.preference_order == PreferenceOrder.PRE_ORDER:
-                predict_BOPOS, predict_binary_vectors = search_BOPrerOs.PRE_ORDER()
+                predict_BOPOS, predict_binary_vectors, indices_vector = (
+                    search_BOPrerOs.PRE_ORDER()
+                )
             elif self.preference_order == PreferenceOrder.PARTIAL_ORDER:
-                predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER()
+                predict_BOPOS, predict_binary_vectors, indices_vector = (
+                    search_BOParOs.PARTIAL_ORDER()
+                )
             else:
                 raise ValueError(
                     f"[Hamming] Unknown preference order: {self.preference_order}"
@@ -79,9 +83,13 @@ class PredictBOPOs:
 
         elif target_metric == TargetMetric.Subset:
             if self.preference_order == PreferenceOrder.PRE_ORDER:
-                predict_BOPOS, predict_binary_vectors = search_BOPrerOs.PRE_ORDER()
+                predict_BOPOS, predict_binary_vectors, indices_vector = (
+                    search_BOPrerOs.PRE_ORDER()
+                )
             elif self.preference_order == PreferenceOrder.PARTIAL_ORDER:
-                predict_BOPOS, predict_binary_vectors = search_BOParOs.PARTIAL_ORDER()
+                predict_BOPOS, predict_binary_vectors, indices_vector = (
+                    search_BOParOs.PARTIAL_ORDER()
+                )
 
             else:
                 raise ValueError(
@@ -357,7 +365,60 @@ class PredictBOPOs:
                                 current_pairwise_probabilistic_predictions_ij[l]
                             )
         return pairwise_probabilistic_predictions
-    #
+
+    def predict_CLR(self, X, n_labels):
+        n_instances, _ = X.shape
+        calibrated_scores = np.zeros((n_instances))
+
+        # For each label, get the calibrated score
+        for k in range(n_labels):
+            clf = self.calibrated_classifier[k]
+            probabilistic_predictions = clf.predict_proba(X)
+            _, n_classes = probabilistic_predictions.shape
+            print("n_classes _CLR", n_classes)
+            if n_classes == 1:
+                # TODO: debug this line
+                # use any instance to find the predicted class
+                predicted_class = clf.predict(X[:, 2])  # type: ignore
+                if predicted_class[0] == 1:
+                    calibrated_scores += probabilistic_predictions
+            else:
+                # use probability at index 1
+                calibrated_scores += probabilistic_predictions[:, 1]
+
+        voting_scores = np.zeros((n_labels, n_instances))
+        for k_1 in range(n_labels - 1):
+            for k_2 in range(n_labels - k_1 - 1):
+                clf = self.pairwise_classifier[f"{k_1}_{k_2}"]
+                probabilistic_predictions = clf.predict_proba(X)
+                _, n_classes = probabilistic_predictions.shape
+                if n_classes == 1:
+                    predicted_class = clf.predict(X[:2])  # type: ignore
+                    if predicted_class[0] == 0:
+                        voting_scores[k_1, :] += [1 for n in range(n_instances)]
+                    else:
+                        voting_scores[k_1 + k_2 + 1, :] += [
+                            1 for n in range(n_instances)
+                        ]
+                else:
+                    voting_scores[k_1, :] += probabilistic_predictions[:, 0]
+                    voting_scores[k_1 + k_2 + 1, :] += probabilistic_predictions[:, 1]
+
+        predicted_Y = []
+        predicted_ranks = []
+        for index in range(n_instances):
+            prediction = [
+                1 if voting_scores[k, index] >= calibrated_scores[index] else 0
+                for k in range(n_labels)
+            ]
+            rank = [
+                n_labels - sorted(voting_scores[:, index]).index(x)
+                for x in voting_scores[:, index]
+            ]
+            predicted_Y.append(prediction)
+            predicted_ranks.append(rank)
+
+        return predicted_Y, predicted_ranks
 
     def fit(self, X, Y):
         """Training the model for each pair of labels (i, j), which could be pre-order or partial-order
