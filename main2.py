@@ -128,14 +128,14 @@ def process_dataset(
 
                 # Support CLR
                 # TODO: run code to get results of CLR
-                clr = PredictBOPOs(
-                    base_classifier_name=base_learner_name.value,  # --> Get classifier
-                )
-                # pairwise_calibrated_classifier to get the calibrated classifier
-                clr.fit_CLR(X_train, Y_train)
-                # predict:
-                # TODO: Do we need to order type (preorder/partial order) for CLR?
-                probabilsitic_predictions = clr.predict_proba_BR(X_test, n_labels)
+                # clr = PredictBOPOs(
+                #     base_classifier_name=base_learner_name.value,  # --> Get classifier
+                # )
+                # # pairwise_calibrated_classifier to get the calibrated classifier
+                # clr.fit_CLR(X_train, Y_train)
+                # # predict:
+                # # TODO: Do we need to order type (preorder/partial order) for CLR?
+                # probabilsitic_predictions = clr.predict_proba_BR(X_test, n_labels)
                 # predict 2 times, pairwise and threshold
 
     return results
@@ -264,7 +264,7 @@ if __name__ == "__main__":
     # Configuration
     data_path = "./data/"
     data_files = [
-        # "emotions.arff",
+        "emotions.arff",
         "CHD_49.arff",
         # "scene.arff",
         # "Yeast.arff",
@@ -273,12 +273,14 @@ if __name__ == "__main__":
     n_labels_set = [6, 6, 6, 14, 14]  # number of labels in each dataset
     noisy_rates = [
         0.0,
-        # 0.2,
-        # 0.4,
+        0.2,
+        0.4,
     ]
     base_learners = [
         BaseLearnerName.RF,
-        #  BaseLearnerName.XGBoost
+        BaseLearnerName.XGBoost,
+        # BaseLearnerName.ETC,
+        # BaseLearnerName.LightGBM,
     ]
 
     TOTAL_REPEAT_TIMES = 1

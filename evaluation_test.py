@@ -158,10 +158,10 @@ class EvaluationFramework:
         ]
 
     def _evaluate(self, data_df, df1, eval_metric, prediction_type):
+        result_folds = []
         for repeat_time in data_df["repeat_time"].unique():
             log(INFO, f"Repeat time: {repeat_time}")
 
-            result_folds = []
             for fold in data_df["fold"].unique():
                 log(INFO, f"Fold: {fold}")
                 df2 = df1[(df1["repeat_time"] == repeat_time) & (df1["fold"] == fold)]
@@ -233,6 +233,8 @@ class EvaluationFramework:
                         ]  # [["repeat_time", "fold", "Y_predicted", "Y_test"]]
 
                         if prediction_type == PredictionType.PREFERENCE_ORDER:
+                            break
+
                             for order_type in EvaluationConfig.EVALUATION_METRICS[
                                 PredictionType.PREFERENCE_ORDER
                             ].keys():
@@ -269,29 +271,6 @@ class EvaluationFramework:
                             ]:
                                 log(INFO, f"Evaluation metric: {eval_metric}")
 
-                                # for repeat_time in data_df["repeat_time"].unique():
-                                #     log(INFO, f"Repeat time: {repeat_time}")
-
-                                #     result_folds = []
-                                #     for fold in data_df["fold"].unique():
-                                #         log(INFO, f"Fold: {fold}")
-                                #         df2 = df1[
-                                #             (df1["repeat_time"] == repeat_time)
-                                #             & (df1["fold"] == fold)
-                                #         ]
-                                #         print("df2", df2["Y_predicted"].values)
-
-                                #         result_folds.append(
-                                #             self.evaluate_metric(
-                                #                 eval_metric,
-                                #                 prediction_type,
-                                #                 df2["Y_predicted"].values[0],  # type: ignore
-                                #                 df2["Y_test"].values[0],  # type: ignore
-                                #             )
-                                #         )
-
-                                # # print(result_folds, "result_folds")
-                                # res = self.aggregate_results(result_folds)
                                 res = self._evaluate(
                                     data_df,
                                     df1,
@@ -383,23 +362,33 @@ def main():
     # Example usage
     evaluator = EvaluationFramework("./results")
 
+    #  data_files = [
+    #     "emotions.arff",
+    #     "CHD_49.arff",
+    #     # "scene.arff",
+    #     # "Yeast.arff",
+    #     # "Water-quality.arff",
+    # ]
+
     # Parameters
     dataset_name = "emotions"
-    noisy_rate = 0.0
+    # dataset_name = "chd_49"
+    noisy_rates = [0.0, 0.2, 0.4]
 
-    try:
-        evaluator.load_results(dataset_name, noisy_rate)
-        # Evaluate dataset
-        evaluator.evaluate_dataset(dataset_name, noisy_rate)
+    for noisy_rate in noisy_rates:
+        try:
+            evaluator.load_results(dataset_name, noisy_rate)
+            # Evaluate dataset
+            evaluator.evaluate_dataset(dataset_name, noisy_rate)
 
-        # Save results
-        output_base = f"./results/evaluation_{dataset_name}_noisy_{noisy_rate}"
-        evaluator.save_results(output_base)
+            # Save results
+            output_base = f"./results/evaluation_{dataset_name}_noisy_{noisy_rate}"
+            evaluator.save_results(output_base)
 
-        log(INFO, f"Evaluation completed successfully for {dataset_name}")
+            log(INFO, f"Evaluation completed successfully for {dataset_name}")
 
-    except Exception as e:
-        log(ERROR, f"Evaluation failed: {str(e)}")
+        except Exception as e:
+            log(ERROR, f"Evaluation failed: {str(e)}")
 
 
 if __name__ == "__main__":
