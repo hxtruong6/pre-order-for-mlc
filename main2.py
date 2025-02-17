@@ -33,10 +33,18 @@ def update_results(
     dataset_name,
     noisy_rate,
 ):
+
+    indices_vector = None
+    if len(predict_results) == 3:
+        indices_vector = list(predict_results[2])
+
+    print("predict_results", len(predict_results))
+
     data = {
         "Y_test": Y_test.tolist(),
         "Y_predicted": list(predict_results[0]),
         "Y_BOPOs": list(predict_results[1]),
+        "indices_vector": indices_vector,
         "target_metric": target_metric,
         "preference_order": order_type,
         "height": height,
@@ -60,6 +68,7 @@ def process_dataset(
     dataset_name: str,
 ):
     results: list[dict] = []
+    clr_results: list[dict] = []
 
     for base_learner_name in base_learners:
 
@@ -74,6 +83,8 @@ def process_dataset(
                     random_state=RANDOM_STATE,
                 )
             ):
+                n_instances = X_test.shape[0]
+                n_labels = Y_test.shape[1]
                 log(
                     INFO,
                     f"Fold: {fold}/{NUMBER_FOLDS} - {noisy_rate}",
@@ -94,9 +105,6 @@ def process_dataset(
                     predict_BOPOs.fit(X_train, Y_train)
 
                     log(INFO, f"PredictBOPOs: {predict_BOPOs}")
-
-                    n_instances = X_test.shape[0]
-                    n_labels = Y_test.shape[1]
 
                     probabilsitic_predictions = predict_BOPOs.predict_proba(
                         X_test, n_labels
@@ -129,19 +137,26 @@ def process_dataset(
                             )
 
                 # Support CLR
-                # TODO: run code to get results of CLR
                 clr = PredictBOPOs(
                     base_classifier_name=base_learner_name.value,  # --> Get classifier
                 )
-                # # pairwise_calibrated_classifier to get the calibrated classifier
                 clr.fit_CLR(X_train, Y_train)
-                # # predict:
-                # # TODO: Do we need to order type (preorder/partial order) for CLR?
                 predicted_Y, _ = clr.predict_CLR(X_test, n_labels)
-                # predict 2 times, pairwise and threshold
-                # TODO: Save new file then run evaluate
+                update_results(
+                    clr_results,
+                    Y_test,
+                    [predicted_Y, []],
+                    repeat_time,
+                    fold,
+                    base_learner_name.value,
+                    None,
+                    None,
+                    None,
+                    dataset_name,
+                    noisy_rate,
+                )
 
-    return results
+    return results, clr_results
 
 
 def training(
@@ -168,7 +183,7 @@ def training(
         # Run for each noisy rate
         for noisy_rate in noisy_rates:
             log(INFO, f"Noisy rate: {noisy_rate}")
-            res = process_dataset(
+            res, clr_res = process_dataset(
                 experience_dataset,
                 dataset_index,
                 noisy_rate,
@@ -186,88 +201,95 @@ def training(
                 noisy_rate,
             )
 
-
-def evaluate_dataset(dataset_name, noisy_rate, results):
-    inference_algorithms = {
-        "IA1": "Preorders + Hamming + Height = None",
-        "IA2": "Preorders + Hamming + Height = 2",
-        "IA3": "Preorders + Subset + Height = None",
-        "IA4": "Preorders + Subset + Height = 2",
-        "IA5": "Partial_orders + Hamming + Height = None",
-        "IA6": "Partial_orders + Hamming + Height = 2",
-        "IA7": "Partial_orders + Subset + Height = None",
-        "IA8": "Partial_orders + Subset + Height = 2",
-    }
-
-    prediction_types = {
-        "PT1": "Preference order",
-        "PT2": "Binary vector",
-    }
-
-    evaluation_metrics = {
-        "EM1": "Hamming",
-        "EM2": "Subset",
-        "EM3": "F measure",
-    }
-
-    for inference_algorithm in inference_algorithms:
-        for prediction_type in prediction_types:
-            if prediction_type == "PT1":
-                for evaluation_metric in evaluation_metrics:
-                    log(
-                        INFO,
-                        f"Inference algorithm: {inference_algorithm}, Prediction type: {prediction_type}, Evaluation metric: {evaluation_metric}",
-                    )
-            elif inference_algorithm in ["IA1", "IA2", "IA3", "IA4"]:
-                for evaluation_metric in [TargetMetric.Hamming, TargetMetric.Subset]:
-                    pass
-            elif inference_algorithm in ["IA5", "IA6", "IA7", "IA8"]:
-                for evaluation_metric in [TargetMetric.Hamming, TargetMetric.Subset]:
-                    pass
+            ExperimentResults.save_results(
+                clr_res,
+                dataset_name,
+                noisy_rate,
+                is_clr=True,
+            )
 
 
-def evaluating(saved_path):
-    with open(saved_path, "r") as f:
-        results = json.load(f)
-    """
-    TODO: Create a dictionary of possible configuration (8 inference algorithms, 2 prediction types, 7 evaluation metrics)
-    8 inference algorithms:
-       - IA1: Preorders + Hamming + Height = None
-       - IA2: Preorders + Hamming + Height = 2
-       - IA3: Preorders + Subset + Height = None
-       - IA4: Preorders + Subset + Height = 2
+# def evaluate_dataset(dataset_name, noisy_rate, results):
+#     inference_algorithms = {
+#         "IA1": "Preorders + Hamming + Height = None",
+#         "IA2": "Preorders + Hamming + Height = 2",
+#         "IA3": "Preorders + Subset + Height = None",
+#         "IA4": "Preorders + Subset + Height = 2",
+#         "IA5": "Partial_orders + Hamming + Height = None",
+#         "IA6": "Partial_orders + Hamming + Height = 2",
+#         "IA7": "Partial_orders + Subset + Height = None",
+#         "IA8": "Partial_orders + Subset + Height = 2",
+#     }
 
-       - IA5: Partial_orders + Hamming + Height = None
-       - IA6: Partial_orders + Hamming + Height = 2
-       - IA7: Partial_orders + Subset + Height = None
-       - IA8: Partial_orders + Subset + Height = 2
+#     prediction_types = {
+#         "PT1": "Preference order",
+#         "PT2": "Binary vector",
+#     }
 
-    2 prediction types per inference algorithms:
-       - PT1: Preference order
-       - PT2: Binary vector
+#     evaluation_metrics = {
+#         "EM1": "Hamming",
+#         "EM2": "Subset",
+#         "EM3": "F measure",
+#     }
 
-    7 evaluation metrics:
-       - PT2: Hamming or Subset or F measure: hamming_accuracy, subset0_1, f1
-       - PT1:
-            - IA1 - IA4: Hamming or Subset for preorder: hamming_accuracy_PRE_ORDER, subset0_1_accuracy_PRE_ORDER
-            - IA5 - IA8: Hamming or Subset for partial_order: hamming_accuracy_PARTIAL_ORDER, subset0_1_accuracy_PARTIAL_ORDER
-    
-    We have table:
-        - 1 dataset X number of BASE_LEARNER X number of NOISY_RATE:
-            - PT2: 1 table (8 inference algorithms * 3 evaluation metrics ( hamming_accuracy, subset0_1, f1))
-            - PT1: 2 table:
-                - PRE_ORDER: 4 inference algorithms * 2 evaluation metrics ( hamming_accuracy_PRE_ORDER, subset0_1_accuracy_PRE_ORDER)
-                - PARTIAL_ORDER: 4 inference algorithms * 2 evaluation metrics ( hamming_accuracy_PARTIAL_ORDER, subset0_1_accuracy_PARTIAL_ORDER)
+#     for inference_algorithm in inference_algorithms:
+#         for prediction_type in prediction_types:
+#             if prediction_type == "PT1":
+#                 for evaluation_metric in evaluation_metrics:
+#                     log(
+#                         INFO,
+#                         f"Inference algorithm: {inference_algorithm}, Prediction type: {prediction_type}, Evaluation metric: {evaluation_metric}",
+#                     )
+#             elif inference_algorithm in ["IA1", "IA2", "IA3", "IA4"]:
+#                 for evaluation_metric in [TargetMetric.Hamming, TargetMetric.Subset]:
+#                     pass
+#             elif inference_algorithm in ["IA5", "IA6", "IA7", "IA8"]:
+#                 for evaluation_metric in [TargetMetric.Hamming, TargetMetric.Subset]:
+#                     pass
 
-    Fold: np.mean(), np.std()
-    """
+
+# def evaluating(saved_path):
+#     with open(saved_path, "r") as f:
+#         results = json.load(f)
+#     """
+#     TODO: Create a dictionary of possible configuration (8 inference algorithms, 2 prediction types, 7 evaluation metrics)
+#     8 inference algorithms:
+#        - IA1: Preorders + Hamming + Height = None
+#        - IA2: Preorders + Hamming + Height = 2
+#        - IA3: Preorders + Subset + Height = None
+#        - IA4: Preorders + Subset + Height = 2
+
+#        - IA5: Partial_orders + Hamming + Height = None
+#        - IA6: Partial_orders + Hamming + Height = 2
+#        - IA7: Partial_orders + Subset + Height = None
+#        - IA8: Partial_orders + Subset + Height = 2
+
+#     2 prediction types per inference algorithms:
+#        - PT1: Preference order
+#        - PT2: Binary vector
+
+#     7 evaluation metrics:
+#        - PT2: Hamming or Subset or F measure: hamming_accuracy, subset0_1, f1
+#        - PT1:
+#             - IA1 - IA4: Hamming or Subset for preorder: hamming_accuracy_PRE_ORDER, subset0_1_accuracy_PRE_ORDER
+#             - IA5 - IA8: Hamming or Subset for partial_order: hamming_accuracy_PARTIAL_ORDER, subset0_1_accuracy_PARTIAL_ORDER
+
+#     We have table:
+#         - 1 dataset X number of BASE_LEARNER X number of NOISY_RATE:
+#             - PT2: 1 table (8 inference algorithms * 3 evaluation metrics ( hamming_accuracy, subset0_1, f1))
+#             - PT1: 2 table:
+#                 - PRE_ORDER: 4 inference algorithms * 2 evaluation metrics ( hamming_accuracy_PRE_ORDER, subset0_1_accuracy_PRE_ORDER)
+#                 - PARTIAL_ORDER: 4 inference algorithms * 2 evaluation metrics ( hamming_accuracy_PARTIAL_ORDER, subset0_1_accuracy_PARTIAL_ORDER)
+
+#     Fold: np.mean(), np.std()
+#     """
 
 # for a quick test
 if __name__ == "__main__":
     # Configuration
     data_path = "./data/"
     data_files = [
-        "emotions.arff",
+        # "emotions.arff",
         "CHD_49.arff",
         # "scene.arff",
         # "Yeast.arff",
@@ -276,12 +298,12 @@ if __name__ == "__main__":
     n_labels_set = [6, 6, 6, 14, 14]  # number of labels in each dataset
     noisy_rates = [
         0.0,
-        0.2,
-        0.4,
+        # 0.2,
+        # 0.4,
     ]
     base_learners = [
         BaseLearnerName.RF,
-        BaseLearnerName.XGBoost,
+        # BaseLearnerName.XGBoost,
         # BaseLearnerName.ETC,
         # BaseLearnerName.LightGBM,
     ]

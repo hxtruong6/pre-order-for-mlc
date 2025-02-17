@@ -351,10 +351,9 @@ class Search_BOPreOs:
         hard_prediction = [
             ind for ind in range(n_labels) if scores_d[ind] > 0 or scores_n[ind] == 0
         ]
-        predicted_partial_order = optX
         # optX: [n*(n-1)*2, 1] -> [1]
         #  [[0.1], [0.2],] => [0.1, 0.2]
-        # #TODO: convert this to [0.1, 0.2]
+        predicted_partial_order = optX.flatten()
         return hard_prediction, predicted_partial_order
 
 
@@ -652,8 +651,7 @@ class Search_BOParOs:
             if scores_d[ind] > 0 or scores_n[ind] == 0
         ]
 
-        predicted_partial_order = optX
         # optX: [n*(n-1)*2, 1] -> [1]
         #  [[0.1], [0.2],] => [0.1, 0.2]
-        # #TODO: convert this to [0.1, 0.2]
+        predicted_partial_order = optX.flatten()
         return hard_prediction, predicted_partial_order

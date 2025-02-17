@@ -44,7 +44,7 @@ class PredictBOPOs:
         n_instances,
         target_metric: TargetMetric,
         height: int | None = None,
-    ):
+    ) -> tuple[list[int], list[float], list[int] | None]:
         # 4 cases for pre-order and 4 cases for partial-order
         log(
             INFO,
@@ -96,7 +96,7 @@ class PredictBOPOs:
                     f"[Subset] Unknown preference order: {self.preference_order}"
                 )
 
-        return predict_BOPOS, predict_binary_vectors
+        return predict_BOPOS, predict_binary_vectors, indices_vector  # type: ignore
 
     def predict_proba(self, X, n_labels):
         n_test_instances, _ = X.shape
@@ -388,7 +388,9 @@ class PredictBOPOs:
 
         voting_scores = np.zeros((n_labels, n_instances))
         for k_1 in range(n_labels - 1):
-            for k_2 in range(n_labels - k_1 - 1):
+            # for k_2 in range(n_labels - k_1 - 1):
+            for k_2 in range(k_1 + 1, n_labels):  # TODO: check this line
+                # k1: label 1, k2: label 2, k1 < k2 | k1 in [0, n_labels - 1], k2 in [k1 + 1, n_labels - 1]
                 clf = self.pairwise_classifier[f"{k_1}_{k_2}"]
                 probabilistic_predictions = clf.predict_proba(X)
                 _, n_classes = probabilistic_predictions.shape
@@ -397,12 +399,14 @@ class PredictBOPOs:
                     if predicted_class[0] == 0:
                         voting_scores[k_1, :] += [1 for n in range(n_instances)]
                     else:
-                        voting_scores[k_1 + k_2 + 1, :] += [
-                            1 for n in range(n_instances)
-                        ]
+                        # voting_scores[k_1 + k_2 + 1, :] += [
+                        #     1 for n in range(n_instances)
+                        # ] # TODO: check this line
+                        voting_scores[k_2, :] += [1 for n in range(n_instances)]
                 else:
                     voting_scores[k_1, :] += probabilistic_predictions[:, 0]
-                    voting_scores[k_1 + k_2 + 1, :] += probabilistic_predictions[:, 1]
+                    # voting_scores[k_1 + k_2 + 1, :] += probabilistic_predictions[:, 1] # TODO: check this line
+                    voting_scores[k_2, :] += probabilistic_predictions[:, 1]
 
         predicted_Y = []
         predicted_ranks = []

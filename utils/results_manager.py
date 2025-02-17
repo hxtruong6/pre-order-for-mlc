@@ -38,7 +38,7 @@ class ExperimentResults:
     """Class to handle experiment results and metrics."""
 
     @staticmethod
-    def save_results(results, dataset_name, noisy_rate):
+    def save_results(results, dataset_name, noisy_rate, is_clr=False):
         """
         Saves the results dictionary to both pickle and CSV formats.
 
@@ -52,7 +52,7 @@ class ExperimentResults:
 
         # Clean filename
         dataset_name = dataset_name.lower().replace(" ", "_")
-        base_filename = f"./results/dataset_{dataset_name}_noisy_{noisy_rate}"
+        base_filename = f"./results/dataset_{dataset_name}_noisy_{noisy_rate}{'_clr' if is_clr else ''}"
 
         # Save as pickle for exact Python object preservation
         with open(f"{base_filename}.pkl", "wb") as f:
@@ -65,7 +65,7 @@ class ExperimentResults:
         log(INFO, f"Results saved to {base_filename}.pkl and {base_filename}.csv")
 
     @staticmethod
-    def load_results(path, dataset_name, noisy_rate):
+    def load_results(path, dataset_name, noisy_rate, is_clr=False):
         """
         Loads results from pickle file.
 
@@ -77,7 +77,7 @@ class ExperimentResults:
             List of dictionaries containing experiment results
         """
         dataset_name = dataset_name.lower().replace(" ", "_")
-        filename = f"{path}/dataset_{dataset_name}_noisy_{noisy_rate}.pkl"
+        filename = f"{path}/dataset_{dataset_name}_noisy_{noisy_rate}{'_clr' if is_clr else ''}.pkl"
 
         log(INFO, f"Loading results from {filename}")
 

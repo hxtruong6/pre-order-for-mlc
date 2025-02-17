@@ -80,12 +80,13 @@ class EvaluationFramework:
         self.results: Dict[str, Dict[str, Dict[str, Any]]] = {}
         self.evaluation_metric = EvaluationMetric()
 
-    def load_results(self, dataset_name: str, noisy_rate: float):
+    def load_results(self, dataset_name: str, noisy_rate: float, is_clr=False):
         """Load results from pickle file and process predictions."""
         results = ExperimentResults.load_results(
             self.results_dir,
             dataset_name,
             noisy_rate,
+            is_clr,
         )
         log(INFO, f"Loaded results for {dataset_name} with shape {results.shape}")
         self.df = results
@@ -93,13 +94,26 @@ class EvaluationFramework:
     def evaluate_metric(
         self,
         metric_name: EvaluationMetricName,
-        prediction_type: PredictionType,
+        prediction_type: PredictionType | None,
         predictions: np.ndarray,
         true_labels: np.ndarray,
         indices_vector: np.ndarray | None,
+        is_clr: bool = False,
     ) -> float:  # type: ignore
         """Calculate specific evaluation metric."""
         try:
+            if is_clr:
+                if metric_name == EvaluationMetricName.HAMMING_ACCURACY:
+                    return self.evaluation_metric.hamming_accuracy(
+                        predictions, true_labels
+                    )
+                elif metric_name == EvaluationMetricName.SUBSET0_1:
+                    return self.evaluation_metric.subset0_1(predictions, true_labels)
+                elif metric_name == EvaluationMetricName.F1:
+                    return self.evaluation_metric.f1(predictions, true_labels)
+                else:
+                    raise ValueError(f"Unknown metric: {metric_name}")
+
             print(f"*** Evaluating metric: {metric_name} for {prediction_type}")
             if prediction_type == PredictionType.BINARY_VECTOR:
                 if metric_name == EvaluationMetricName.HAMMING_ACCURACY:
@@ -175,6 +189,31 @@ class EvaluationFramework:
                         df2["Y_predicted"].values[0],  # type: ignore
                         df2["Y_test"].values[0],  # type: ignore
                         df2["Y_BOPOs"].values[0],  # type: ignore
+                    )
+                )
+
+        # print(result_folds, "result_folds")
+        res = self.aggregate_results(result_folds)
+        return res
+
+    def _evaluate_clr(self, data_df, df1, eval_metric):
+        result_folds = []
+        for repeat_time in data_df["repeat_time"].unique():
+            log(INFO, f"Repeat time: {repeat_time}")
+
+            for fold in data_df["fold"].unique():
+                log(INFO, f"Fold: {fold}")
+                df2 = df1[(df1["repeat_time"] == repeat_time) & (df1["fold"] == fold)]
+                # print("df2", df2["Y_predicted"].values)
+
+                result_folds.append(
+                    self.evaluate_metric(
+                        eval_metric,
+                        None,
+                        df2["Y_predicted"].values[0],  # type: ignore
+                        df2["Y_test"].values[0],  # type: ignore
+                        None,  # type: ignore
+                        is_clr=True,
                     )
                 )
 
@@ -305,6 +344,67 @@ class EvaluationFramework:
             )
             raise
 
+    def evaluate_dataset_clr(self, dataset_name: str, noisy_rate: float):
+        """
+        Evaluate results for a specific dataset and noise rate.
+
+        Args:
+            dataset_name: Name of the dataset
+            noisy_rate: Noise rate used in the experiment
+        """
+        try:
+            log(
+                INFO,
+                f"Processing results for {dataset_name} with noise rate {noisy_rate}",
+            )
+
+            self.eval_results = []
+
+            for base_learner_name in self.df["base_learner_name"].unique():
+                log(INFO, f"Processing results for {base_learner_name}")
+
+                # Get the data values
+                data_df = self.get_data_df(
+                    dataset_name,
+                    base_learner_name,
+                )
+                print("data_df", data_df)
+
+                # With each evaluation metric, we need to get the data values
+                for eval_metric in [
+                    EvaluationMetricName.HAMMING_ACCURACY,
+                    EvaluationMetricName.SUBSET0_1,
+                    EvaluationMetricName.F1,
+                ]:
+
+                    log(INFO, f"Evaluation metric: {eval_metric}")
+
+                    res = self._evaluate_clr(
+                        data_df,
+                        data_df,
+                        eval_metric,
+                    )
+                    # Add the results to the evaluation dataframe
+                    self.eval_results.append(
+                        {
+                            "Base_Learner": base_learner_name,
+                            "Algorithm": "CLR",
+                            "Metric": eval_metric.value,
+                            "Mean": res["mean"],
+                            "Std": res["std"],
+                        },
+                    )
+
+            log(INFO, f"Evaluation completed for {dataset_name}")
+
+        except Exception as e:
+            log(
+                ERROR,
+                f"Evaluation failed for {dataset_name}: {str(e)}",
+                exc_info=True,
+            )
+            raise
+
     def _validate_shapes(
         self, predictions: np.ndarray, true_labels: np.ndarray, algo_id: str
     ) -> bool:
@@ -380,15 +480,22 @@ def main():
 
     for noisy_rate in noisy_rates:
         try:
-            evaluator.load_results(dataset_name, noisy_rate)
-            # Evaluate dataset
-            evaluator.evaluate_dataset(dataset_name, noisy_rate)
+            # evaluator.load_results(dataset_name, noisy_rate)
+            # # Evaluate dataset
+            # evaluator.evaluate_dataset(dataset_name, noisy_rate)
 
-            # Save results
-            output_base = f"./results/evaluation_{dataset_name}_noisy_{noisy_rate}"
+            # # Save results
+            # output_base = f"./results/evaluation_{dataset_name}_noisy_{noisy_rate}"
+            # evaluator.save_results(output_base)
+
+            # log(INFO, f"Evaluation completed successfully for {dataset_name}")
+
+            # For clr
+            evaluator.load_results(dataset_name, noisy_rate, is_clr=True)
+            evaluator.evaluate_dataset_clr(dataset_name, noisy_rate)
+
+            output_base = f"./results/evaluation_{dataset_name}_noisy_{noisy_rate}_clr"
             evaluator.save_results(output_base)
-
-            log(INFO, f"Evaluation completed successfully for {dataset_name}")
 
         except Exception as e:
             log(ERROR, f"Evaluation failed: {str(e)}")
