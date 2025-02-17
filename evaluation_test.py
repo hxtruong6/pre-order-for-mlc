@@ -480,15 +480,15 @@ def main():
 
     for noisy_rate in noisy_rates:
         try:
-            # evaluator.load_results(dataset_name, noisy_rate)
-            # # Evaluate dataset
-            # evaluator.evaluate_dataset(dataset_name, noisy_rate)
+            evaluator.load_results(dataset_name, noisy_rate)
+            # Evaluate dataset
+            evaluator.evaluate_dataset(dataset_name, noisy_rate)
 
-            # # Save results
-            # output_base = f"./results/evaluation_{dataset_name}_noisy_{noisy_rate}"
-            # evaluator.save_results(output_base)
+            # Save results
+            output_base = f"./results/evaluation_{dataset_name}_noisy_{noisy_rate}"
+            evaluator.save_results(output_base)
 
-            # log(INFO, f"Evaluation completed successfully for {dataset_name}")
+            log(INFO, "Start for CLR:")
 
             # For clr
             evaluator.load_results(dataset_name, noisy_rate, is_clr=True)
@@ -496,6 +496,8 @@ def main():
 
             output_base = f"./results/evaluation_{dataset_name}_noisy_{noisy_rate}_clr"
             evaluator.save_results(output_base)
+
+            log(INFO, f"Evaluation completed successfully for {dataset_name}")
 
         except Exception as e:
             log(ERROR, f"Evaluation failed: {str(e)}")
