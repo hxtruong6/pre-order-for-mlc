@@ -302,10 +302,10 @@ if __name__ == "__main__":
         # 0.4,
     ]
     base_learners = [
-        BaseLearnerName.RF,
+        # BaseLearnerName.RF,
         # BaseLearnerName.XGBoost,
         # BaseLearnerName.ETC,
-        # BaseLearnerName.LightGBM,
+        BaseLearnerName.LightGBM,
     ]
 
     TOTAL_REPEAT_TIMES = 1

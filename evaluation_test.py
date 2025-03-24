@@ -180,7 +180,6 @@ class EvaluationFramework:
             for fold in data_df["fold"].unique():
                 log(INFO, f"Fold: {fold}")
                 df2 = df1[(df1["repeat_time"] == repeat_time) & (df1["fold"] == fold)]
-                print("df2", df2["Y_predicted"].values)
 
                 result_folds.append(
                     self.evaluate_metric(
@@ -272,7 +271,6 @@ class EvaluationFramework:
                                 else data_df["height"].isna()
                             )
                         ]  # [["repeat_time", "fold", "Y_predicted", "Y_test"]]
-                        print("df1", df1)
 
                         if prediction_type == PredictionType.PREFERENCE_ORDER:
                             break
@@ -334,7 +332,7 @@ class EvaluationFramework:
                                     },
                                 )
 
-            log(INFO, f"Evaluation completed for {dataset_name}")
+            # log(INFO, f"Evaluation completed for {dataset_name}")
 
         except Exception as e:
             log(
@@ -395,7 +393,7 @@ class EvaluationFramework:
                         },
                     )
 
-            log(INFO, f"Evaluation completed for {dataset_name}")
+            # log(INFO, f"Evaluation completed for {dataset_name}")
 
         except Exception as e:
             log(
@@ -476,7 +474,11 @@ def main():
     # Parameters
     # dataset_name = "emotions"
     dataset_name = "chd_49"
-    noisy_rates = [0.0, 0.2, 0.4]
+    noisy_rates = [
+        0.0,
+        # 0.2,
+        # 0.4,
+    ]
 
     for noisy_rate in noisy_rates:
         try:
