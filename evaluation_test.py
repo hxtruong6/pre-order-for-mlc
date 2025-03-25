@@ -476,8 +476,9 @@ def main():
     dataset_name = "chd_49"
     noisy_rates = [
         0.0,
-        # 0.2,
-        # 0.4,
+        0.1,
+        0.2,
+        0.3,
     ]
 
     for noisy_rate in noisy_rates:

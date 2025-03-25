@@ -285,8 +285,8 @@ if __name__ == "__main__":
     # Configuration
     data_path = "./data/"
     data_files = [
-        "emotions.arff",
-        # "CHD_49.arff",
+        # "emotions.arff",
+        "CHD_49.arff",
         # "scene.arff",
         # "Yeast.arff",
         # "Water-quality.arff",
@@ -294,9 +294,9 @@ if __name__ == "__main__":
     n_labels_set = [6, 6, 6, 14, 14]  # number of labels in each dataset
     noisy_rates = [0.0, 0.1, 0.2, 0.3]
     base_learners = [
-        # BaseLearnerName.RF,
-        # BaseLearnerName.XGBoost,
-        # BaseLearnerName.ETC,
+        BaseLearnerName.RF,
+        BaseLearnerName.XGBoost,
+        BaseLearnerName.ETC,
         BaseLearnerName.LightGBM,
     ]
 
