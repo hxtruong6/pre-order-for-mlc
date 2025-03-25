@@ -40,8 +40,6 @@ class Search_BOPreOs:
     # hamming - height = None
 
     def PRE_ORDER(self):
-        print(f"Search_BOPreOs: {self.target_metric}")
-
         indices_vector = {}
         indVec = 0
         for i in range(self.n_labels - 1):

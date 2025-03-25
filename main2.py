@@ -38,8 +38,6 @@ def update_results(
     if len(predict_results) == 3:
         indices_vector = list(predict_results[2])
 
-    print("predict_results", len(predict_results))
-
     data = {
         "Y_test": Y_test.tolist(),
         "Y_predicted": list(predict_results[0]),
@@ -104,7 +102,7 @@ def process_dataset(
                     # Train the model
                     predict_BOPOs.fit(X_train, Y_train)
 
-                    log(INFO, f"PredictBOPOs: {predict_BOPOs}")
+                    # log(INFO, f"PredictBOPOs: {predict_BOPOs}")
 
                     probabilsitic_predictions = predict_BOPOs.predict_proba(
                         X_test, n_labels
@@ -168,8 +166,6 @@ def training(
     TOTAL_REPEAT_TIMES,
     NUMBER_FOLDS,
 ):
-    eval_metric = EvaluationMetric()
-
     experience_dataset = Datasets4Experiments(data_path, data_files, n_labels_set)
     experience_dataset.load_datasets()
 
@@ -289,18 +285,14 @@ if __name__ == "__main__":
     # Configuration
     data_path = "./data/"
     data_files = [
-        # "emotions.arff",
-        "CHD_49.arff",
+        "emotions.arff",
+        # "CHD_49.arff",
         # "scene.arff",
         # "Yeast.arff",
         # "Water-quality.arff",
     ]
     n_labels_set = [6, 6, 6, 14, 14]  # number of labels in each dataset
-    noisy_rates = [
-        0.0,
-        # 0.2,
-        # 0.4,
-    ]
+    noisy_rates = [0.0, 0.1, 0.2, 0.3]
     base_learners = [
         # BaseLearnerName.RF,
         # BaseLearnerName.XGBoost,
@@ -308,8 +300,8 @@ if __name__ == "__main__":
         BaseLearnerName.LightGBM,
     ]
 
-    TOTAL_REPEAT_TIMES = 1
-    NUMBER_FOLDS = 2
+    TOTAL_REPEAT_TIMES = 5
+    NUMBER_FOLDS = 5
 
     training(
         data_path,

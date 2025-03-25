@@ -22,7 +22,7 @@ class Estimator:
         elif self.name == BaseLearnerName.XGBoost.value:
             return GradientBoostingClassifier(random_state=RANDOM_STATE)
         elif self.name == BaseLearnerName.LightGBM.value:
-            return LGBMClassifier(random_state=RANDOM_STATE)
+            return LGBMClassifier(random_state=RANDOM_STATE, n_jobs=16, verbose=-1)
         else:
             raise ValueError(f"Unknown base learner: {self.name}")
 
