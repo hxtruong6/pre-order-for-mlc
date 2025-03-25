@@ -286,8 +286,8 @@ if __name__ == "__main__":
     data_path = "./data/"
     data_files = [
         # "emotions.arff",
-        "CHD_49.arff",
-        # "scene.arff",
+        # "CHD_49.arff",
+        "scene.arff",
         # "Yeast.arff",
         # "Water-quality.arff",
     ]

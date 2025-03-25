@@ -473,7 +473,8 @@ def main():
 
     # Parameters
     # dataset_name = "emotions"
-    dataset_name = "chd_49"
+    # dataset_name = "chd_49"
+    dataset_name = "scene"
     noisy_rates = [
         0.0,
         0.1,
