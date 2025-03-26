@@ -63,6 +63,7 @@ class BaseClassifiers:
         calibrated_classifiers = []
         # With each label
         for k in range(n_labels):
+            # print(f"Pairwise calibrated classifier for label: {k}")
             MCC_y = Y[:, k]
             # ex: k = 0 ->  Y[:,k] = [1, 0, 1, 0] --> MCC_y = [0, 1, 0, 1]
             # If the label is 1, then the MCC_y is 0

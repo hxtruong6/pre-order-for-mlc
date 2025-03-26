@@ -42,3 +42,6 @@ class Estimator:
 
     def classes_(self) -> list[int]:
         return self.clf.classes_  # type: ignore
+
+    def predict(self, X: NDArray) -> NDArray:
+        return self.clf.predict(X)  # type: ignore

@@ -379,7 +379,7 @@ class PredictBOPOs:
             if n_classes == 1:
                 # TODO: debug this line
                 # use any instance to find the predicted class
-                predicted_class = clf.predict(X[:, 2])  # type: ignore
+                predicted_class = clf.predict(X[:, 2])
                 if predicted_class[0] == 1:
                     calibrated_scores += probabilistic_predictions
             else:
@@ -394,8 +394,8 @@ class PredictBOPOs:
                 clf = self.pairwise_classifier[f"{k_1}_{k_2}"]
                 probabilistic_predictions = clf.predict_proba(X)
                 _, n_classes = probabilistic_predictions.shape
-                if n_classes == 1:
-                    predicted_class = clf.predict(X[:2])  # type: ignore
+                if n_classes == 1:  # why 1? -> label at index 0?
+                    predicted_class = clf.predict(X[:2])  # :2 means first 2 instances
                     if predicted_class[0] == 0:
                         voting_scores[k_1, :] += [1 for n in range(n_instances)]
                     else:

@@ -138,8 +138,11 @@ def process_dataset(
                 clr = PredictBOPOs(
                     base_classifier_name=base_learner_name.value,  # --> Get classifier
                 )
+                print(f"X_train.shape: {X_train.shape}, Y_train.shape: {Y_train.shape}")
                 clr.fit_CLR(X_train, Y_train)
+                # print(f"Predict CLR by: {clr.base_classifier.name}")
                 predicted_Y, _ = clr.predict_CLR(X_test, n_labels)
+                # print(f"predicted_Y.shape: {len(predicted_Y)}")
                 update_results(
                     clr_results,
                     Y_test,
@@ -287,11 +290,12 @@ if __name__ == "__main__":
     data_files = [
         # "emotions.arff",
         # "CHD_49.arff",
-        "scene.arff",
-        # "Yeast.arff",
+        # "scene.arff",
+        "Yeast.arff",
         # "Water-quality.arff",
     ]
-    n_labels_set = [6, 6, 6, 14, 14]  # number of labels in each dataset
+    # n_labels_set = [6, 6, 6, 14, 14]  # number of labels in each dataset
+    n_labels_set = [14]
     noisy_rates = [0.0, 0.1, 0.2, 0.3]
     base_learners = [
         BaseLearnerName.RF,
