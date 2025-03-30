@@ -3,7 +3,7 @@ import numpy as np
 from enum import Enum
 
 from base_classifiers import BaseClassifiers
-from constants import TargetMetric
+from constants import BaseLearnerName, TargetMetric
 from estimator import Estimator
 from searching_algorithms import Search_BOPreOs, Search_BOParOs
 
@@ -36,6 +36,12 @@ class PredictBOPOs:
         self.pairwise_classifier: dict[str, Estimator] = {}
 
         self.calibrated_classifier: list[Estimator] = []
+
+        self.single_label_pair: dict[str, int | None] = {  # key = label i_j
+            # 1_2: 1
+            # 1_3: 0
+            # 1_4: None
+        }
 
     def predict_preference_orders(
         self,
@@ -374,38 +380,55 @@ class PredictBOPOs:
         for k in range(n_labels):
             clf = self.calibrated_classifier[k]
             probabilistic_predictions = clf.predict_proba(X)
-            _, n_classes = probabilistic_predictions.shape
+            _, n_classes = (
+                probabilistic_predictions.shape
+            )  # shape: [n_instances, n_classes]
             # print("n_classes _CLR", n_classes)
             if n_classes == 1:
                 # TODO: debug this line
                 # use any instance to find the predicted class
-                predicted_class = clf.predict(X[:, 2])
-                if predicted_class[0] == 1:
-                    calibrated_scores += probabilistic_predictions
+                if self.base_classifier.name in [
+                    BaseLearnerName.XGBoost,
+                    BaseLearnerName.LightGBM,
+                ]:
+                    pass
+                # Check this label existing in the training set
+                #
+                else:
+                    predicted_class = clf.predict(X[:2])
+                    if predicted_class[0] == 1:
+                        calibrated_scores += probabilistic_predictions
+
             else:
                 # use probability at index 1
                 calibrated_scores += probabilistic_predictions[:, 1]
 
         voting_scores = np.zeros((n_labels, n_instances))
         for k_1 in range(n_labels - 1):
-            # for k_2 in range(n_labels - k_1 - 1):
             for k_2 in range(k_1 + 1, n_labels):  # TODO: check this line
-                # k1: label 1, k2: label 2, k1 < k2 | k1 in [0, n_labels - 1], k2 in [k1 + 1, n_labels - 1]
                 clf = self.pairwise_classifier[f"{k_1}_{k_2}"]
                 probabilistic_predictions = clf.predict_proba(X)
                 _, n_classes = probabilistic_predictions.shape
                 if n_classes == 1:  # why 1? -> label at index 0?
-                    predicted_class = clf.predict(X[:2])  # :2 means first 2 instances
-                    if predicted_class[0] == 0:
-                        voting_scores[k_1, :] += [1 for n in range(n_instances)]
+                    if self.base_classifier.name in [
+                        BaseLearnerName.XGBoost,
+                        BaseLearnerName.LightGBM,
+                    ]:
+                        # Check this label existing in the training set
+                        if self.single_label_pair[f"{k_1}_{k_2}"] == 0:
+                            voting_scores[k_1, :] += [1 for n in range(n_instances)]
+                        else:  # None will be handle in below with n_classes > 1
+                            voting_scores[k_2, :] += [1 for n in range(n_instances)]
                     else:
-                        # voting_scores[k_1 + k_2 + 1, :] += [
-                        #     1 for n in range(n_instances)
-                        # ] # TODO: check this line
-                        voting_scores[k_2, :] += [1 for n in range(n_instances)]
-                else:
+                        predicted_class = clf.predict(
+                            X[:2]
+                        )  # :2 means first 2 instances
+                        if predicted_class[0] == 0:
+                            voting_scores[k_1, :] += [1 for n in range(n_instances)]
+                        else:
+                            voting_scores[k_2, :] += [1 for n in range(n_instances)]
+                else:  # for classes > 1
                     voting_scores[k_1, :] += probabilistic_predictions[:, 0]
-                    # voting_scores[k_1 + k_2 + 1, :] += probabilistic_predictions[:, 1] # TODO: check this line
                     voting_scores[k_2, :] += probabilistic_predictions[:, 1]
 
         predicted_Y = []
@@ -449,7 +472,7 @@ class PredictBOPOs:
             raise ValueError(f"Unknown preference order: {self.preference_order}")
 
     def fit_CLR(self, X, Y):
-        self.pairwise_classifier, self.calibrated_classifier = (
+        self.pairwise_classifier, self.calibrated_classifier, self.single_label_pair = (
             self.base_classifier.pairwise_calibrated_classifier(X, Y)
         )
 

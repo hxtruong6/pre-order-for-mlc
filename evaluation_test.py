@@ -1,3 +1,4 @@
+import argparse
 import csv
 from logging import ERROR, INFO, log, basicConfig
 import random
@@ -463,25 +464,24 @@ def main():
     # Example usage
     evaluator = EvaluationFramework("./results")
 
-    #  data_files = [
-    #     "emotions.arff",
-    #     "CHD_49.arff",
-    #     # "scene.arff",
-    #     # "Yeast.arff",
-    #     # "Water-quality.arff",
-    # ]
+    arg = argparse.ArgumentParser()
+    arg.add_argument("--dataset", type=str)
+    arg.add_argument("--results_dir", type=str)
+    args = arg.parse_args()
 
-    # Parameters
-    # dataset_name = "emotions"
-    # dataset_name = "chd_49"
-    # dataset_name = "scene"
-    dataset_name = "yeast"
-    noisy_rates = [
-        0.0,
-        0.1,
-        0.2,
-        0.3,
-    ]
+    if args.results_dir is None:
+        results_dir = "./results"
+    else:
+        results_dir = args.results_dir
+        # create the results directory if it doesn't exist
+        Path(results_dir).mkdir(parents=True, exist_ok=True)
+
+    if args.dataset is None:
+        dataset_name = "yeast"  # emotions, chd_49, scene, yeast, water-quality, virusgo
+    else:
+        dataset_name = args.dataset
+
+    noisy_rates = [0.0, 0.1, 0.2, 0.3]
 
     for noisy_rate in noisy_rates:
         try:
@@ -490,7 +490,7 @@ def main():
             evaluator.evaluate_dataset(dataset_name, noisy_rate)
 
             # Save results
-            output_base = f"./results/evaluation_{dataset_name}_noisy_{noisy_rate}"
+            output_base = f"{results_dir}/evaluation_{dataset_name}_noisy_{noisy_rate}"
             evaluator.save_results(output_base)
 
             log(INFO, "Start for CLR:")
@@ -499,7 +499,9 @@ def main():
             evaluator.load_results(dataset_name, noisy_rate, is_clr=True)
             evaluator.evaluate_dataset_clr(dataset_name, noisy_rate)
 
-            output_base = f"./results/evaluation_{dataset_name}_noisy_{noisy_rate}_clr"
+            output_base = (
+                f"{results_dir}/evaluation_{dataset_name}_noisy_{noisy_rate}_clr"
+            )
             evaluator.save_results(output_base)
 
             log(INFO, f"Evaluation completed successfully for {dataset_name}")

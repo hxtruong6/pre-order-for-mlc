@@ -5,6 +5,7 @@ Created on Mon Oct 23 20:54:40 2023
 @author: nguyenli_admin
 """
 
+import argparse
 import json
 from constants import RANDOM_STATE, BaseLearnerName, TargetMetric
 from evaluation_metric import EvaluationMetric
@@ -60,13 +61,19 @@ def process_dataset(
     experiment_dataset: Datasets4Experiments,
     dataset_index: int,
     noisy_rate: float,
-    repeat_time: int,
+    TOTAL_REPEAT_TIMES: int,
     NUMBER_FOLDS: int,
     base_learners: list[BaseLearnerName],
     dataset_name: str,
+    is_clr: bool,
 ):
     results: list[dict] = []
     clr_results: list[dict] = []
+
+    log(
+        INFO,
+        f"Training for {dataset_name} with {TOTAL_REPEAT_TIMES} repeat times and {NUMBER_FOLDS} folds",
+    )
 
     for base_learner_name in base_learners:
 
@@ -87,75 +94,84 @@ def process_dataset(
                     INFO,
                     f"Fold: {fold}/{NUMBER_FOLDS} - {noisy_rate}",
                 )
-                for order_type in [
-                    PreferenceOrder.PRE_ORDER,
-                    PreferenceOrder.PARTIAL_ORDER,
-                ]:
-                    log(INFO, f"Preference order: {order_type}")
+                if not is_clr:
+                    for order_type in [
+                        PreferenceOrder.PRE_ORDER,
+                        PreferenceOrder.PARTIAL_ORDER,
+                    ]:
+                        log(INFO, f"Preference order: {order_type}")
 
-                    # Initialize the model with the base learner and the preference order
-                    predict_BOPOs = PredictBOPOs(
+                        # Initialize the model with the base learner and the preference order
+                        predict_BOPOs = PredictBOPOs(
+                            base_classifier_name=base_learner_name.value,  # --> Get classifier
+                            preference_order=order_type,
+                        )
+
+                        # Train the model
+                        predict_BOPOs.fit(X_train, Y_train)
+
+                        # log(INFO, f"PredictBOPOs: {predict_BOPOs}")
+
+                        probabilsitic_predictions = predict_BOPOs.predict_proba(
+                            X_test, n_labels
+                        )
+
+                        # Save indices_vector from predict_BOPOs
+
+                        for target_metric in [
+                            TargetMetric.Hamming,
+                            TargetMetric.Subset,
+                        ]:
+                            for height in [2, None]:
+                                predict_results = (
+                                    predict_BOPOs.predict_preference_orders(
+                                        probabilsitic_predictions,
+                                        n_labels,
+                                        n_instances,
+                                        target_metric,
+                                        height,
+                                    )
+                                )
+
+                                update_results(
+                                    results,
+                                    Y_test,
+                                    predict_results,
+                                    repeat_time,
+                                    fold,
+                                    base_learner_name.value,
+                                    target_metric.value,
+                                    order_type.value,
+                                    height,
+                                    dataset_name,
+                                    noisy_rate,
+                                )
+
+                if is_clr:
+                    # Support CLR
+                    clr = PredictBOPOs(
                         base_classifier_name=base_learner_name.value,  # --> Get classifier
-                        preference_order=order_type,
                     )
-
-                    # Train the model
-                    predict_BOPOs.fit(X_train, Y_train)
-
-                    # log(INFO, f"PredictBOPOs: {predict_BOPOs}")
-
-                    probabilsitic_predictions = predict_BOPOs.predict_proba(
-                        X_test, n_labels
+                    print(
+                        f"X_train.shape: {X_train.shape}, Y_train.shape: {Y_train.shape}"
                     )
-
-                    # Save indices_vector from predict_BOPOs
-
-                    for target_metric in [TargetMetric.Hamming, TargetMetric.Subset]:
-                        for height in [2, None]:
-                            predict_results = predict_BOPOs.predict_preference_orders(
-                                probabilsitic_predictions,
-                                n_labels,
-                                n_instances,
-                                target_metric,
-                                height,
-                            )
-
-                            update_results(
-                                results,
-                                Y_test,
-                                predict_results,
-                                repeat_time,
-                                fold,
-                                base_learner_name.value,
-                                target_metric.value,
-                                order_type.value,
-                                height,
-                                dataset_name,
-                                noisy_rate,
-                            )
-
-                # Support CLR
-                clr = PredictBOPOs(
-                    base_classifier_name=base_learner_name.value,  # --> Get classifier
-                )
-                print(f"X_train.shape: {X_train.shape}, Y_train.shape: {Y_train.shape}")
-                clr.fit_CLR(X_train, Y_train)
-                # print(f"Predict CLR by: {clr.base_classifier.name}")
-                predicted_Y, _ = clr.predict_CLR(X_test, n_labels)
-                # print(f"predicted_Y.shape: {len(predicted_Y)}")
-                update_results(
-                    clr_results,
-                    Y_test,
-                    [predicted_Y, []],
-                    repeat_time,
-                    fold,
-                    base_learner_name.value,
-                    None,
-                    None,
-                    None,
-                    dataset_name,
-                    noisy_rate,
-                )
+                    clr.fit_CLR(X_train, Y_train)
+                    # print(f"Predict CLR by: {clr.base_classifier.name}")
+                    predicted_Y, _ = clr.predict_CLR(X_test, n_labels)
+                    # print(f"predicted_Y.shape: {len(predicted_Y)}")
+                    update_results(
+                        clr_results,
+                        Y_test,
+                        [predicted_Y, []],
+                        repeat_time,
+                        fold,
+                        base_learner_name.value,
+                        None,
+                        None,
+                        None,
+                        dataset_name,
+                        noisy_rate,
+                    )
 
     return results, clr_results
 
@@ -163,13 +179,13 @@ def process_dataset(
 def training(
     data_path,
     data_files,
-    n_labels_set,
     noisy_rates,
     base_learners,
     TOTAL_REPEAT_TIMES,
     NUMBER_FOLDS,
+    results_dir,
 ):
-    experience_dataset = Datasets4Experiments(data_path, data_files, n_labels_set)
+    experience_dataset = Datasets4Experiments(data_path, data_files)
     experience_dataset.load_datasets()
 
     # Run for each dataset
@@ -182,7 +198,10 @@ def training(
         # Run for each noisy rate
         for noisy_rate in noisy_rates:
             log(INFO, f"Noisy rate: {noisy_rate}")
-            res, clr_res = process_dataset(
+
+            log(INFO, "Training for Preference Order")
+
+            res, _ = process_dataset(
                 experience_dataset,
                 dataset_index,
                 noisy_rate,
@@ -190,20 +209,37 @@ def training(
                 NUMBER_FOLDS,
                 base_learners,
                 dataset_name,
+                is_clr=False,
             )
 
-            log(INFO, f"Result length: {len(res)}")
+            log(INFO, "Saving results for Preference Order")
 
             ExperimentResults.save_results(
                 res,
                 dataset_name,
                 noisy_rate,
+                results_dir,
             )
 
+            log(INFO, "Training for CLR")
+
+            _, clr_res = process_dataset(
+                experience_dataset,
+                dataset_index,
+                noisy_rate,
+                TOTAL_REPEAT_TIMES,
+                NUMBER_FOLDS,
+                base_learners,
+                dataset_name,
+                is_clr=True,
+            )
+
+            log(INFO, "Saving results for CLR")
             ExperimentResults.save_results(
                 clr_res,
                 dataset_name,
                 noisy_rate,
+                results_dir,
                 is_clr=True,
             )
 
@@ -283,39 +319,88 @@ def training(
 #     Fold: np.mean(), np.std()
 #     """
 
-# for a quick test
-if __name__ == "__main__":
-    # Configuration
+
+def run_training():
     data_path = "./data/"
-    data_files = [
-        # "emotions.arff",
-        # "CHD_49.arff",
-        # "scene.arff",
-        "Yeast.arff",
-        # "Water-quality.arff",
-    ]
-    # n_labels_set = [6, 6, 6, 14, 14]  # number of labels in each dataset
-    n_labels_set = [14]
+    results_dir = "./results"
+
+    arg = argparse.ArgumentParser()
+    arg.add_argument("--dataset", type=str)
+    arg.add_argument("--results_dir", type=str)
+    args = arg.parse_args()
+
+    if args.results_dir is None:
+        results_dir = "./results"
+    else:
+        results_dir = args.results_dir
+
+    if args.dataset.lower() == "chd_49":
+        data_files = [
+            {
+                "dataset_name": "CHD_49.arff",
+                "n_labels_set": 6,
+            }
+        ]
+    elif args.dataset.lower() == "emotions":
+        data_files = [
+            {
+                "dataset_name": "emotions.arff",
+                "n_labels_set": 6,
+            }
+        ]
+    elif args.dataset.lower() == "scene":
+        data_files = [
+            {
+                "dataset_name": "scene.arff",
+                "n_labels_set": 6,
+            }
+        ]
+    elif args.dataset.lower() == "yeast":
+        data_files = [
+            {
+                "dataset_name": "Yeast.arff",
+                "n_labels_set": 14,
+            }
+        ]
+    elif args.dataset.lower() == "water-quality":
+        data_files = [
+            {
+                "dataset_name": "Water-quality.arff",
+                "n_labels_set": 14,
+            }
+        ]
+    elif args.dataset.lower() == "virusgo":
+        data_files = [
+            {
+                "dataset_name": "VirusGO_sparse.arff",
+                "n_labels_set": 6,
+            }
+        ]
+    else:
+        raise ValueError(f"Dataset {args.dataset} not found")
+
     noisy_rates = [0.0, 0.1, 0.2, 0.3]
     base_learners = [
         BaseLearnerName.RF,
-        BaseLearnerName.XGBoost,
-        BaseLearnerName.ETC,
-        BaseLearnerName.LightGBM,
+        # BaseLearnerName.XGBoost,
+        # BaseLearnerName.ETC,
+        # BaseLearnerName.LightGBM,
     ]
 
-    TOTAL_REPEAT_TIMES = 5
-    NUMBER_FOLDS = 5
+    TOTAL_REPEAT_TIMES = 1
+    NUMBER_FOLDS = 2
 
     training(
         data_path,
         data_files,
-        n_labels_set,
         noisy_rates,
         base_learners,
         TOTAL_REPEAT_TIMES,
         NUMBER_FOLDS,
+        results_dir,
     )
 
-    # saved_path = "./results/results_1_2.txt"
-    # evaluating(saved_path)
+
+# for a quick test
+if __name__ == "__main__":
+    run_training()

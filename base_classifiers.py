@@ -77,6 +77,7 @@ class BaseClassifiers:
             calibrated_classifiers.append(classifier)
 
         pairwise_classifiers = {}
+        single_label_pair = {}
         for i in range(n_labels - 1):
             for j in range(i + 1, n_labels):
                 key = f"{i}_{j}"
@@ -93,8 +94,17 @@ class BaseClassifiers:
                 classifier = Estimator(self.name)
                 classifier.fit(MCC_X, MCC_y)  # type: ignore
                 pairwise_classifiers[key] = classifier
+                single_label_pair[key] = (
+                    1
+                    if len(np.unique(MCC_y)) == 1 and np.unique(MCC_y)[0] == 1
+                    else (
+                        0
+                        if len(np.unique(MCC_y)) == 1 and np.unique(MCC_y)[0] == 0
+                        else None
+                    )
+                )
 
-        return pairwise_classifiers, calibrated_classifiers
+        return pairwise_classifiers, calibrated_classifiers, single_label_pair
 
     def pairwise_partial_order_classifier_fit(self, X, Y):
         # This BaseClassifier provides pairwise_probability_information for learning partial orders
@@ -139,9 +149,17 @@ class BaseClassifiers:
 
                 # Init classifier
                 classifier = Estimator(self.name)
+                self.dataset_classifier = {
+                    f"{key}": {
+                        "X": X,
+                        "Y": MCC_y,
+                    }
+                }
                 classifier.fit(X, MCC_y)  # type: ignore
                 # Store the classifier for each pair of labels
                 self.pairwise_classifiers[key] = classifier
+
+        # run parraellly fit for each pair of labels
 
         # This is a dictionary of pairwise classifiers. [key] is a string of the form "i_j"
         # where i and j are the indices of the labels in the label matrix Y

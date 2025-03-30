@@ -10,10 +10,15 @@ TARGET_IN_END_FILE_DATASETS = ["emotions.arff", "scene.arff"]
 
 class Datasets4Experiments:
 
-    def __init__(self, data_path: str, data_files: list[str], n_labels_set: list[int]):
+    def __init__(self, data_path: str, data_files: list[dict]):
         self.data_path = data_path
-        self.data_files = data_files
-        self.n_labels_set = n_labels_set
+
+        self.data_files = []
+        self.n_labels_set = []
+        for item in data_files:
+            self.data_files.append(item["dataset_name"])
+            self.n_labels_set.append(item["n_labels_set"])
+
         self.datasets: list[tuple[np.ndarray, np.ndarray, str]] = []
 
     def load_datasets(self):

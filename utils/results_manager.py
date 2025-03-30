@@ -38,7 +38,7 @@ class ExperimentResults:
     """Class to handle experiment results and metrics."""
 
     @staticmethod
-    def save_results(results, dataset_name, noisy_rate, is_clr=False):
+    def save_results(results, dataset_name, noisy_rate, results_dir, is_clr=False):
         """
         Saves the results dictionary to both pickle and CSV formats.
 
@@ -48,19 +48,19 @@ class ExperimentResults:
             noisy_rate: Noise rate used in the experiment
         """
         # Create results directory if it doesn't exist
-        Path("./results").mkdir(parents=True, exist_ok=True)
+        Path(results_dir).mkdir(parents=True, exist_ok=True)
 
         # Clean filename
         dataset_name = dataset_name.lower().replace(" ", "_")
-        base_filename = f"./results/dataset_{dataset_name}_noisy_{noisy_rate}{'_clr' if is_clr else ''}"
+        base_filename = f"{results_dir}/dataset_{dataset_name}_noisy_{noisy_rate}{'_clr' if is_clr else ''}"
 
         # Save as pickle for exact Python object preservation
         with open(f"{base_filename}.pkl", "wb") as f:
             pickle.dump(results, f)
 
         # Save as CSV for human readability and easy importing
-        df = pd.DataFrame(results)
-        df.to_csv(f"{base_filename}.csv", index=False)
+        # df = pd.DataFrame(results)
+        # df.to_csv(f"{base_filename}.csv", index=False)
 
         log(INFO, f"Results saved to {base_filename}.pkl and {base_filename}.csv")
 
