@@ -1,3 +1,10 @@
+results/**
+
+!results/**/
+# !results/**/*.csv
+!results/**/evaluation_*.csv
+!results/**/evaluation_*.xlsx
+
 .vscode/
 
 # Created by https://www.toptal.com/developers/gitignore/api/python

@@ -274,8 +274,6 @@ class EvaluationFramework:
                         ]  # [["repeat_time", "fold", "Y_predicted", "Y_test"]]
 
                         if prediction_type == PredictionType.PREFERENCE_ORDER:
-                            break
-
                             for order_type in EvaluationConfig.EVALUATION_METRICS[
                                 PredictionType.PREFERENCE_ORDER
                             ].keys():
@@ -478,6 +476,7 @@ def main():
 
     if args.dataset is None:
         dataset_name = "yeast"  # emotions, chd_49, scene, yeast, water-quality, virusgo
+        raise ValueError("Dataset is required")
     else:
         dataset_name = args.dataset
 
