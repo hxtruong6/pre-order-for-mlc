@@ -5,10 +5,11 @@ Created on Mon Oct 23 14:02:21 2023
 @author: nguyenli_admin
 """
 
+from joblib import Parallel, delayed
 import lightgbm
 import numpy as np
 from sklearn.base import BaseEstimator
-from estimator import Estimator
+from estimator import Estimator, train_classifier
 from logging import INFO, log
 from typing import Dict, List, Tuple, Optional
 from numpy.typing import NDArray
@@ -28,16 +29,6 @@ class BaseClassifiers:
             f"BaseClassifiers: Initializing base learner: {name}",
         )
         self.name = name
-
-        # Store all the pairwise classifiers for each pair of labels
-        self.pairwise_classifiers: dict[str, Estimator] = {}
-
-    # We may use dictionaries to store all the pairwise classifiers
-    #   classifier = {}
-    #    for i in range(n_labels - 1):
-    #        for j in range(i + 1, n_labels):
-    #            key = "%i_%i" % (i, j)
-    #            classifier[key] = the pairwise_classifier for the label pair (y_i,y_j)
 
     def pairwise_calibrated_classifier(
         self, X: NDArray[np.float64], Y: NDArray[np.int32]
@@ -61,6 +52,7 @@ class BaseClassifiers:
 
         # calibrated_classifiers is in fact is a (inverse) BR classifier
         calibrated_classifiers = []
+        clr_dataset_classifier = {}
         # With each label
         for k in range(n_labels):
             # print(f"Pairwise calibrated classifier for label: {k}")
@@ -71,13 +63,36 @@ class BaseClassifiers:
             # np.logical_not = reverse the boolean values.
             # The is score to support for class 0.
 
+            clr_dataset_classifier[str(k)] = {  # type: ignore
+                "X": X.copy(),
+                "Y": MCC_y.copy(),
+            }
+
             # Learning for each label k
-            classifier = Estimator(self.name)
-            classifier.fit(X, MCC_y)
-            calibrated_classifiers.append(classifier)
+            # classifier = Estimator(self.name)
+            # classifier.fit(X, MCC_y)
+            # calibrated_classifiers.append(classifier)
+
+        log(
+            INFO,
+            f"\t - Training for {len(clr_dataset_classifier.keys())} calibrated_classifiers with {self.name}",
+        )
+        # run parraellly fit for each pair of labels
+        classifiers = Parallel(n_jobs=-1)(
+            delayed(train_classifier)(
+                clr_dataset_classifier[str(k)]["X"],
+                clr_dataset_classifier[str(k)]["Y"],
+                self.name,
+            )  # type: ignore
+            for k in range(n_labels)
+        )
+        log(INFO, f"\t - Trained {n_labels} classifiers")
+
+        calibrated_classifiers = list(classifiers)
 
         pairwise_classifiers = {}
         single_label_pair = {}
+        dataset_classifier = {}
         for i in range(n_labels - 1):
             for j in range(i + 1, n_labels):
                 key = f"{i}_{j}"
@@ -91,9 +106,40 @@ class BaseClassifiers:
                     elif Y[n, i] == 0 and Y[n, j] == 1:
                         MCC_X.append(X[n])
                         MCC_y.append(1)
-                classifier = Estimator(self.name)
-                classifier.fit(MCC_X, MCC_y)  # type: ignore
-                pairwise_classifiers[key] = classifier
+
+                dataset_classifier[key] = {  # type: ignore
+                    "X": MCC_X,
+                    "Y": MCC_y,
+                }
+
+                # classifier = Estimator(self.name)
+                # classifier.fit(MCC_X, MCC_y)  # type: ignore
+                # pairwise_classifiers[key] = classifier
+
+        log(
+            INFO,
+            f"\t - Training for {len(dataset_classifier.keys())} pairs with {self.name}",
+        )
+
+        classifiers = Parallel(n_jobs=-1)(
+            delayed(train_classifier)(
+                dataset_classifier[key]["X"],
+                dataset_classifier[key]["Y"],
+                self.name,
+            )  # type: ignore
+            for key in dataset_classifier.keys()
+        )
+
+        log(INFO, f"\t - Trained {len(dataset_classifier.keys())} classifiers")
+
+        pairwise_classifiers = dict(
+            zip(dataset_classifier.keys(), classifiers)
+        )  # type: ignore
+
+        for i in range(n_labels - 1):
+            for j in range(i + 1, n_labels):
+                key = f"{i}_{j}"
+                MCC_y = dataset_classifier[key]["Y"]
                 single_label_pair[key] = (
                     1
                     if len(np.unique(MCC_y)) == 1 and np.unique(MCC_y)[0] == 1
@@ -110,7 +156,9 @@ class BaseClassifiers:
         # This BaseClassifier provides pairwise_probability_information for learning partial orders
         n_labels = len(Y[0])
         n_instances, _ = Y.shape
+        dataset_classifier = {}
         pairwise_classifiers = {}
+
         for i in range(n_labels - 1):
             for j in range(i + 1, n_labels):
                 key = f"{i}_{j}"
@@ -122,10 +170,34 @@ class BaseClassifiers:
                         MCC_y.append(0)
                     elif Y[n, i] == 0 and Y[n, j] == 1:
                         MCC_y.append(1)
-                classifier = Estimator(self.name)
-                classifier.fit(X, MCC_y)  # type: ignore
-                pairwise_classifiers[key] = classifier
-        return pairwise_classifiers
+                dataset_classifier[key] = {  # type: ignore
+                    "X": X.copy(),
+                    "Y": MCC_y.copy(),
+                }
+                # classifier = Estimator(self.name)
+                # classifier.fit(X, MCC_y)  # type: ignore
+                # pairwise_classifiers[key] = classifier
+
+        log(
+            INFO,
+            f"\t - Training for {len(dataset_classifier.keys())} pairs with {self.name}",
+        )
+        # run parraellly fit for each pair of labels
+        classifiers = Parallel(n_jobs=-1)(
+            delayed(train_classifier)(
+                dataset_classifier[key]["X"],
+                dataset_classifier[key]["Y"],
+                self.name,
+            )  # type: ignore
+            for key in dataset_classifier.keys()
+        )
+        log(INFO, f"\t - Trained {len(dataset_classifier.keys())} classifiers")
+
+        pairwise_classifiers = dict(
+            zip(dataset_classifier.keys(), classifiers)
+        )  # type: ignore
+
+        return pairwise_classifiers  # type: ignore
 
     def pairwise_pre_order_classifier_fit(self, X, Y) -> dict[str, Estimator]:
         """
@@ -133,6 +205,8 @@ class BaseClassifiers:
         For each pair of labels, we will train a classifier to predict the probability of the label
         """
         n_instances, n_labels = Y.shape
+        log(INFO, f"\t - {n_labels} labels with {self.name}")
+        dataset_classifier = {}
         for i in range(n_labels - 1):
             for j in range(i + 1, n_labels):
                 key = f"{i}_{j}"
@@ -147,24 +221,39 @@ class BaseClassifiers:
                     elif Y[n, i] == 0 and Y[n, j] == 1:
                         MCC_y.append(1)
 
-                # Init classifier
-                classifier = Estimator(self.name)
-                self.dataset_classifier = {
-                    f"{key}": {
-                        "X": X,
-                        "Y": MCC_y,
-                    }
+                dataset_classifier[key] = {  # type: ignore
+                    "X": X.copy(),
+                    "Y": MCC_y.copy(),
                 }
-                classifier.fit(X, MCC_y)  # type: ignore
-                # Store the classifier for each pair of labels
-                self.pairwise_classifiers[key] = classifier
+                # Init classifier
+                # classifier = Estimator(self.name)
+                # classifier.fit(X, MCC_y)  # type: ignore
+                # # Store the classifier for each pair of labels
+                # self.pairwise_classifiers[key] = classifier
 
+        # OPTIMIZE:
+        log(
+            INFO,
+            f"\t - Training for {len(dataset_classifier.keys())} pairs with {self.name}",
+        )
         # run parraellly fit for each pair of labels
+        classifiers = Parallel(n_jobs=-1)(
+            delayed(train_classifier)(
+                dataset_classifier[key]["X"],
+                dataset_classifier[key]["Y"],
+                self.name,
+            )  # type: ignore
+            for key in dataset_classifier.keys()
+        )
+        log(INFO, f"\t - Trained {len(dataset_classifier.keys())} classifiers")
+
+        pairwise_classifiers = dict(
+            zip(dataset_classifier.keys(), classifiers)
+        )  # type: ignore
 
         # This is a dictionary of pairwise classifiers. [key] is a string of the form "i_j"
         # where i and j are the indices of the labels in the label matrix Y
-        return self.pairwise_classifiers
-        # TODO: Do this `fit` trained or not? should return value or a classifier?
+        return pairwise_classifiers  # type: ignore
 
     def binary_relevance_classifer(self, X, Y) -> list[BaseEstimator]:
         # This is to learn a Binary relevance (BR)

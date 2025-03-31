@@ -5,7 +5,19 @@ from sklearn.model_selection import KFold
 from scipy.stats import bernoulli
 from sklearn.preprocessing import StandardScaler
 
-TARGET_IN_END_FILE_DATASETS = ["emotions.arff", "scene.arff"]
+TARGET_IN_END_FILE_DATASETS = [
+    "emotions.arff",
+    "scene.arff",
+    "flags.arff",
+    "VirusGO.arff",
+    "VirusPseAAC.arff",
+    "Yelp.arff",
+    "birds.arff",
+    "HumanPseAAC.arff",
+    "PlantGO.arff",
+    "GpositivePseAAC.arff",
+    "PlantPseAAC.arff",
+]
 
 
 class Datasets4Experiments:
@@ -24,12 +36,24 @@ class Datasets4Experiments:
     def load_datasets(self):
         for file_name, n_labels in zip(self.data_files, self.n_labels_set):
             full_path = f"{self.data_path}{file_name}"
+            print(f"Loading dataset from {full_path}")
             data, meta = arff.loadarff(full_path)
             df = pd.DataFrame(data)
-            X, Y = self.preprocess_data(
-                df, n_labels, is_target_in_end=file_name in TARGET_IN_END_FILE_DATASETS
-            )
+
+            is_target_in_end = False
+            for target_in_end_file in TARGET_IN_END_FILE_DATASETS:
+                if target_in_end_file.lower() == file_name.lower():
+                    is_target_in_end = True
+                    break
+
+            print(f"is_target_in_end: {is_target_in_end}")
+
+            X, Y = self.preprocess_data(df, n_labels, is_target_in_end)
             df_name = file_name.split(".")[0]
+
+            print(f"X shape: {X.shape} | {X}")
+            print(f"Y shape: {Y.shape} | {Y}")
+
             self.datasets.append((X, Y, df_name))
 
     def preprocess_data(self, df, n_labels, is_target_in_end=False):

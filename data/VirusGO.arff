@@ -1,5 +1,4 @@
 @relation 'VirusGO: -C -6'
-
 @attribute Att1 numeric
 @attribute Att2 numeric
 @attribute Att3 numeric
@@ -755,7 +754,6 @@
 @attribute Label4 {0,1}
 @attribute Label5 {0,1}
 @attribute Label6 {0,1}
-
 @data
 {106 1,313 1,315 1,749 1}
 {106 1,313 1,315 1,749 1}

@@ -99,7 +99,9 @@ class EvaluationFramework:
         predictions: np.ndarray,
         true_labels: np.ndarray,
         indices_vector: np.ndarray | None,
+        bopos: np.ndarray | None,
         is_clr: bool = False,
+        order_type: OrderType | None = None,
     ) -> float:  # type: ignore
         """Calculate specific evaluation metric."""
         try:
@@ -115,7 +117,9 @@ class EvaluationFramework:
                 else:
                     raise ValueError(f"Unknown metric: {metric_name}")
 
-            print(f"*** Evaluating metric: {metric_name} for {prediction_type}")
+            print(
+                f"*** Evaluating metric: {metric_name} for {prediction_type} {'\t| OrderType' if order_type is not None else ''} {order_type.value if order_type is not None else ''}"
+            )
             if prediction_type == PredictionType.BINARY_VECTOR:
                 if metric_name == EvaluationMetricName.HAMMING_ACCURACY:
                     return self.evaluation_metric.hamming_accuracy(
@@ -128,20 +132,34 @@ class EvaluationFramework:
                 else:
                     raise ValueError(f"Unknown metric: {metric_name}")
             elif prediction_type == PredictionType.PREFERENCE_ORDER:
-                if metric_name == EvaluationMetricName.HAMMING_ACCURACY_PRE_ORDER:
-                    return self.evaluation_metric.hamming_accuracy_PRE_ORDER(
-                        predictions, true_labels, indices_vector
-                    )
-                elif metric_name == EvaluationMetricName.SUBSET0_1_PRE_ORDER:
-                    return self.evaluation_metric.subset0_1_accuracy_PRE_ORDER(
-                        predictions, true_labels, indices_vector
-                    )
+                if order_type == OrderType.PRE_ORDER:
+                    if metric_name == EvaluationMetricName.HAMMING_ACCURACY_PRE_ORDER:
+                        return self.evaluation_metric.hamming_accuracy_PRE_ORDER(
+                            predictions, true_labels, indices_vector, bopos
+                        )
+                    elif metric_name == EvaluationMetricName.SUBSET0_1_PRE_ORDER:
+                        return self.evaluation_metric.subset0_1_accuracy_PRE_ORDER(
+                            predictions, true_labels, indices_vector, bopos
+                        )
+                elif order_type == OrderType.PARTIAL_ORDER:
+                    if (
+                        metric_name
+                        == EvaluationMetricName.HAMMING_ACCURACY_PARTIAL_ORDER
+                    ):
+                        return self.evaluation_metric.hamming_accuracy_PARTIAL_ORDER(
+                            predictions, true_labels, indices_vector, bopos
+                        )
+                    elif metric_name == EvaluationMetricName.SUBSET0_1_PARTIAL_ORDER:
+                        return self.evaluation_metric.subset0_1_accuracy_PARTIAL_ORDER(
+                            predictions, true_labels, indices_vector, bopos
+                        )
             else:
                 raise ValueError(f"Unknown prediction type: {prediction_type}")
         except Exception as e:
             raise Exception(f"Error calculating {metric_name}: {e}")
 
     def aggregate_results(self, metric_values: List[float]) -> Dict[str, float]:
+        # print(metric_values, "metric_values")
         """Calculate mean and standard deviation across folds."""
         if not metric_values:
             return {"mean": 0.0, "std": 0.0}
@@ -173,7 +191,7 @@ class EvaluationFramework:
             # )
         ]
 
-    def _evaluate(self, data_df, df1, eval_metric, prediction_type):
+    def _evaluate(self, data_df, df1, eval_metric, prediction_type, order_type=None):
         result_folds = []
         for repeat_time in data_df["repeat_time"].unique():
             log(INFO, f"Repeat time: {repeat_time}")
@@ -182,7 +200,22 @@ class EvaluationFramework:
                 log(INFO, f"Fold: {fold}")
                 df2 = df1[(df1["repeat_time"] == repeat_time) & (df1["fold"] == fold)]
 
-                print(df2["indices_vector"].values[0])
+                # print(
+                #     "index",
+                #     df2["indices_vector"].values[0],
+                #     np.array(df2["indices_vector"].values[0]).shape,
+                # )
+                # print(
+                #     "bopo",
+                #     np.array(df2["Y_BOPOs"].values[0]),
+                #     np.array(df2["Y_BOPOs"].values[0]).shape,
+                # )
+                # print(
+                #     "pred",
+                #     np.array(df2["Y_predicted"].values[0]),
+                #     np.array(df2["Y_predicted"].values[0]).shape,
+                # )
+                # print("test", df2["Y_test"].values[0])
 
                 result_folds.append(
                     self.evaluate_metric(
@@ -191,6 +224,9 @@ class EvaluationFramework:
                         predictions=df2["Y_predicted"].values[0],  # type: ignore
                         true_labels=df2["Y_test"].values[0],  # type: ignore
                         indices_vector=df2["indices_vector"].values[0],  # type: ignore
+                        bopos=df2["Y_BOPOs"].values[0],  # type: ignore
+                        is_clr=False,
+                        order_type=order_type,
                     )
                 )
 
@@ -215,6 +251,7 @@ class EvaluationFramework:
                         predictions=df2["Y_predicted"].values[0],  # type: ignore
                         true_labels=df2["Y_test"].values[0],  # type: ignore
                         indices_vector=None,  # type: ignore
+                        bopos=None,  # type: ignore
                         is_clr=True,
                     )
                 )
@@ -279,7 +316,17 @@ class EvaluationFramework:
                             for order_type in EvaluationConfig.EVALUATION_METRICS[
                                 PredictionType.PREFERENCE_ORDER
                             ].keys():
-                                log(INFO, f"Order type: {order_type}")
+                                log(
+                                    INFO,
+                                    f"Order type: {order_type.value} | Preference order: {preference_order}",
+                                )
+                                if preference_order != order_type.value:
+                                    log(
+                                        INFO,
+                                        f"Preference order mismatch: {preference_order} != {order_type.value} |* Skip this order type",
+                                    )
+                                    continue
+
                                 for eval_metric in EvaluationConfig.EVALUATION_METRICS[
                                     PredictionType.PREFERENCE_ORDER
                                 ][order_type]:
@@ -289,6 +336,7 @@ class EvaluationFramework:
                                         df1,
                                         eval_metric,
                                         prediction_type,
+                                        order_type,
                                     )
                                     # Add the results to the evaluation dataframe
                                     self.eval_results.append(
@@ -306,7 +354,6 @@ class EvaluationFramework:
                                     )
 
                         else:
-                            continue
                             log(INFO, f"Prediction type: {prediction_type}")
                             for eval_metric in EvaluationConfig.EVALUATION_METRICS[
                                 prediction_type
@@ -437,7 +484,7 @@ class EvaluationFramework:
         try:
             # Prepare data for DataFrame
             rows = []
-            print("self.eval_results", self.eval_results)
+            # print("self.eval_results", self.eval_results)
 
             # Create DataFrame
             df = pd.DataFrame(self.eval_results)
@@ -486,8 +533,8 @@ def main():
     noisy_rates = [
         0.0,
         0.1,
-        # 0.2,
-        # 0.3,
+        0.2,
+        0.3,
     ]
 
     evaluator = EvaluationFramework(results_dir)

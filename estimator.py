@@ -45,3 +45,9 @@ class Estimator:
 
     def predict(self, X: NDArray) -> NDArray:
         return self.clf.predict(X)  # type: ignore
+
+
+def train_classifier(X, Y, estimator_name):
+    classifier = Estimator(estimator_name)  # Add n_jobs or other params here
+    classifier.fit(X, Y)
+    return classifier

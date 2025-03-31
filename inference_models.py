@@ -462,17 +462,16 @@ class PredictBOPOs:
             self.pairwise_classifier = (
                 self.base_classifier.pairwise_pre_order_classifier_fit(X, Y)
             )
-        # TODO: add partial order
         elif "PARTIAL_ORDER" in self.preference_order.name:
             self.pairwise_classifier = (
                 self.base_classifier.pairwise_partial_order_classifier_fit(X, Y)
-            )
+            )  # type: ignore
             pass
         else:
             raise ValueError(f"Unknown preference order: {self.preference_order}")
 
     def fit_CLR(self, X, Y):
-        self.pairwise_classifier, self.calibrated_classifier, self.single_label_pair = (
+        self.pairwise_classifier, self.calibrated_classifier, self.single_label_pair = (  # type: ignore
             self.base_classifier.pairwise_calibrated_classifier(X, Y)
         )
 

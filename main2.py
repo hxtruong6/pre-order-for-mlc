@@ -78,6 +78,7 @@ def process_dataset(
     )
 
     for base_learner_name in base_learners:
+        raise ValueError("Not implemented")
 
         # Run fold for each dataset and each noisy rate and repeat times
         for repeat_time in range(TOTAL_REPEAT_TIMES):
@@ -357,6 +358,27 @@ def run_training():
                 "n_labels_set": 6,
             }
         ]
+    elif args.dataset.lower() == "VirusPseAAC".lower():
+        data_files = [
+            {
+                "dataset_name": "VirusPseAAC.arff",
+                "n_labels_set": 6,
+            }
+        ]
+    # elif args.dataset.lower() == "yelp":
+    #     data_files = [
+    #         {
+    #             "dataset_name": "Yelp.arff", # has nominal attributes
+    #             "n_labels_set": 8,
+    #         }
+    #     ]
+    # elif args.dataset.lower() == "birds":
+    #     data_files = [
+    #         {
+    #             "dataset_name": "birds.arff", # has nominal attributes
+    #             "n_labels_set": 19,
+    #         }
+    #     ]
     elif args.dataset.lower() == "yeast":
         data_files = [
             {
@@ -371,11 +393,25 @@ def run_training():
                 "n_labels_set": 14,
             }
         ]
-    elif args.dataset.lower() == "virusgo":
+    elif args.dataset.lower() == "HumanPseAAC".lower():
         data_files = [
             {
-                "dataset_name": "VirusGO_sparse.arff",
-                "n_labels_set": 6,
+                "dataset_name": "HumanPseAAC.arff",
+                "n_labels_set": 14,
+            }
+        ]
+    elif args.dataset.lower() == "GpositivePseAAC".lower():
+        data_files = [
+            {
+                "dataset_name": "GpositivePseAAC.arff",
+                "n_labels_set": 4,
+            }
+        ]
+    elif args.dataset.lower() == "PlantPseAAC".lower():
+        data_files = [
+            {
+                "dataset_name": "PlantPseAAC.arff",
+                "n_labels_set": 12,
             }
         ]
     else:
@@ -383,7 +419,7 @@ def run_training():
 
     noisy_rates = [
         0.0,
-        0.1,
+        # 0.1,
         # 0.2,
         # 0.3,
     ]
