@@ -182,13 +182,15 @@ class EvaluationFramework:
                 log(INFO, f"Fold: {fold}")
                 df2 = df1[(df1["repeat_time"] == repeat_time) & (df1["fold"] == fold)]
 
+                print(df2["indices_vector"].values[0])
+
                 result_folds.append(
                     self.evaluate_metric(
-                        eval_metric,
-                        prediction_type,
-                        df2["Y_predicted"].values[0],  # type: ignore
-                        df2["Y_test"].values[0],  # type: ignore
-                        df2["Y_BOPOs"].values[0],  # type: ignore
+                        metric_name=eval_metric,
+                        prediction_type=prediction_type,
+                        predictions=df2["Y_predicted"].values[0],  # type: ignore
+                        true_labels=df2["Y_test"].values[0],  # type: ignore
+                        indices_vector=df2["indices_vector"].values[0],  # type: ignore
                     )
                 )
 
@@ -208,11 +210,11 @@ class EvaluationFramework:
 
                 result_folds.append(
                     self.evaluate_metric(
-                        eval_metric,
-                        None,
-                        df2["Y_predicted"].values[0],  # type: ignore
-                        df2["Y_test"].values[0],  # type: ignore
-                        None,  # type: ignore
+                        metric_name=eval_metric,
+                        prediction_type=None,
+                        predictions=df2["Y_predicted"].values[0],  # type: ignore
+                        true_labels=df2["Y_test"].values[0],  # type: ignore
+                        indices_vector=None,  # type: ignore
                         is_clr=True,
                     )
                 )
@@ -245,7 +247,7 @@ class EvaluationFramework:
                     dataset_name,
                     base_learner_name,
                 )
-                print("data_df", data_df)
+                # print("data_df", data_df)
 
                 # With each evaluation metric, we need to get the data values
                 for prediction_type in PredictionType:
@@ -304,6 +306,7 @@ class EvaluationFramework:
                                     )
 
                         else:
+                            continue
                             log(INFO, f"Prediction type: {prediction_type}")
                             for eval_metric in EvaluationConfig.EVALUATION_METRICS[
                                 prediction_type
@@ -365,7 +368,7 @@ class EvaluationFramework:
                     dataset_name,
                     base_learner_name,
                 )
-                print("data_df", data_df)
+                # print("data_df", data_df)
 
                 # With each evaluation metric, we need to get the data values
                 for eval_metric in [
@@ -459,8 +462,6 @@ class EvaluationFramework:
 
 
 def main():
-    # Example usage
-    evaluator = EvaluationFramework("./results")
 
     arg = argparse.ArgumentParser()
     arg.add_argument("--dataset", type=str)
@@ -480,7 +481,16 @@ def main():
     else:
         dataset_name = args.dataset
 
-    noisy_rates = [0.0, 0.1, 0.2, 0.3]
+    log(INFO, f"Args: Dataset: {dataset_name}, Results dir: {results_dir}")
+
+    noisy_rates = [
+        0.0,
+        0.1,
+        # 0.2,
+        # 0.3,
+    ]
+
+    evaluator = EvaluationFramework(results_dir)
 
     for noisy_rate in noisy_rates:
         try:

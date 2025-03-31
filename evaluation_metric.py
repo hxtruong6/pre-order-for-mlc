@@ -115,6 +115,7 @@ class EvaluationMetric:
 
         ham_acc_PRE_ORDER = 0
         n_instances = len(predicted_preorders)
+        print(indices_vector)
         for index in range(n_instances):
             current_predicted_preorder = predicted_preorders[index]
             ham_acc = 0
@@ -125,6 +126,7 @@ class EvaluationMetric:
                             'indices_vector[f"{i}_{j}_{0}"]',
                             indices_vector[f"{i}_{j}_{0}"],
                         )
+                        # TODO: check if the indices_vector is correct
                         ham_acc += current_predicted_preorder[
                             indices_vector[f"{i}_{j}_{0}"]
                         ]

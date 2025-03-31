@@ -46,6 +46,7 @@ class Search_BOPreOs:
             for j in range(i + 1, self.n_labels):
                 for l in range(4):
                     #                    key = "%i_%i_%i" % (i, j, l)
+                    # TODO: check if the indices_vector is correct
                     indices_vector[f"{i}_{j}_{l}"] = indVec
                     indVec += 1
         G, h, A, b, I, B = self._encode_parameters_PRE_ORDER(indices_vector)  # type: ignore

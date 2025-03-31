@@ -7,5 +7,13 @@ python evaluation_test.py --results_dir <results_dir>
 
 python main2.py --dataset chd_49 --results_dir results/20250330
 
-python evaluation_test.py --dataset chd_49 --results_dir results/20250330/evaluation_chd_49
+python evaluation_test.py --dataset chd_49 --results_dir results/20250330
 ```
+
+# Checkpoint 1
+
+Time taken: 14.591945886611938 seconds for chd_49
+
+# Checkpoint 2
+
+Time taken: x seconds for chd49

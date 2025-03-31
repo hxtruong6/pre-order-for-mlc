@@ -7,6 +7,7 @@ Created on Mon Oct 23 20:54:40 2023
 
 import argparse
 import json
+import time
 from constants import RANDOM_STATE, BaseLearnerName, TargetMetric
 from evaluation_metric import EvaluationMetric
 
@@ -37,7 +38,8 @@ def update_results(
 
     indices_vector = None
     if len(predict_results) == 3:
-        indices_vector = list(predict_results[2])
+        # print(predict_results[2])
+        indices_vector = predict_results[2]
 
     data = {
         "Y_test": Y_test.tolist(),
@@ -379,7 +381,12 @@ def run_training():
     else:
         raise ValueError(f"Dataset {args.dataset} not found")
 
-    noisy_rates = [0.0, 0.1, 0.2, 0.3]
+    noisy_rates = [
+        0.0,
+        0.1,
+        # 0.2,
+        # 0.3,
+    ]
     base_learners = [
         BaseLearnerName.RF,
         # BaseLearnerName.XGBoost,
@@ -390,6 +397,8 @@ def run_training():
     TOTAL_REPEAT_TIMES = 1
     NUMBER_FOLDS = 2
 
+    time1 = time.time()
+
     training(
         data_path,
         data_files,
@@ -399,6 +408,9 @@ def run_training():
         NUMBER_FOLDS,
         results_dir,
     )
+
+    time2 = time.time()
+    print(f"Time taken: {time2 - time1} seconds")
 
 
 # for a quick test
