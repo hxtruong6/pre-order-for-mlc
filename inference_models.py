@@ -1,4 +1,5 @@
 from logging import INFO, log
+from joblib import Parallel, delayed
 import numpy as np
 from enum import Enum
 
@@ -17,6 +18,7 @@ class PreferenceOrder(Enum):
 1. Predict probability
 2. Predict preference orders
 """
+
 
 class PredictBOPOs:
 
@@ -112,16 +114,32 @@ class PredictBOPOs:
             == PreferenceOrder.PRE_ORDER
             # or self.preference_order == PreferenceOrder.BIPARTITE_PRE_ORDER
         ):
+
+            def _get_pairwise_predict_proba():
+                predict_results = Parallel(n_jobs=-1)(
+                    delayed(self.pairwise_classifier[f"{i}_{j}"].predict_proba)(X)
+                    for i in range(n_labels - 1)
+                    for j in range(i + 1, n_labels)
+                )
+
+                return dict(zip(self.pairwise_classifier.keys(), predict_results))
+
             pairwise_probabilistic_predictions = {}
+            pairwise_predict_proba = _get_pairwise_predict_proba()
             for i in range(n_labels - 1):
                 for j in range(i + 1, n_labels):
-                    pairwise_probabilistic_predictions_ij = np.zeros((n_test_instances, 4))
+                    pairwise_probabilistic_predictions_ij = np.zeros(
+                        (n_test_instances, 4)
+                    )
                     key_classifier = f"{i}_{j}"
 
                     # TODO: recheck this line. DEBUG this predict_proba function.
                     # Output: probability predictions. Value is a matrix [test_instances, 4] PRE_ORDER. PARTIAL_ORDER. [test_instance, 3]
+                    # original_pairwise_probabilistic_predictions_ij = (
+                    #     self.pairwise_classifier[key_classifier].predict_proba(X)
+                    # )
                     original_pairwise_probabilistic_predictions_ij = (
-                        self.pairwise_classifier[key_classifier].predict_proba(X)
+                        pairwise_predict_proba[key_classifier]
                     )
                     # original_pairwise_probabilistic_predictions_ij = [test_instances, 1/2/3/4]. Not guaranteed 4/3 classes.
 
@@ -133,9 +151,10 @@ class PredictBOPOs:
                     for l in range(4):
                         if l in presented_classes:
                             pairwise_probabilistic_predictions_ij[:, l] = (
-                                original_pairwise_probabilistic_predictions_ij[
-                                    :, presented_classes.index(l)
-                                ]
+                                # original_pairwise_probabilistic_predictions_ij[
+                                #     :, presented_classes.index(l)
+                                # ]
+                                pairwise_predict_proba[key_classifier][:, l]  # type: ignore
                             )
                     for n in range(n_test_instances):
 
@@ -152,7 +171,8 @@ class PredictBOPOs:
                             zero_indices = [
                                 ind
                                 for ind in range(4)
-                                if current_pairwise_probabilistic_predictions_ij[ind] == 0
+                                if current_pairwise_probabilistic_predictions_ij[ind]
+                                == 0
                             ]
                             current_pairwise_probabilistic_predictions_ij = [
                                 (
@@ -171,13 +191,29 @@ class PredictBOPOs:
             == PreferenceOrder.PARTIAL_ORDER
             # or self.preference_order == PreferenceOrder.BIPARTITE_PARTIAL_ORDER
         ):
+
+            def _get_pairwise_predict_proba():
+                predict_results = Parallel(n_jobs=-1)(
+                    delayed(self.pairwise_classifier[f"{i}_{j}"].predict_proba)(X)
+                    for i in range(n_labels - 1)
+                    for j in range(i + 1, n_labels)
+                )
+
+                return dict(zip(self.pairwise_classifier.keys(), predict_results))
+
             pairwise_probabilistic_predictions = {}
+            pairwise_predict_proba = _get_pairwise_predict_proba()
             for i in range(n_labels - 1):
                 for j in range(i + 1, n_labels):
-                    pairwise_probabilistic_predictions_ij = np.zeros((n_test_instances, 3))
+                    pairwise_probabilistic_predictions_ij = np.zeros(
+                        (n_test_instances, 3)
+                    )
                     key_classifier = f"{i}_{j}"
+                    # original_pairwise_probabilistic_predictions_ij = (
+                    #     self.pairwise_classifier[key_classifier].predict_proba(X)
+                    # )
                     original_pairwise_probabilistic_predictions_ij = (
-                        self.pairwise_classifier[key_classifier].predict_proba(X)
+                        pairwise_predict_proba[key_classifier]
                     )
                     presented_classes = list(
                         self.pairwise_classifier[key_classifier].classes_()
@@ -185,9 +221,10 @@ class PredictBOPOs:
                     for l in range(3):
                         if l in presented_classes:
                             pairwise_probabilistic_predictions_ij[:, l] = (
-                                original_pairwise_probabilistic_predictions_ij[
-                                    :, presented_classes.index(l)
-                                ]
+                                # original_pairwise_probabilistic_predictions_ij[
+                                #     :, presented_classes.index(l)
+                                # ]
+                                pairwise_predict_proba[key_classifier][:, l]  # type: ignore
                             )
                     for n in range(n_test_instances):
 
@@ -204,7 +241,8 @@ class PredictBOPOs:
                             zero_indices = [
                                 ind
                                 for ind in range(3)
-                                if current_pairwise_probabilistic_predictions_ij[ind] == 0
+                                if current_pairwise_probabilistic_predictions_ij[ind]
+                                == 0
                             ]
                             current_pairwise_probabilistic_predictions_ij = [
                                 (
@@ -266,10 +304,14 @@ class PredictBOPOs:
                     for n in range(n_test_instances):
 
                         current_pairwise_probabilistic_predictions_ij = [
-                            probabilistic_predictions_i[n,1]*probabilistic_predictions_j[n,0],
-                            probabilistic_predictions_i[n,0]*probabilistic_predictions_j[n,1],
-                            probabilistic_predictions_i[n,0]*probabilistic_predictions_j[n,0],
-                            probabilistic_predictions_i[n,1]*probabilistic_predictions_j[n,1]
+                            probabilistic_predictions_i[n, 1]
+                            * probabilistic_predictions_j[n, 0],
+                            probabilistic_predictions_i[n, 0]
+                            * probabilistic_predictions_j[n, 1],
+                            probabilistic_predictions_i[n, 0]
+                            * probabilistic_predictions_j[n, 0],
+                            probabilistic_predictions_i[n, 1]
+                            * probabilistic_predictions_j[n, 1],
                         ]
 
                         # add a small regularization term if the probabilistic prediction is deterministic instead of probabilistic
@@ -283,7 +325,8 @@ class PredictBOPOs:
                             zero_indices = [
                                 ind
                                 for ind in range(4)
-                                if current_pairwise_probabilistic_predictions_ij[ind] == 0
+                                if current_pairwise_probabilistic_predictions_ij[ind]
+                                == 0
                             ]
                             current_pairwise_probabilistic_predictions_ij = [
                                 (
@@ -339,9 +382,14 @@ class PredictBOPOs:
                     for n in range(n_test_instances):
 
                         current_pairwise_probabilistic_predictions_ij = [
-                            probabilistic_predictions_i[n,1]*probabilistic_predictions_j[n,0],
-                            probabilistic_predictions_i[n,0]*probabilistic_predictions_j[n,1],
-                            probabilistic_predictions_i[n,0]*probabilistic_predictions_j[n,0] + probabilistic_predictions_i[n,1]*probabilistic_predictions_j[n,1]
+                            probabilistic_predictions_i[n, 1]
+                            * probabilistic_predictions_j[n, 0],
+                            probabilistic_predictions_i[n, 0]
+                            * probabilistic_predictions_j[n, 1],
+                            probabilistic_predictions_i[n, 0]
+                            * probabilistic_predictions_j[n, 0]
+                            + probabilistic_predictions_i[n, 1]
+                            * probabilistic_predictions_j[n, 1],
                         ]
 
                         # add a small regularization term if the probabilistic prediction is deterministic instead of probabilistic
@@ -355,7 +403,8 @@ class PredictBOPOs:
                             zero_indices = [
                                 ind
                                 for ind in range(3)
-                                if current_pairwise_probabilistic_predictions_ij[ind] == 0
+                                if current_pairwise_probabilistic_predictions_ij[ind]
+                                == 0
                             ]
                             current_pairwise_probabilistic_predictions_ij = [
                                 (
@@ -474,29 +523,3 @@ class PredictBOPOs:
         self.pairwise_classifier, self.calibrated_classifier, self.single_label_pair = (  # type: ignore
             self.base_classifier.pairwise_calibrated_classifier(X, Y)
         )
-
-
-#  These functions can be moved to another separate class
-#    def classifier_chains(self, *args, **kwargs):
-#        chains = [
-#            ClassifierChain(self.estimator, order="random", random_state=i)  # type: ignore
-#            for i in range(10)  # TODO: what is 10?
-#        ]
-#        # for chain in chains:
-#        #     chain.fit(X[train_index], Y[train_index])
-#
-#        # Y_pred_chains = np.array([chain.predict(X[test_index]) for chain in chains])
-#        # Y_pred_ensemble = Y_pred_chains.mean(axis=0)
-#        # predicted_Y = np.where(Y_pred_ensemble > 0.5, 1, 0)
-#
-#    def calibrated_label_ranking(self, *args, **kwargs):
-#        chains = [
-#            ClassifierChain(self.estimator, order="random", random_state=i)  # type: ignore
-#            for i in range(10)  # TODO: what is 10?
-#        ]
-#        # for chain in chains:
-#        #     chain.fit(X[train_index], Y[train_index])
-#
-#        # Y_pred_chains = np.array([chain.predict(X[test_index]) for chain in chains])
-#        # Y_pred_ensemble = Y_pred_chains.mean(axis=0)
-#        # predicted_Y = np.where(Y_pred_ensemble > 0.5, 1, 0)

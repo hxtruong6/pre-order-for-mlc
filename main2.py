@@ -10,6 +10,8 @@ import json
 import os
 import sys
 import time
+
+from joblib import Parallel, delayed
 from constants import RANDOM_STATE, BaseLearnerName, TargetMetric
 from evaluation_metric import EvaluationMetric
 
@@ -21,11 +23,8 @@ from utils.results_manager import ExperimentResults
 # add logging
 from logging import basicConfig, INFO, log, ERROR
 
-# basicConfig(level=INFO)
-basicConfig(level=ERROR)
-
-# sys.stdout = open(os.devnull, 'w')
-
+basicConfig(level=INFO)
+# basicConfig(level=ERROR)
 
 
 def update_results(
@@ -107,6 +106,7 @@ def process_dataset(
                         PreferenceOrder.PARTIAL_ORDER,
                     ]:
                         log(INFO, f"Preference order: {order_type}")
+                        train_time1 = time.time()
 
                         # Initialize the model with the base learner and the preference order
                         predict_BOPOs = PredictBOPOs(
@@ -116,22 +116,32 @@ def process_dataset(
 
                         # Train the model
                         predict_BOPOs.fit(X_train, Y_train)
+                        log(
+                            INFO,
+                            f"Total training time {(time.time() - train_time1)/1000} seconds",
+                        )
 
                         # log(INFO, f"PredictBOPOs: {predict_BOPOs}")
 
+                        predict_time1 = time.time()
                         probabilsitic_predictions = predict_BOPOs.predict_proba(
                             X_test, n_labels
                         )
 
-                        # Save indices_vector from predict_BOPOs
+                        log(
+                            INFO,
+                            f"Total prediction time {(time.time() - predict_time1)/1000} seconds",
+                        )
 
+                        # Save indices_vector from predict_BOPOs
+                        predict_tasks = []
                         for target_metric in [
                             TargetMetric.Hamming,
                             TargetMetric.Subset,
                         ]:
                             for height in [2, None]:
-                                predict_results = (
-                                    predict_BOPOs.predict_preference_orders(
+                                predict_tasks.append(
+                                    (
                                         probabilsitic_predictions,
                                         n_labels,
                                         n_instances,
@@ -140,6 +150,24 @@ def process_dataset(
                                     )
                                 )
 
+                        predict_order_time1 = time.time()
+
+                        predict_results_list = Parallel(n_jobs=-1)(
+                            delayed(predict_BOPOs.predict_preference_orders)(*task)
+                            for task in predict_tasks
+                        )
+                        log(
+                            INFO,
+                            f"Total preference order prediction time {(time.time() - predict_order_time1)/1000} seconds",
+                        )
+
+                        index_result = 0
+                        for target_metric in [
+                            TargetMetric.Hamming,
+                            TargetMetric.Subset,
+                        ]:
+                            for height in [2, None]:
+                                predict_results = predict_results_list[index_result]  # type: ignore
                                 update_results(
                                     results,
                                     Y_test,
@@ -153,6 +181,7 @@ def process_dataset(
                                     dataset_name,
                                     noisy_rate,
                                 )
+                                index_result += 1
 
                 if is_clr:
                     # Support CLR
@@ -192,9 +221,11 @@ def training(
     NUMBER_FOLDS,
     results_dir,
 ):
+    load_time1 = time.time()
     experience_dataset = Datasets4Experiments(data_path, data_files)
     experience_dataset.load_datasets()
 
+    print(f"Loading datasets time taken: {time.time() - load_time1} seconds")
     # Run for each dataset
     for dataset_index in range(experience_dataset.get_length()):
         dataset_name = experience_dataset.get_dataset_name(dataset_index)
@@ -239,7 +270,7 @@ def training(
                 base_learners,
                 dataset_name,
                 is_clr=True,
-            )
+            )  # type: ignore
 
             log(INFO, "Saving results for CLR")
             ExperimentResults.save_results(
@@ -438,6 +469,7 @@ def run_training():
     NUMBER_FOLDS = 5
 
     time1 = time.time()
+    log(INFO, f"Time taken: {time1} seconds")
 
     training(
         data_path,
@@ -450,7 +482,7 @@ def run_training():
     )
 
     time2 = time.time()
-    print(f"Time taken: {time2 - time1} seconds")
+    log(INFO, f"Time taken: {time2 - time1} seconds")
 
 
 # for a quick test

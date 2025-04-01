@@ -3,8 +3,9 @@ import numpy as np
 from numpy import array
 from cvxopt import matrix
 
-from constants import TargetMetric
 
+from constants import TargetMetric
+from utils.suppress import suppress_output, suppress_stderr
 
 class Search_BOPreOs:
     """
@@ -327,7 +328,10 @@ class Search_BOPreOs:
 
         for ind in range(len(vector)):
             c[ind, 0] = vector[ind]
-        (_, x) = ilp(matrix(c), matrix(G), matrix(h), matrix(A), matrix(b), I, B)
+
+        with suppress_output():
+            (_, x) = ilp(matrix(c), matrix(G), matrix(h), matrix(A), matrix(b), I, B)
+
         optX = array(x)
         #        for indX in indexEmpty:
         #            optX[indX,0] = 0
@@ -625,7 +629,8 @@ class Search_BOParOs:
         c = np.zeros((self.n_labels * (self.n_labels - 1) * 2, 1))
         for ind in range(len(vector)):
             c[ind, 0] = vector[ind]
-        (_, x) = ilp(matrix(c), matrix(G), matrix(h), matrix(A), matrix(b), I, B)
+        with suppress_output():
+            (_, x) = ilp(matrix(c), matrix(G), matrix(h), matrix(A), matrix(b), I, B)
         optX = array(x)
         #        for indX in indexEmpty:
         #            optX[indX,0] = 0

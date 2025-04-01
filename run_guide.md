@@ -19,3 +19,10 @@ Time taken: 22.96786594390869 seconds for emotions
 
 Time taken: 9.6 seconds for chd49
 Time taken: 10.604193925857544 seconds for emotions
+
+# Checkpoint 3
+
+Time taken: 7.495674133300781 seconds for chd49
+Time taken: 7.847771883010864 seconds for emotions
+
+# Checkpoint 4
