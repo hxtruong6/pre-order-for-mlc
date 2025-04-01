@@ -24,7 +24,7 @@ from logging import basicConfig, INFO, log, ERROR
 # basicConfig(level=INFO)
 basicConfig(level=ERROR)
 
-sys.stdout = open(os.devnull, 'w')
+# sys.stdout = open(os.devnull, 'w')
 
 
 
