@@ -12,7 +12,8 @@ import pandas as pd
 from utils.results_manager import ExperimentResults
 from evaluation_metric import EvaluationMetric, EvaluationMetricName
 
-basicConfig(level=INFO)
+# basicConfig(level=INFO)
+basicConfig(level=ERROR)
 
 
 class OrderType(Enum):

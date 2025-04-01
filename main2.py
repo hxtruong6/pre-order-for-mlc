@@ -7,6 +7,8 @@ Created on Mon Oct 23 20:54:40 2023
 
 import argparse
 import json
+import os
+import sys
 import time
 from constants import RANDOM_STATE, BaseLearnerName, TargetMetric
 from evaluation_metric import EvaluationMetric
@@ -17,9 +19,13 @@ from inference_models import PredictBOPOs, PreferenceOrder
 from utils.results_manager import ExperimentResults
 
 # add logging
-from logging import basicConfig, INFO, log
+from logging import basicConfig, INFO, log, ERROR
 
-basicConfig(level=INFO)
+# basicConfig(level=INFO)
+basicConfig(level=ERROR)
+
+sys.stdout = open(os.devnull, 'w')
+
 
 
 def update_results(
@@ -78,8 +84,6 @@ def process_dataset(
     )
 
     for base_learner_name in base_learners:
-        raise ValueError("Not implemented")
-
         # Run fold for each dataset and each noisy rate and repeat times
         for repeat_time in range(TOTAL_REPEAT_TIMES):
             log(INFO, f"Dataset: {dataset_index}, Repeat time: {repeat_time}")
@@ -419,19 +423,19 @@ def run_training():
 
     noisy_rates = [
         0.0,
-        # 0.1,
-        # 0.2,
-        # 0.3,
+        0.1,
+        0.2,
+        0.3,
     ]
     base_learners = [
         BaseLearnerName.RF,
-        # BaseLearnerName.XGBoost,
-        # BaseLearnerName.ETC,
-        # BaseLearnerName.LightGBM,
+        BaseLearnerName.XGBoost,
+        BaseLearnerName.ETC,
+        BaseLearnerName.LightGBM,
     ]
 
-    TOTAL_REPEAT_TIMES = 1
-    NUMBER_FOLDS = 2
+    TOTAL_REPEAT_TIMES = 5
+    NUMBER_FOLDS = 5
 
     time1 = time.time()
 

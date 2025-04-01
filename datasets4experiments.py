@@ -46,13 +46,13 @@ class Datasets4Experiments:
                     is_target_in_end = True
                     break
 
-            print(f"is_target_in_end: {is_target_in_end}")
+            # print(f"is_target_in_end: {is_target_in_end}")
 
             X, Y = self.preprocess_data(df, n_labels, is_target_in_end)
             df_name = file_name.split(".")[0]
 
-            print(f"X shape: {X.shape} | {X}")
-            print(f"Y shape: {Y.shape} | {Y}")
+            # print(f"X shape: {X.shape} | {X}")
+            # print(f"Y shape: {Y.shape} | {Y}")
 
             self.datasets.append((X, Y, df_name))
 
