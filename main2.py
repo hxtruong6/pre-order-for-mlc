@@ -114,11 +114,12 @@ def process_dataset(
                             preference_order=order_type,
                         )
 
+                        train_time1 = time.time()
                         # Train the model
                         predict_BOPOs.fit(X_train, Y_train)
                         log(
                             INFO,
-                            f"Total training time {(time.time() - train_time1)/1000} seconds",
+                            f"Training time: {(time.time() - train_time1)   } seconds",
                         )
 
                         # log(INFO, f"PredictBOPOs: {predict_BOPOs}")
@@ -130,7 +131,7 @@ def process_dataset(
 
                         log(
                             INFO,
-                            f"Total prediction time {(time.time() - predict_time1)/1000} seconds",
+                            f"Prediction time {(time.time() - predict_time1)    } seconds",
                         )
 
                         # Save indices_vector from predict_BOPOs
@@ -158,9 +159,10 @@ def process_dataset(
                         )
                         log(
                             INFO,
-                            f"Total preference order prediction time {(time.time() - predict_order_time1)/1000} seconds",
+                            f"Total preference order prediction time {(time.time() - predict_order_time1)} seconds",
                         )
 
+                        save_time1 = time.time()
                         index_result = 0
                         for target_metric in [
                             TargetMetric.Hamming,
@@ -183,8 +185,14 @@ def process_dataset(
                                 )
                                 index_result += 1
 
+                        log(
+                            INFO,
+                            f"Saving time {(time.time() - save_time1)} seconds",
+                        )
+
                 if is_clr:
                     # Support CLR
+                    clr_time1 = time.time()
                     clr = PredictBOPOs(
                         base_classifier_name=base_learner_name.value,  # --> Get classifier
                     )
@@ -192,9 +200,19 @@ def process_dataset(
                     #     f"X_train.shape: {X_train.shape}, Y_train.shape: {Y_train.shape}"
                     # )
                     clr.fit_CLR(X_train, Y_train)
+                    log(
+                        INFO,
+                        f"CLR Training time: {(time.time() - clr_time1)} seconds",
+                    )
                     # print(f"Predict CLR by: {clr.base_classifier.name}")
+                    predict_time1 = time.time()
                     predicted_Y, _ = clr.predict_CLR(X_test, n_labels)
+                    log(
+                        INFO,
+                        f"CLR Prediction time {(time.time() - predict_time1)} seconds",
+                    )
                     # print(f"predicted_Y.shape: {len(predicted_Y)}")
+                    save_time1 = time.time()
                     update_results(
                         clr_results,
                         Y_test,
@@ -207,6 +225,10 @@ def process_dataset(
                         None,
                         dataset_name,
                         noisy_rate,
+                    )
+                    log(
+                        INFO,
+                        f"CLR Saving time {(time.time() - save_time1)} seconds",
                     )
 
     return results, clr_results
@@ -225,7 +247,7 @@ def training(
     experience_dataset = Datasets4Experiments(data_path, data_files)
     experience_dataset.load_datasets()
 
-    print(f"Loading datasets time taken: {time.time() - load_time1} seconds")
+    log(INFO, f"Loading datasets time taken: {time.time() - load_time1} seconds")
     # Run for each dataset
     for dataset_index in range(experience_dataset.get_length()):
         dataset_name = experience_dataset.get_dataset_name(dataset_index)
@@ -233,12 +255,14 @@ def training(
             INFO,
             f"Dataset: {dataset_index}: {dataset_name}",
         )
+
         # Run for each noisy rate
         for noisy_rate in noisy_rates:
             log(INFO, f"Noisy rate: {noisy_rate}")
 
-            log(INFO, "Training for Preference Order")
+            # log(INFO, "Training for Preference Order")
 
+            time1 = time.time()
             res, _ = process_dataset(
                 experience_dataset,
                 dataset_index,
@@ -249,8 +273,11 @@ def training(
                 dataset_name,
                 is_clr=False,
             )
-
-            log(INFO, "Saving results for Preference Order")
+            log(
+                INFO,
+                f"Processing dataset time taken: {time.time() - time1} seconds",
+            )
+            # log(INFO, "Saving results for Preference Order")
 
             ExperimentResults.save_results(
                 res,
@@ -454,22 +481,21 @@ def run_training():
 
     noisy_rates = [
         0.0,
-        0.1,
-        0.2,
-        0.3,
+        # 0.1,
+        # 0.2,
+        # 0.3,
     ]
     base_learners = [
         BaseLearnerName.RF,
-        BaseLearnerName.XGBoost,
-        BaseLearnerName.ETC,
-        BaseLearnerName.LightGBM,
+        # BaseLearnerName.XGBoost,
+        # BaseLearnerName.ETC,
+        # BaseLearnerName.LightGBM,
     ]
 
-    TOTAL_REPEAT_TIMES = 5
-    NUMBER_FOLDS = 5
+    TOTAL_REPEAT_TIMES = 1
+    NUMBER_FOLDS = 2
 
     time1 = time.time()
-    log(INFO, f"Time taken: {time1} seconds")
 
     training(
         data_path,
@@ -482,7 +508,7 @@ def run_training():
     )
 
     time2 = time.time()
-    log(INFO, f"Time taken: {time2 - time1} seconds")
+    log(INFO, f"Total time taken: {time2 - time1} seconds")
 
 
 # for a quick test
