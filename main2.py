@@ -188,9 +188,9 @@ def process_dataset(
                     clr = PredictBOPOs(
                         base_classifier_name=base_learner_name.value,  # --> Get classifier
                     )
-                    print(
-                        f"X_train.shape: {X_train.shape}, Y_train.shape: {Y_train.shape}"
-                    )
+                    # print(
+                    #     f"X_train.shape: {X_train.shape}, Y_train.shape: {Y_train.shape}"
+                    # )
                     clr.fit_CLR(X_train, Y_train)
                     # print(f"Predict CLR by: {clr.base_classifier.name}")
                     predicted_Y, _ = clr.predict_CLR(X_test, n_labels)

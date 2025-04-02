@@ -26,20 +26,20 @@ run_and_log() {
     echo "Finished for dataset: $dataset" # >> $log_file
     echo "===================="           # >> $log_file
 
-    # Split the log file into smaller chunks (e.g., 10MB each)
-    split -b 10M $log_file ${log_file}_part_
+    # # Split the log file into smaller chunks (e.g., 10MB each)
+    # split -b 10M $log_file ${log_file}_part_
 
-    # Optional: Remove the original log file after splitting
-    rm $log_file
+    # # Optional: Remove the original log file after splitting
+    # rm $log_file
 }
 
 # Run the commands for each dataset
-run_and_log "chd_49"
+# run_and_log "chd_49"
 run_and_log "emotions"
 run_and_log "VirusPseAAC"
 run_and_log "GpositivePseAAC"
+run_and_log "scene"
 run_and_log "water-quality"
 run_and_log "PlantPseAAC"
 run_and_log "yeast"
-run_and_log "scene"
 run_and_log "HumanPseAAC"
