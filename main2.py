@@ -114,12 +114,11 @@ def process_dataset(
                             preference_order=order_type,
                         )
 
-                        train_time1 = time.time()
                         # Train the model
                         predict_BOPOs.fit(X_train, Y_train)
                         log(
                             INFO,
-                            f"Training time: {(time.time() - train_time1)   } seconds",
+                            f"Training time: {(time.time() - train_time1)} seconds",
                         )
 
                         # log(INFO, f"PredictBOPOs: {predict_BOPOs}")
@@ -486,10 +485,10 @@ def run_training():
         # 0.3,
     ]
     base_learners = [
-        BaseLearnerName.RF,
+        # BaseLearnerName.RF,
         # BaseLearnerName.XGBoost,
         # BaseLearnerName.ETC,
-        # BaseLearnerName.LightGBM,
+        BaseLearnerName.LightGBM,
     ]
 
     TOTAL_REPEAT_TIMES = 1

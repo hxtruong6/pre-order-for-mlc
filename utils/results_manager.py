@@ -28,6 +28,9 @@ class ResultProcessor:
             if col in df.columns:
                 df[col] = df[col].apply(ResultProcessor.convert_string_to_array)  # type: ignore
 
+        # convert to int for Y_BOPOs
+        df["Y_BOPOs"] = df["Y_BOPOs"].apply(lambda x: x.astype(int))
+
         return df
 
 

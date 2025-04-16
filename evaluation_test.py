@@ -1,5 +1,6 @@
 import argparse
 import csv
+import json
 from logging import ERROR, INFO, log, basicConfig
 import random
 import numpy as np
@@ -118,9 +119,9 @@ class EvaluationFramework:
                 else:
                     raise ValueError(f"Unknown metric: {metric_name}")
 
-            print(
-                f"*** Evaluating metric: {metric_name} for {prediction_type} {'\t| OrderType' if order_type is not None else ''} {order_type.value if order_type is not None else ''}"
-            )
+            # print(
+            #     f"*** Evaluating metric: {metric_name} for {prediction_type} {'\t| OrderType' if order_type is not None else ''} {order_type.value if order_type is not None else ''}"
+            # )
             if prediction_type == PredictionType.BINARY_VECTOR:
                 if metric_name == EvaluationMetricName.HAMMING_ACCURACY:
                     return self.evaluation_metric.hamming_accuracy(
@@ -136,11 +137,11 @@ class EvaluationFramework:
                 if order_type == OrderType.PRE_ORDER:
                     if metric_name == EvaluationMetricName.HAMMING_ACCURACY_PRE_ORDER:
                         return self.evaluation_metric.hamming_accuracy_PRE_ORDER(
-                            predictions, true_labels, indices_vector, bopos
+                            true_labels, indices_vector, bopos
                         )
                     elif metric_name == EvaluationMetricName.SUBSET0_1_PRE_ORDER:
                         return self.evaluation_metric.subset0_1_accuracy_PRE_ORDER(
-                            predictions, true_labels, indices_vector, bopos
+                            true_labels, indices_vector, bopos
                         )
                 elif order_type == OrderType.PARTIAL_ORDER:
                     if (
@@ -148,11 +149,11 @@ class EvaluationFramework:
                         == EvaluationMetricName.HAMMING_ACCURACY_PARTIAL_ORDER
                     ):
                         return self.evaluation_metric.hamming_accuracy_PARTIAL_ORDER(
-                            predictions, true_labels, indices_vector, bopos
+                            true_labels, indices_vector, bopos
                         )
                     elif metric_name == EvaluationMetricName.SUBSET0_1_PARTIAL_ORDER:
                         return self.evaluation_metric.subset0_1_accuracy_PARTIAL_ORDER(
-                            predictions, true_labels, indices_vector, bopos
+                            true_labels, indices_vector, bopos
                         )
             else:
                 raise ValueError(f"Unknown prediction type: {prediction_type}")
@@ -285,7 +286,6 @@ class EvaluationFramework:
                     dataset_name,
                     base_learner_name,
                 )
-                # print("data_df", data_df)
 
                 # With each evaluation metric, we need to get the data values
                 for prediction_type in PredictionType:

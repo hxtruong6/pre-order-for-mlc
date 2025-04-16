@@ -1,3 +1,4 @@
+import os
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.ensemble import GradientBoostingClassifier
@@ -22,7 +23,26 @@ class Estimator:
         elif self.name == BaseLearnerName.XGBoost.value:
             return GradientBoostingClassifier(random_state=RANDOM_STATE)
         elif self.name == BaseLearnerName.LightGBM.value:
-            return LGBMClassifier(random_state=RANDOM_STATE, n_jobs=16, verbose=-1)
+            number_of_cores: int = (
+                os.cpu_count() if os.cpu_count() is not None else 1
+            )  # type: ignore
+
+            return LGBMClassifier(
+                random_state=RANDOM_STATE,
+                n_jobs=int(number_of_cores - 1),
+                verbose=-1,
+                num_leaves=20,  # Moderate complexity
+                max_depth=6,
+                bagging_fraction=0.9,
+                feature_fraction=0.8,
+                learning_rate=0.1,
+                n_estimators=100,
+                min_child_samples=5,  # Relaxed for small datasets
+                min_child_weight=0.0001,  # Allow splits with low Hessian
+                min_split_gain=0.01,  # Allow minimal gain splits
+                is_unbalance=True,  # Handle label imbalance
+                device="cpu",
+            )
         else:
             raise ValueError(f"Unknown base learner: {self.name}")
 

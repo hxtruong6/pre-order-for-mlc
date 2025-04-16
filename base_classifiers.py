@@ -234,7 +234,7 @@ class BaseClassifiers:
         # OPTIMIZE:
         log(
             INFO,
-            f"\t - Training for {len(dataset_classifier.keys())} pairs with {self.name}",
+            f"\t - Training {len(dataset_classifier.keys())} pairs with {self.name}",
         )
         # run parraellly fit for each pair of labels
         classifiers = Parallel(n_jobs=-1)(
