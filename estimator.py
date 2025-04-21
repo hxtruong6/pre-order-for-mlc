@@ -7,7 +7,14 @@ from numpy.typing import NDArray
 from lightgbm import LGBMClassifier
 
 from constants import RANDOM_STATE, BaseLearnerName
+from logging import basicConfig, INFO, log
 
+basicConfig(level=INFO) # type: ignore
+
+number_of_cores: int = (
+                os.cpu_count() if os.cpu_count() is not None else 1
+            )  # type: ignore
+# log(INFO, f"Number of cores: {number_of_cores}")
 
 class Estimator:
     def __init__(self, name: str):
@@ -23,13 +30,10 @@ class Estimator:
         elif self.name == BaseLearnerName.XGBoost.value:
             return GradientBoostingClassifier(random_state=RANDOM_STATE)
         elif self.name == BaseLearnerName.LightGBM.value:
-            number_of_cores: int = (
-                os.cpu_count() if os.cpu_count() is not None else 1
-            )  # type: ignore
-
             return LGBMClassifier(
                 random_state=RANDOM_STATE,
                 n_jobs=int(number_of_cores - 1),
+                # n_jobs=16,
                 verbose=-1,
                 num_leaves=20,  # Moderate complexity
                 max_depth=6,

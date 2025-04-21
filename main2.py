@@ -83,8 +83,12 @@ def process_dataset(
     )
 
     for base_learner_name in base_learners:
+        repeat_times = TOTAL_REPEAT_TIMES
+        if base_learner_name == BaseLearnerName.LightGBM:
+            repeat_times = 1
+
         # Run fold for each dataset and each noisy rate and repeat times
-        for repeat_time in range(TOTAL_REPEAT_TIMES):
+        for repeat_time in range(repeat_times):
             log(INFO, f"Dataset: {dataset_index}, Repeat time: {repeat_time}")
             for fold, (X_train, Y_train, X_test, Y_test) in enumerate(
                 experiment_dataset.kfold_split_with_noise(
@@ -479,20 +483,20 @@ def run_training():
         raise ValueError(f"Dataset {args.dataset} not found")
 
     noisy_rates = [
-        0.0,
+        # 0.0,
         # 0.1,
         # 0.2,
-        # 0.3,
+        0.3,
     ]
     base_learners = [
-        # BaseLearnerName.RF,
-        # BaseLearnerName.XGBoost,
-        # BaseLearnerName.ETC,
-        BaseLearnerName.LightGBM,
+        # BaseLearnerName.LightGBM,
+        BaseLearnerName.RF,
+        BaseLearnerName.XGBoost,
+        BaseLearnerName.ETC,
     ]
 
-    TOTAL_REPEAT_TIMES = 1
-    NUMBER_FOLDS = 2
+    TOTAL_REPEAT_TIMES = 5
+    NUMBER_FOLDS = 5
 
     time1 = time.time()
 
