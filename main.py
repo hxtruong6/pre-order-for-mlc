@@ -486,17 +486,17 @@ def run_training():
         0.0,
         0.1,
         0.2,
-        # 0.3,
+        0.3,
     ]
     base_learners = [
-        # BaseLearnerName.LightGBM,
-        BaseLearnerName.RF,
-        BaseLearnerName.XGBoost,
-        BaseLearnerName.ETC,
+        BaseLearnerName.LightGBM,
+        # BaseLearnerName.RF,
+        # BaseLearnerName.XGBoost,
+        # BaseLearnerName.ETC,
     ]
 
-    TOTAL_REPEAT_TIMES = 5
-    NUMBER_FOLDS = 5
+    TOTAL_REPEAT_TIMES = 1
+    NUMBER_FOLDS = 3
 
     time1 = time.time()
 
