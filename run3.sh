@@ -1,7 +1,7 @@
 #!/bin/bash
 
-results_dir="results/20250428"
-log_dir="logs/20250428"
+results_dir="results/20250426"
+log_dir="logs/20250426"
 
 # Create the results directory if it doesn't exist
 if [ ! -d "$results_dir" ]; then
@@ -39,7 +39,7 @@ run_and_log() {
 # run_and_log "VirusPseAAC"
 # run_and_log "GpositivePseAAC"
 # run_and_log "PlantPseAAC"
-# run_and_log "water-quality"
+run_and_log "water-quality"
 # run_and_log "scene"
 # run_and_log "yeast"
-run_and_log "HumanPseAAC"
+# run_and_log "HumanPseAAC"

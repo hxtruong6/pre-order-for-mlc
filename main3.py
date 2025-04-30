@@ -484,9 +484,9 @@ def run_training():
 
     noisy_rates = [
         # 0.0,
-        0.1,
-        # 0.2,
-        # 0.3,
+        # 0.1,
+        0.2,
+        0.3,
     ]
     base_learners = [
         BaseLearnerName.LightGBM,
@@ -496,7 +496,7 @@ def run_training():
     ]
 
     TOTAL_REPEAT_TIMES = 1
-    NUMBER_FOLDS = 2
+    NUMBER_FOLDS = 3
 
     time1 = time.time()
 
