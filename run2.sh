@@ -1,7 +1,7 @@
 #!/bin/bash
 
-results_dir="results/20250428"
-log_dir="logs/20250428"
+results_dir="results/20250507_1"
+log_dir="logs/20250507_1"
 
 # Create the results directory if it doesn't exist
 if [ ! -d "$results_dir" ]; then
@@ -21,7 +21,7 @@ run_and_log() {
 
     echo "Running for dataset: $dataset" # >> $log_file
     echo "===================="          # >> $log_file
-    python main3.py --dataset "$dataset" --results_dir "$results_dir" >>$log_file 2>&1
+    python main2.py --dataset "$dataset" --results_dir "$results_dir" >>$log_file 2>&1
     python evaluation_test.py --dataset "$dataset" --results_dir "$results_dir" >>$log_file 2>&1
     echo "Finished for dataset: $dataset" # >> $log_file
     echo "===================="           # >> $log_file
