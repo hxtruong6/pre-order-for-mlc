@@ -39,7 +39,15 @@ class ExperimentResults:
     """Class to handle experiment results and metrics."""
 
     @staticmethod
-    def save_results(results, dataset_name, noisy_rate, results_dir, is_clr=False):
+    def save_results(
+        results,
+        dataset_name,
+        noisy_rate,
+        results_dir,
+        is_clr=False,
+        is_br=False,
+        is_cc=False,
+    ):
         """
         Saves the results dictionary to both pickle and CSV formats.
 
@@ -47,13 +55,29 @@ class ExperimentResults:
             results: List of dictionaries containing experiment results
             dataset_name: Name of the dataset
             noisy_rate: Noise rate used in the experiment
+            results_dir: Directory to save results
+            is_clr: Whether results are from CLR
+            is_br: Whether results are from Binary Relevance
+            is_cc: Whether results are from Classifier Chain
         """
         # Create results directory if it doesn't exist
         Path(results_dir).mkdir(parents=True, exist_ok=True)
 
         # Clean filename
         dataset_name = dataset_name.lower().replace(" ", "_")
-        base_filename = f"{results_dir}/dataset_{dataset_name}_noisy_{noisy_rate}{'_clr' if is_clr else ''}"
+
+        # Determine suffix based on method type
+        suffix = ""
+        if is_clr:
+            suffix = "_clr"
+        elif is_br:
+            suffix = "_br"
+        elif is_cc:
+            suffix = "_cc"
+
+        base_filename = (
+            f"{results_dir}/dataset_{dataset_name}_noisy_{noisy_rate}{suffix}"
+        )
 
         # Save as pickle for exact Python object preservation
         with open(f"{base_filename}.pkl", "wb") as f:
@@ -66,19 +90,35 @@ class ExperimentResults:
         log(INFO, f"Results saved to {base_filename}.pkl and {base_filename}.csv")
 
     @staticmethod
-    def load_results(path, dataset_name, noisy_rate, is_clr=False):
+    def load_results(
+        path, dataset_name, noisy_rate, is_clr=False, is_br=False, is_cc=False
+    ):
         """
         Loads results from pickle file.
 
         Args:
+            path: Path to results directory
             dataset_name: Name of the dataset
             noisy_rate: Noise rate used in the experiment
+            is_clr: Whether results are from CLR
+            is_br: Whether results are from Binary Relevance
+            is_cc: Whether results are from Classifier Chain
 
         Returns:
             List of dictionaries containing experiment results
         """
         dataset_name = dataset_name.lower().replace(" ", "_")
-        filename = f"{path}/dataset_{dataset_name}_noisy_{noisy_rate}{'_clr' if is_clr else ''}.pkl"
+
+        # Determine suffix based on method type
+        suffix = ""
+        if is_clr:
+            suffix = "_clr"
+        elif is_br:
+            suffix = "_br"
+        elif is_cc:
+            suffix = "_cc"
+
+        filename = f"{path}/dataset_{dataset_name}_noisy_{noisy_rate}{suffix}.pkl"
 
         log(INFO, f"Loading results from {filename}")
 

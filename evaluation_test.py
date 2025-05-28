@@ -83,16 +83,27 @@ class EvaluationFramework:
         self.results: Dict[str, Dict[str, Dict[str, Any]]] = {}
         self.evaluation_metric = EvaluationMetric()
 
-    def load_results(self, dataset_name: str, noisy_rate: float, is_clr=False):
-        """Load results from pickle file and process predictions."""
-        results = ExperimentResults.load_results(
-            self.results_dir,
-            dataset_name,
-            noisy_rate,
-            is_clr,
-        )
-        log(INFO, f"Loaded results for {dataset_name} with shape {results.shape}")
-        self.df = results
+    def load_results(
+        self,
+        dataset_name: str,
+        noisy_rate: float,
+        is_clr=False,
+        is_br=False,
+        is_cc=False,
+    ):
+        """Load results from file"""
+        try:
+            self.df = ExperimentResults.load_results(
+                self.results_dir,
+                dataset_name,
+                noisy_rate,
+                is_clr=is_clr,
+                is_br=is_br,
+                is_cc=is_cc,
+            )
+        except Exception as e:
+            log(ERROR, f"Failed to load results: {str(e)}")
+            raise
 
     def evaluate_metric(
         self,
@@ -102,12 +113,34 @@ class EvaluationFramework:
         true_labels: np.ndarray,
         indices_vector: np.ndarray | None,
         bopos: np.ndarray | None,
-        is_clr: bool = False,
         order_type: OrderType | None = None,
+        is_clr: bool = False,
+        is_br: bool = False,
+        is_cc: bool = False,
     ) -> float:  # type: ignore
         """Calculate specific evaluation metric."""
         try:
-            if is_clr:
+            if is_br:
+                if metric_name == EvaluationMetricName.HAMMING_ACCURACY:
+                    return self.evaluation_metric.hamming_accuracy(
+                        predictions, true_labels
+                    )
+                elif metric_name == EvaluationMetricName.SUBSET0_1:
+                    return self.evaluation_metric.subset0_1(predictions, true_labels)
+                elif metric_name == EvaluationMetricName.F1:
+                    return self.evaluation_metric.f1(predictions, true_labels)
+                else:
+                    raise ValueError(f"Unknown metric: {metric_name}")
+            elif is_cc:
+                if metric_name == EvaluationMetricName.HAMMING_ACCURACY:
+                    return self.evaluation_metric.hamming_accuracy(
+                        predictions, true_labels
+                    )
+                elif metric_name == EvaluationMetricName.SUBSET0_1:
+                    return self.evaluation_metric.subset0_1(predictions, true_labels)
+                else:
+                    raise ValueError(f"Unknown metric: {metric_name}")
+            elif is_clr:
                 if metric_name == EvaluationMetricName.HAMMING_ACCURACY:
                     return self.evaluation_metric.hamming_accuracy(
                         predictions, true_labels
@@ -202,23 +235,6 @@ class EvaluationFramework:
                 log(INFO, f"Fold: {fold}")
                 df2 = df1[(df1["repeat_time"] == repeat_time) & (df1["fold"] == fold)]
 
-                # print(
-                #     "index",
-                #     df2["indices_vector"].values[0],
-                #     np.array(df2["indices_vector"].values[0]).shape,
-                # )
-                # print(
-                #     "bopo",
-                #     np.array(df2["Y_BOPOs"].values[0]),
-                #     np.array(df2["Y_BOPOs"].values[0]).shape,
-                # )
-                # print(
-                #     "pred",
-                #     np.array(df2["Y_predicted"].values[0]),
-                #     np.array(df2["Y_predicted"].values[0]).shape,
-                # )
-                # print("test", df2["Y_test"].values[0])
-
                 result_folds.append(
                     self.evaluate_metric(
                         metric_name=eval_metric,
@@ -227,12 +243,11 @@ class EvaluationFramework:
                         true_labels=df2["Y_test"].values[0],  # type: ignore
                         indices_vector=df2["indices_vector"].values[0],  # type: ignore
                         bopos=df2["Y_BOPOs"].values[0],  # type: ignore
-                        is_clr=False,
                         order_type=order_type,
+                        is_clr=False,
                     )
                 )
 
-        # print(result_folds, "result_folds")
         res = self.aggregate_results(result_folds)
         return res
 
@@ -453,6 +468,164 @@ class EvaluationFramework:
             )
             raise
 
+    def evaluate_dataset_br(self, dataset_name: str, noisy_rate: float):
+        """
+        Evaluate results for Binary Relevance.
+
+        Args:
+            dataset_name: Name of the dataset
+            noisy_rate: Noise rate used in the experiment
+        """
+        try:
+            log(
+                INFO,
+                f"Processing BR results for {dataset_name} with noise rate {noisy_rate}",
+            )
+
+            self.eval_results = []
+
+            for base_learner_name in self.df["base_learner_name"].unique():
+                log(INFO, f"Processing results for {base_learner_name}")
+
+                # Get the data values
+                data_df = self.get_data_df(
+                    dataset_name,
+                    base_learner_name,
+                )
+
+                # With each evaluation metric, we need to get the data values
+                for eval_metric in [
+                    EvaluationMetricName.HAMMING_ACCURACY,
+                    EvaluationMetricName.SUBSET0_1,
+                    EvaluationMetricName.F1,
+                ]:
+                    log(INFO, f"Evaluation metric: {eval_metric}")
+
+                    res = self._evaluate_br(
+                        data_df,
+                        data_df,
+                        eval_metric,
+                    )
+                    # Add the results to the evaluation dataframe
+                    self.eval_results.append(
+                        {
+                            "Base_Learner": base_learner_name,
+                            "Algorithm": "BR",
+                            "Metric": eval_metric.value,
+                            "Mean": res["mean"],
+                            "Std": res["std"],
+                        },
+                    )
+
+        except Exception as e:
+            log(
+                ERROR,
+                f"Evaluation failed for {dataset_name}: {str(e)}",
+                exc_info=True,
+            )
+            raise
+
+    def _evaluate_br(self, data_df, df1, eval_metric):
+        """Helper method to evaluate BR results"""
+        result_folds = []
+        for repeat_time in data_df["repeat_time"].unique():
+            log(INFO, f"Repeat time: {repeat_time}")
+
+            for fold in data_df["fold"].unique():
+                log(INFO, f"Fold: {fold}")
+                df2 = df1[(df1["repeat_time"] == repeat_time) & (df1["fold"] == fold)]
+
+                result_folds.append(
+                    self.evaluate_metric(
+                        metric_name=eval_metric,
+                        predictions=df2["Y_predicted"].values[0],  # type: ignore
+                        true_labels=df2["Y_test"].values[0],  # type: ignore
+                        is_br=True,
+                    )
+                )
+
+        res = self.aggregate_results(result_folds)
+        return res
+
+    def evaluate_dataset_cc(self, dataset_name: str, noisy_rate: float):
+        """
+        Evaluate results for Classifier Chain.
+
+        Args:
+            dataset_name: Name of the dataset
+            noisy_rate: Noise rate used in the experiment
+        """
+        try:
+            log(
+                INFO,
+                f"Processing CC results for {dataset_name} with noise rate {noisy_rate}",
+            )
+
+            self.eval_results = []
+
+            for base_learner_name in self.df["base_learner_name"].unique():
+                log(INFO, f"Processing results for {base_learner_name}")
+
+                # Get the data values
+                data_df = self.get_data_df(
+                    dataset_name,
+                    base_learner_name,
+                )
+
+                # With each evaluation metric, we need to get the data values
+                for eval_metric in [
+                    EvaluationMetricName.HAMMING_ACCURACY,
+                    EvaluationMetricName.SUBSET0_1,
+                    EvaluationMetricName.F1,
+                ]:
+                    log(INFO, f"Evaluation metric: {eval_metric}")
+
+                    res = self._evaluate_cc(
+                        data_df,
+                        data_df,
+                        eval_metric,
+                    )
+                    # Add the results to the evaluation dataframe
+                    self.eval_results.append(
+                        {
+                            "Base_Learner": base_learner_name,
+                            "Algorithm": "CC",
+                            "Metric": eval_metric.value,
+                            "Mean": res["mean"],
+                            "Std": res["std"],
+                        },
+                    )
+
+        except Exception as e:
+            log(
+                ERROR,
+                f"Evaluation failed for {dataset_name}: {str(e)}",
+                exc_info=True,
+            )
+            raise
+
+    def _evaluate_cc(self, data_df, df1, eval_metric):
+        """Helper method to evaluate CC results"""
+        result_folds = []
+        for repeat_time in data_df["repeat_time"].unique():
+            log(INFO, f"Repeat time: {repeat_time}")
+
+            for fold in data_df["fold"].unique():
+                log(INFO, f"Fold: {fold}")
+                df2 = df1[(df1["repeat_time"] == repeat_time) & (df1["fold"] == fold)]
+
+                result_folds.append(
+                    self.evaluate_metric(
+                        metric_name=eval_metric,
+                        predictions=df2["Y_predicted"].values[0],  # type: ignore
+                        true_labels=df2["Y_test"].values[0],  # type: ignore
+                        is_cc=True,
+                    )
+                )
+
+        res = self.aggregate_results(result_folds)
+        return res
+
     def _validate_shapes(
         self, predictions: np.ndarray, true_labels: np.ndarray, algo_id: str
     ) -> bool:
@@ -510,7 +683,6 @@ class EvaluationFramework:
 
 
 def main():
-
     arg = argparse.ArgumentParser()
     arg.add_argument("--dataset", type=str)
     arg.add_argument("--results_dir", type=str)
@@ -542,22 +714,36 @@ def main():
 
     for noisy_rate in noisy_rates:
         try:
+            # Evaluate BOPOs
             evaluator.load_results(dataset_name, noisy_rate)
-            # Evaluate dataset
             evaluator.evaluate_dataset(dataset_name, noisy_rate)
-
-            # Save results
             output_base = f"{results_dir}/evaluation_{dataset_name}_noisy_{noisy_rate}"
             evaluator.save_results(output_base)
 
+            # Evaluate CLR
             log(INFO, "Start for CLR:")
-
-            # For clr
             evaluator.load_results(dataset_name, noisy_rate, is_clr=True)
             evaluator.evaluate_dataset_clr(dataset_name, noisy_rate)
-
             output_base = (
                 f"{results_dir}/evaluation_{dataset_name}_noisy_{noisy_rate}_clr"
+            )
+            evaluator.save_results(output_base)
+
+            # Evaluate BR
+            log(INFO, "Start for BR:")
+            evaluator.load_results(dataset_name, noisy_rate, is_br=True)
+            evaluator.evaluate_dataset_br(dataset_name, noisy_rate)
+            output_base = (
+                f"{results_dir}/evaluation_{dataset_name}_noisy_{noisy_rate}_br"
+            )
+            evaluator.save_results(output_base)
+
+            # Evaluate CC
+            log(INFO, "Start for CC:")
+            evaluator.load_results(dataset_name, noisy_rate, is_cc=True)
+            evaluator.evaluate_dataset_cc(dataset_name, noisy_rate)
+            output_base = (
+                f"{results_dir}/evaluation_{dataset_name}_noisy_{noisy_rate}_cc"
             )
             evaluator.save_results(output_base)
 

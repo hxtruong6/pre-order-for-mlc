@@ -2,9 +2,10 @@ from logging import INFO, log
 from joblib import Parallel, delayed
 import numpy as np
 from enum import Enum
+from sklearn.multioutput import MultiOutputClassifier, ClassifierChain
 
 from base_classifiers import BaseClassifiers
-from constants import BaseLearnerName, TargetMetric
+from constants import BaseLearnerName, TargetMetric, RANDOM_STATE
 from estimator import Estimator
 from searching_algorithms import Search_BOPreOs, Search_BOParOs
 
@@ -44,6 +45,11 @@ class PredictBOPOs:
             # 1_3: 0
             # 1_4: None
         }
+
+        # Add new attributes for BR and CC
+        self.br_classifiers: dict[str, Estimator] = {}  # Binary Relevance classifiers
+        self.cc_classifiers: dict[str, Estimator] = {}  # Classifier Chain classifiers
+        self.cc_order: list[int] = []  # Order of labels for Classifier Chain
 
     def predict_preference_orders(
         self,
@@ -253,7 +259,7 @@ class PredictBOPOs:
                                 for x in current_pairwise_probabilistic_predictions_ij
                             ]
                         for l in range(3):
-                            #                            key_pairwise_probabilsitic_predictions = "%i_%i_%i_%i" % (i, j, n,l)
+                            #                            key_pairwise_probabilistic_predictions = "%i_%i_%i_%i" % (i, j, n,l)
                             pairwise_probabilistic_predictions[f"{i}_{j}_{n}_{l}"] = (
                                 current_pairwise_probabilistic_predictions_ij[l]
                             )
@@ -523,3 +529,82 @@ class PredictBOPOs:
         self.pairwise_classifier, self.calibrated_classifier, self.single_label_pair = (  # type: ignore
             self.base_classifier.pairwise_calibrated_classifier(X, Y)
         )
+
+    def fit_BR(self, X, Y):
+        """Train Binary Relevance model using scikit-learn's MultiOutputClassifier
+
+        Args:
+            X: Training features
+            Y: Training labels
+        """
+        log(INFO, "Training Binary Relevance model")
+        n_labels = Y.shape[1]
+
+        # Create base classifier
+        base_clf = self.base_classifier.get_classifier()  # type: ignore
+
+        # Create MultiOutputClassifier
+        self.br_classifier = MultiOutputClassifier(base_clf)
+
+        # Train the model
+        self.br_classifier.fit(X, Y)
+
+        log(INFO, "Binary Relevance training completed")
+
+    def predict_BR(self, X, n_labels):
+        """Predict using Binary Relevance
+
+        Args:
+            X: Test features
+            n_labels: Number of labels
+
+        Returns:
+            tuple: (predicted_Y, None) to match CLR interface
+        """
+        # Get predictions from MultiOutputClassifier
+        predicted_Y = self.br_classifier.predict(X)
+        return (
+            predicted_Y.tolist() if hasattr(predicted_Y, "tolist") else predicted_Y
+        ), None
+
+    def fit_CC(self, X, Y):
+        """Train Classifier Chain model using scikit-learn's ClassifierChain
+
+        Args:
+            X: Training features
+            Y: Training labels
+        """
+        log(INFO, "Training Classifier Chain model")
+        n_labels = Y.shape[1]
+
+        # Create base classifier
+        base_clf = self.base_classifier.get_classifier()  # type: ignore
+
+        # Create ClassifierChain with random order
+        self.cc_classifier = ClassifierChain(
+            base_clf, order="random", random_state=RANDOM_STATE
+        )
+
+        # Train the model
+        self.cc_classifier.fit(X, Y)
+
+        # Store the order for reference
+        self.cc_order = self.cc_classifier.order_
+
+        log(INFO, "Classifier Chain training completed")
+
+    def predict_CC(self, X, n_labels):
+        """Predict using Classifier Chain
+
+        Args:
+            X: Test features
+            n_labels: Number of labels
+
+        Returns:
+            tuple: (predicted_Y, None) to match CLR interface
+        """
+        # Get predictions from ClassifierChain
+        predicted_Y = self.cc_classifier.predict(X)
+        return (
+            predicted_Y.tolist() if hasattr(predicted_Y, "tolist") else predicted_Y
+        ), None

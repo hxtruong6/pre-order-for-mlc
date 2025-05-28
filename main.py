@@ -73,9 +73,13 @@ def process_dataset(
     base_learners: list[BaseLearnerName],
     dataset_name: str,
     is_clr: bool,
+    is_br: bool = False,
+    is_cc: bool = False,
 ):
     results: list[dict] = []
     clr_results: list[dict] = []
+    br_results: list[dict] = []
+    cc_results: list[dict] = []
 
     log(
         INFO,
@@ -104,7 +108,7 @@ def process_dataset(
                     INFO,
                     f"Fold: {fold}/{NUMBER_FOLDS} - {noisy_rate}",
                 )
-                if not is_clr:
+                if not is_clr and not is_br and not is_cc:
                     for order_type in [
                         PreferenceOrder.PRE_ORDER,
                         PreferenceOrder.PARTIAL_ORDER,
@@ -125,8 +129,6 @@ def process_dataset(
                             f"Training time: {(time.time() - train_time1)} seconds",
                         )
 
-                        # log(INFO, f"PredictBOPOs: {predict_BOPOs}")
-
                         predict_time1 = time.time()
                         probabilsitic_predictions = predict_BOPOs.predict_proba(
                             X_test, n_labels
@@ -134,7 +136,7 @@ def process_dataset(
 
                         log(
                             INFO,
-                            f"Prediction time {(time.time() - predict_time1)    } seconds",
+                            f"Prediction time {(time.time() - predict_time1)} seconds",
                         )
 
                         # Save indices_vector from predict_BOPOs
@@ -199,22 +201,17 @@ def process_dataset(
                     clr = PredictBOPOs(
                         base_classifier_name=base_learner_name.value,  # --> Get classifier
                     )
-                    # print(
-                    #     f"X_train.shape: {X_train.shape}, Y_train.shape: {Y_train.shape}"
-                    # )
                     clr.fit_CLR(X_train, Y_train)
                     log(
                         INFO,
                         f"CLR Training time: {(time.time() - clr_time1)} seconds",
                     )
-                    # print(f"Predict CLR by: {clr.base_classifier.name}")
                     predict_time1 = time.time()
                     predicted_Y, _ = clr.predict_CLR(X_test, n_labels)
                     log(
                         INFO,
                         f"CLR Prediction time {(time.time() - predict_time1)} seconds",
                     )
-                    # print(f"predicted_Y.shape: {len(predicted_Y)}")
                     save_time1 = time.time()
                     update_results(
                         clr_results,
@@ -234,7 +231,79 @@ def process_dataset(
                         f"CLR Saving time {(time.time() - save_time1)} seconds",
                     )
 
-    return results, clr_results
+                if is_br:
+                    # Support Binary Relevance
+                    br_time1 = time.time()
+                    br = PredictBOPOs(
+                        base_classifier_name=base_learner_name.value,
+                    )
+                    br.fit_BR(X_train, Y_train)
+                    log(
+                        INFO,
+                        f"BR Training time: {(time.time() - br_time1)} seconds",
+                    )
+                    predict_time1 = time.time()
+                    predicted_Y, _ = br.predict_BR(X_test, n_labels)
+                    log(
+                        INFO,
+                        f"BR Prediction time {(time.time() - predict_time1)} seconds",
+                    )
+                    save_time1 = time.time()
+                    update_results(
+                        br_results,
+                        Y_test,
+                        [predicted_Y, []],
+                        repeat_time,
+                        fold,
+                        base_learner_name.value,
+                        None,
+                        None,
+                        None,
+                        dataset_name,
+                        noisy_rate,
+                    )
+                    log(
+                        INFO,
+                        f"BR Saving time {(time.time() - save_time1)} seconds",
+                    )
+
+                if is_cc:
+                    # Support Classifier Chain
+                    cc_time1 = time.time()
+                    cc = PredictBOPOs(
+                        base_classifier_name=base_learner_name.value,
+                    )
+                    cc.fit_CC(X_train, Y_train)
+                    log(
+                        INFO,
+                        f"CC Training time: {(time.time() - cc_time1)} seconds",
+                    )
+                    predict_time1 = time.time()
+                    predicted_Y, _ = cc.predict_CC(X_test, n_labels)
+                    log(
+                        INFO,
+                        f"CC Prediction time {(time.time() - predict_time1)} seconds",
+                    )
+                    save_time1 = time.time()
+                    update_results(
+                        cc_results,
+                        Y_test,
+                        [predicted_Y, []],
+                        repeat_time,
+                        fold,
+                        base_learner_name.value,
+                        None,
+                        None,
+                        None,
+                        dataset_name,
+                        noisy_rate,
+                    )
+                    log(
+                        INFO,
+                        f"CC Saving time {(time.time() - save_time1)} seconds",
+                    )
+
+    return results, clr_results, br_results, cc_results
 
 
 def training(
@@ -266,7 +335,7 @@ def training(
             # log(INFO, "Training for Preference Order")
 
             time1 = time.time()
-            res, _ = process_dataset(
+            res, clr_res, br_res, cc_res = process_dataset(
                 experience_dataset,
                 dataset_index,
                 noisy_rate,
@@ -275,6 +344,8 @@ def training(
                 base_learners,
                 dataset_name,
                 is_clr=False,
+                is_br=False,
+                is_cc=False,
             )
             log(
                 INFO,
@@ -291,7 +362,7 @@ def training(
 
             log(INFO, "Training for CLR")
 
-            _, clr_res = process_dataset(
+            _, clr_res, br_res, cc_res = process_dataset(
                 experience_dataset,
                 dataset_index,
                 noisy_rate,
@@ -300,6 +371,8 @@ def training(
                 base_learners,
                 dataset_name,
                 is_clr=True,
+                is_br=False,
+                is_cc=False,
             )  # type: ignore
 
             log(INFO, "Saving results for CLR")
@@ -309,6 +382,52 @@ def training(
                 noisy_rate,
                 results_dir,
                 is_clr=True,
+            )
+
+            log(INFO, "Training for BR")
+            _, _, br_res, cc_res = process_dataset(
+                experience_dataset,
+                dataset_index,
+                noisy_rate,
+                TOTAL_REPEAT_TIMES,
+                NUMBER_FOLDS,
+                base_learners,
+                dataset_name,
+                is_clr=False,
+                is_br=True,
+                is_cc=False,
+            )  # type: ignore
+
+            log(INFO, "Saving results for BR")
+            ExperimentResults.save_results(
+                br_res,
+                dataset_name,
+                noisy_rate,
+                results_dir,
+                is_br=True,
+            )
+
+            log(INFO, "Training for CC")
+            _, _, _, cc_res = process_dataset(
+                experience_dataset,
+                dataset_index,
+                noisy_rate,
+                TOTAL_REPEAT_TIMES,
+                NUMBER_FOLDS,
+                base_learners,
+                dataset_name,
+                is_clr=False,
+                is_br=False,
+                is_cc=True,
+            )  # type: ignore
+
+            log(INFO, "Saving results for CC")
+            ExperimentResults.save_results(
+                cc_res,
+                dataset_name,
+                noisy_rate,
+                results_dir,
+                is_cc=True,
             )
 
 
