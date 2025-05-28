@@ -6,18 +6,16 @@ Created on Mon Oct 23 20:54:40 2023
 """
 
 import argparse
-import json
-import os
-import sys
 import time
 
 from joblib import Parallel, delayed
+from config import ConfigManager
 from constants import RANDOM_STATE, BaseLearnerName, TargetMetric
-from evaluation_metric import EvaluationMetric
 
 
 from datasets4experiments import Datasets4Experiments
 from inference_models import PredictBOPOs, PreferenceOrder
+from training_orchestrator import TrainingOrchestrator
 from utils.results_manager import ExperimentResults
 
 # add logging
@@ -106,7 +104,7 @@ def process_dataset(
                 n_labels = Y_test.shape[1]
                 log(
                     INFO,
-                    f"Fold: {fold}/{NUMBER_FOLDS} - {noisy_rate}",
+                    f"Fold: {fold+1}/{NUMBER_FOLDS} - {noisy_rate}",
                 )
                 if not is_clr and not is_br and not is_cc:
                     for order_type in [
@@ -507,132 +505,43 @@ def training(
 #     """
 
 
-def run_training():
-    data_path = "./data/"
-    results_dir = "./results"
-
-    arg = argparse.ArgumentParser()
-    arg.add_argument("--dataset", type=str)
-    arg.add_argument("--results_dir", type=str)
-    args = arg.parse_args()
-
-    if args.results_dir is None:
-        results_dir = "./results"
-    else:
-        results_dir = args.results_dir
-
-    if args.dataset.lower() == "chd_49":
-        data_files = [
-            {
-                "dataset_name": "CHD_49.arff",
-                "n_labels_set": 6,
-            }
-        ]
-    elif args.dataset.lower() == "emotions":
-        data_files = [
-            {
-                "dataset_name": "emotions.arff",
-                "n_labels_set": 6,
-            }
-        ]
-    elif args.dataset.lower() == "scene":
-        data_files = [
-            {
-                "dataset_name": "scene.arff",
-                "n_labels_set": 6,
-            }
-        ]
-    elif args.dataset.lower() == "VirusPseAAC".lower():
-        data_files = [
-            {
-                "dataset_name": "VirusPseAAC.arff",
-                "n_labels_set": 6,
-            }
-        ]
-    # elif args.dataset.lower() == "yelp":
-    #     data_files = [
-    #         {
-    #             "dataset_name": "Yelp.arff", # has nominal attributes
-    #             "n_labels_set": 8,
-    #         }
-    #     ]
-    # elif args.dataset.lower() == "birds":
-    #     data_files = [
-    #         {
-    #             "dataset_name": "birds.arff", # has nominal attributes
-    #             "n_labels_set": 19,
-    #         }
-    #     ]
-    elif args.dataset.lower() == "yeast":
-        data_files = [
-            {
-                "dataset_name": "Yeast.arff",
-                "n_labels_set": 14,
-            }
-        ]
-    elif args.dataset.lower() == "water-quality":
-        data_files = [
-            {
-                "dataset_name": "Water-quality.arff",
-                "n_labels_set": 14,
-            }
-        ]
-    elif args.dataset.lower() == "HumanPseAAC".lower():
-        data_files = [
-            {
-                "dataset_name": "HumanPseAAC.arff",
-                "n_labels_set": 14,
-            }
-        ]
-    elif args.dataset.lower() == "GpositivePseAAC".lower():
-        data_files = [
-            {
-                "dataset_name": "GpositivePseAAC.arff",
-                "n_labels_set": 4,
-            }
-        ]
-    elif args.dataset.lower() == "PlantPseAAC".lower():
-        data_files = [
-            {
-                "dataset_name": "PlantPseAAC.arff",
-                "n_labels_set": 12,
-            }
-        ]
-    else:
-        raise ValueError(f"Dataset {args.dataset} not found")
-
-    noisy_rates = [
-        # 0.0,
-        0.1,
-        # 0.2,
-        # 0.3,
-    ]
-    base_learners = [
-        BaseLearnerName.LightGBM,
-        # BaseLearnerName.RF,
-        # BaseLearnerName.XGBoost,
-        # BaseLearnerName.ETC,
-    ]
-
-    TOTAL_REPEAT_TIMES = 1
-    NUMBER_FOLDS = 2
-
-    time1 = time.time()
-
-    training(
-        data_path,
-        data_files,
-        noisy_rates,
-        base_learners,
-        TOTAL_REPEAT_TIMES,
-        NUMBER_FOLDS,
-        results_dir,
-    )
-
-    time2 = time.time()
-    log(INFO, f"Total time taken: {time2 - time1} seconds")
+def parse_args():
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--dataset", type=str, required=True)
+    parser.add_argument("--results_dir", type=str)
+    return parser.parse_args()
 
 
-# for a quick test
+def main():
+    """Main entry point for the training process."""
+    # Setup logging
+    basicConfig(level=INFO)
+
+    # Parse arguments
+    args = parse_args()
+
+    try:
+        # Get configurations
+        config_manager = ConfigManager()
+        dataset_config = config_manager.get_dataset_config(args.dataset)
+        training_config = config_manager.get_training_config(args)
+
+        # Initialize and run training
+        orchestrator = TrainingOrchestrator(training_config)
+        orchestrator.setup(dataset_config)
+
+        # Start training
+        start_time = time.time()
+        orchestrator.train(dataset_config)
+        end_time = time.time()
+
+        log(INFO, f"Total time taken: {end_time - start_time} seconds")
+
+    except Exception as e:
+        log(ERROR, f"Training failed: {str(e)}")
+        raise
+
+
 if __name__ == "__main__":
-    run_training()
+    main()

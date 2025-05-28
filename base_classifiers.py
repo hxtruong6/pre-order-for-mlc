@@ -30,7 +30,7 @@ class BaseClassifiers:
         )
         self.name = name
 
-    def get_classifier(self) -> BaseEstimator
+    def get_classifier(self) -> BaseEstimator:
         return Estimator(self.name).get_classifier()  # type: ignore
 
     def pairwise_calibrated_classifier(
