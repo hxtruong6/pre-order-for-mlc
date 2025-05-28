@@ -561,11 +561,9 @@ class PredictBOPOs:
         Returns:
             tuple: (predicted_Y, None) to match CLR interface
         """
-        # Get predictions from MultiOutputClassifier
+        # Get predictions from MultiOutputClassifier and convert to list
         predicted_Y = self.br_classifier.predict(X)
-        return (
-            predicted_Y.tolist() if hasattr(predicted_Y, "tolist") else predicted_Y
-        ), None
+        return np.array(predicted_Y).tolist(), None
 
     def fit_CC(self, X, Y):
         """Train Classifier Chain model using scikit-learn's ClassifierChain
@@ -582,9 +580,8 @@ class PredictBOPOs:
 
         # Create ClassifierChain with random order
         self.cc_classifier = ClassifierChain(
-            base_clf, order="random", random_state=RANDOM_STATE
+            base_clf, order="random", random_state=RANDOM_STATE  # type: ignore
         )
-
         # Train the model
         self.cc_classifier.fit(X, Y)
 
@@ -603,8 +600,6 @@ class PredictBOPOs:
         Returns:
             tuple: (predicted_Y, None) to match CLR interface
         """
-        # Get predictions from ClassifierChain
+        # Get predictions from ClassifierChain and convert to list
         predicted_Y = self.cc_classifier.predict(X)
-        return (
-            predicted_Y.tolist() if hasattr(predicted_Y, "tolist") else predicted_Y
-        ), None
+        return np.array(predicted_Y).tolist(), None
