@@ -62,6 +62,8 @@ class EvaluationConfig:
             EvaluationMetricName.HAMMING_ACCURACY,
             EvaluationMetricName.SUBSET0_1,
             EvaluationMetricName.F1,
+            EvaluationMetricName.MEAN_IR,
+            EvaluationMetricName.CV_IR,
         ],
         PredictionType.PREFERENCE_ORDER: {
             OrderType.PRE_ORDER: [
@@ -161,6 +163,10 @@ class EvaluationFramework:
             return self.evaluation_metric.subset0_1(predictions, true_labels)
         elif metric_name == EvaluationMetricName.F1 and (is_clr or is_cc or is_br):
             return self.evaluation_metric.f1(predictions, true_labels)
+        elif metric_name == EvaluationMetricName.MEAN_IR:
+            return self.evaluation_metric.mean_ir(true_labels)
+        elif metric_name == EvaluationMetricName.CV_IR:
+            return self.evaluation_metric.cv_ir(true_labels)
         else:
             raise ValueError(f"Unknown metric: {metric_name}")
 
@@ -177,6 +183,10 @@ class EvaluationFramework:
             return self.evaluation_metric.subset0_1(predictions, true_labels)
         elif metric_name == EvaluationMetricName.F1:
             return self.evaluation_metric.f1(predictions, true_labels)
+        elif metric_name == EvaluationMetricName.MEAN_IR:
+            return self.evaluation_metric.mean_ir(true_labels)
+        elif metric_name == EvaluationMetricName.CV_IR:
+            return self.evaluation_metric.cv_ir(true_labels)
         else:
             raise ValueError(f"Unknown metric: {metric_name}")
 
@@ -488,6 +498,8 @@ class EvaluationFramework:
                     EvaluationMetricName.HAMMING_ACCURACY,
                     EvaluationMetricName.SUBSET0_1,
                     EvaluationMetricName.F1,
+                    EvaluationMetricName.MEAN_IR,
+                    EvaluationMetricName.CV_IR,
                 ]:
                     log(INFO, f"Evaluation metric: {eval_metric}")
                     result_folds = self._evaluate_fold(
@@ -538,6 +550,8 @@ class EvaluationFramework:
                     EvaluationMetricName.HAMMING_ACCURACY,
                     EvaluationMetricName.SUBSET0_1,
                     EvaluationMetricName.F1,
+                    EvaluationMetricName.MEAN_IR,
+                    EvaluationMetricName.CV_IR,
                 ]:
                     log(INFO, f"Evaluation metric: {eval_metric}")
                     result_folds = self._evaluate_fold(
@@ -588,6 +602,8 @@ class EvaluationFramework:
                     EvaluationMetricName.HAMMING_ACCURACY,
                     EvaluationMetricName.SUBSET0_1,
                     EvaluationMetricName.F1,
+                    EvaluationMetricName.MEAN_IR,
+                    EvaluationMetricName.CV_IR,
                 ]:
                     log(INFO, f"Evaluation metric: {eval_metric}")
                     result_folds = self._evaluate_fold(

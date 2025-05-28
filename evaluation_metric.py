@@ -8,6 +8,8 @@ class EvaluationMetricName(Enum):
     F1 = "f1"
     JACCARD = "jaccard"
     SUBSET0_1 = "subset0_1"
+    MEAN_IR = "mean_ir"  # New metric for imbalance ratio
+    CV_IR = "cv_ir"  # New metric for coefficient of variation of imbalance ratio
     # SUBSET_EXACT_MATCH = "subset_exact_match"
     # RECALL = "recall"
     # HAMMING_ACCURACY_PL = "hamming_accuracy_PL"
@@ -34,18 +36,12 @@ class EvaluationMetric:
             return self.hamming_accuracy(predicted_Y, true_Y)
         elif metric_name == EvaluationMetricName.F1.value:
             return self.f1(predicted_Y, true_Y)
-        # elif metric_name == EvaluationMetricName.JACCARD.value:
-        #     return self.jaccard(predicted_Y, true_Y)
         elif metric_name == EvaluationMetricName.SUBSET0_1.value:
             return self.subset0_1(predicted_Y, true_Y)
-        # elif metric_name == EvaluationMetricName.SUBSET_EXACT_MATCH.value:
-        #     return self.subset_exact_match(predicted_Y, true_Y)
-        # elif metric_name == EvaluationMetricName.RECALL.value:
-        #     return self.recall(predicted_Y, true_Y)
-        # elif metric_name == EvaluationMetricName.HAMMING_ACCURACY_PL.value:
-        #     return self.hamming_accuracy_PL(predicted_Y, true_Y)
-        # elif metric_name == EvaluationMetricName.SUBSET0_1_PL.value:
-        #     return self.subset0_1_PL(predicted_Y, true_Y)
+        elif metric_name == EvaluationMetricName.MEAN_IR.value:
+            return self.mean_ir(true_Y)
+        elif metric_name == EvaluationMetricName.CV_IR.value:
+            return self.cv_ir(true_Y)
         else:
             raise ValueError("Invalid metric name")
 
@@ -216,3 +212,69 @@ class EvaluationMetric:
                     if (bopos[indices_vector[f"{i}_{j}_{2}"]]) == 0:
                         return 0
         return 1
+
+    def mean_ir(self, Y: np.ndarray) -> float:
+        """
+        Calculate Mean Imbalance Ratio (MeanIR) for multi-label dataset.
+
+        Args:
+            Y: Binary matrix of shape (n_samples, n_labels) where 1 indicates presence of label
+
+        Returns:
+            float: Mean imbalance ratio across all labels
+        """
+        # Count occurrences of each label
+        label_counts = np.sum(Y, axis=0)
+
+        # Find the count of the most frequent label
+        max_label_count = np.max(label_counts)
+
+        # Calculate IRperLabel for each label
+        IRperLabel = np.zeros(len(label_counts))
+        for i, count in enumerate(label_counts):
+            if count == 0:
+                IRperLabel[i] = np.inf  # Handle case where a label has no instances
+            else:
+                IRperLabel[i] = max_label_count / count
+
+        # Calculate MeanIR
+        return float(np.mean(IRperLabel))
+
+    def cv_ir(self, Y: np.ndarray) -> float:
+        """
+        Calculate Coefficient of Variation of Imbalance Ratio (CVIR) for multi-label dataset.
+
+        Args:
+            Y: Binary matrix of shape (n_samples, n_labels) where 1 indicates presence of label
+
+        Returns:
+            float: Coefficient of variation of imbalance ratios
+        """
+        # Count occurrences of each label
+        label_counts = np.sum(Y, axis=0)
+        n_labels = len(label_counts)
+
+        # Find the count of the most frequent label
+        max_label_count = np.max(label_counts)
+
+        # Calculate IRperLabel for each label
+        IRperLabel = np.zeros(n_labels)
+        for i, count in enumerate(label_counts):
+            if count == 0:
+                IRperLabel[i] = np.inf  # Handle case where a label has no instances
+            else:
+                IRperLabel[i] = max_label_count / count
+
+        # Calculate MeanIR
+        MeanIR = np.mean(IRperLabel)
+
+        # Calculate standard deviation of IRperLabel
+        if n_labels > 1:
+            IRperLabel_sigma = np.sqrt(
+                np.sum((IRperLabel - MeanIR) ** 2) / (n_labels - 1)
+            )
+        else:
+            IRperLabel_sigma = 0  # Avoid division by zero if only one label
+
+        # Calculate CVIR
+        return float(IRperLabel_sigma / MeanIR if MeanIR != 0 else np.inf)
