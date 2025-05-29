@@ -67,3 +67,24 @@ Please read CONTRIBUTING.md for details on our code of conduct, and the process 
 ## License
 
 This project is licensed under the MIT License.
+
+## Examples
+
+y_predict_partial_abstention = [[1, 0, 1, 0, 0, 0], [1, 0, 1, 0, 0, 1], 
+                                [1, 0, 1, 1, 0, 0], [1, 0, 1, 1, 0, 1], [0, 0, 1, 1, 0, 1]]  
+                             != [-1, 0, 1, -1, 0, -1]  
+
+y_predict_partial_abstention = [1, 0, 1, -1, 0, -1] % -1 = {0, 1}
+
+y_true                       = [0, 0, 1,  1, 0, 0]
+
+AREC(y_predict_partial_abstention, y_true) = ([[0 \in 1]] + [[0 \in 0]] + [[1 \in -1]] + [[0 \in 0]] +  [[0 \in -1]])/6
+                                           = (    0       +      1      +      1       +      1      +       1      )/6
+                                           = 4/6
+
+AABS(y_predict_partial_abstention) = (1/K)\sum_{k=1}^K [[y^k_predict = -1]] = 2/6 
+
+REC(y_predict_partial_abstention, y_true) = 1 if AREC(y_predict_partial_abstention, y_true) = 1 
+
+ABS(y_predict_partial_abstention) = K*AABS(y_predict_partial_abstention)
+
