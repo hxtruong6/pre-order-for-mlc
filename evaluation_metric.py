@@ -8,8 +8,10 @@ class EvaluationMetricName(Enum):
     F1 = "f1"
     JACCARD = "jaccard"
     SUBSET0_1 = "subset0_1"
-    MEAN_IR = "mean_ir"  # New metric for imbalance ratio
-    CV_IR = "cv_ir"  # New metric for coefficient of variation of imbalance ratio
+    MEAN_IR = "mean_ir"  # for imbalance ratio
+    CV_IR = "cv_ir"  # for coefficient of variation of imbalance ratio
+    MFRD = "mfrd"  # Maximum False Rate Difference
+    AFRD = "afrd"  # Average False Rate Difference
     # SUBSET_EXACT_MATCH = "subset_exact_match"
     # RECALL = "recall"
     # HAMMING_ACCURACY_PL = "hamming_accuracy_PL"
@@ -42,6 +44,10 @@ class EvaluationMetric:
             return self.mean_ir(true_Y)
         elif metric_name == EvaluationMetricName.CV_IR.value:
             return self.cv_ir(true_Y)
+        elif metric_name == EvaluationMetricName.MFRD.value:
+            return self.mfrd(predicted_Y, true_Y)
+        elif metric_name == EvaluationMetricName.AFRD.value:
+            return self.afrd(predicted_Y, true_Y)
         else:
             raise ValueError("Invalid metric name")
 
@@ -278,3 +284,65 @@ class EvaluationMetric:
 
         # Calculate CVIR
         return float(IRperLabel_sigma / MeanIR if MeanIR != 0 else np.inf)
+
+    def mfrd(self, predicted_Y: np.ndarray, true_Y: np.ndarray) -> float:
+        """
+        Calculate Maximum False Rate Difference (MFRD) for multi-label classification.
+
+        Args:
+            predicted_Y: Binary matrix of shape (n_samples, n_labels) containing predicted labels
+            true_Y: Binary matrix of shape (n_samples, n_labels) containing true labels
+
+        Returns:
+            float: Maximum absolute difference between FPR and FNR across all labels
+        """
+        n_labels = predicted_Y.shape[1]
+        max_diff = 0.0
+
+        for k in range(n_labels):
+            # Calculate TP, FP, TN, FN for current label
+            tp = np.sum((predicted_Y[:, k] == 1) & (true_Y[:, k] == 1))
+            fp = np.sum((predicted_Y[:, k] == 1) & (true_Y[:, k] == 0))
+            tn = np.sum((predicted_Y[:, k] == 0) & (true_Y[:, k] == 0))
+            fn = np.sum((predicted_Y[:, k] == 0) & (true_Y[:, k] == 1))
+
+            # Calculate FPR and FNR
+            fpr = fp / (fp + tn) if (fp + tn) > 0 else 0
+            fnr = fn / (fn + tp) if (fn + tp) > 0 else 0
+
+            # Calculate absolute difference
+            diff = abs(fpr - fnr)
+            max_diff = max(max_diff, diff)
+
+        return float(max_diff)
+
+    def afrd(self, predicted_Y: np.ndarray, true_Y: np.ndarray) -> float:
+        """
+        Calculate Average False Rate Difference (AFRD) for multi-label classification.
+
+        Args:
+            predicted_Y: Binary matrix of shape (n_samples, n_labels) containing predicted labels
+            true_Y: Binary matrix of shape (n_samples, n_labels) containing true labels
+
+        Returns:
+            float: Average absolute difference between FPR and FNR across all labels
+        """
+        n_labels = predicted_Y.shape[1]
+        total_diff = 0.0
+
+        for k in range(n_labels):
+            # Calculate TP, FP, TN, FN for current label
+            tp = np.sum((predicted_Y[:, k] == 1) & (true_Y[:, k] == 1))
+            fp = np.sum((predicted_Y[:, k] == 1) & (true_Y[:, k] == 0))
+            tn = np.sum((predicted_Y[:, k] == 0) & (true_Y[:, k] == 0))
+            fn = np.sum((predicted_Y[:, k] == 0) & (true_Y[:, k] == 1))
+
+            # Calculate FPR and FNR
+            fpr = fp / (fp + tn) if (fp + tn) > 0 else 0
+            fnr = fn / (fn + tp) if (fn + tp) > 0 else 0
+
+            # Calculate absolute difference
+            diff = abs(fpr - fnr)
+            total_diff += diff
+
+        return float(total_diff / n_labels)

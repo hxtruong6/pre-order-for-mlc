@@ -64,6 +64,8 @@ class EvaluationConfig:
             EvaluationMetricName.F1,
             EvaluationMetricName.MEAN_IR,
             EvaluationMetricName.CV_IR,
+            EvaluationMetricName.MFRD,
+            EvaluationMetricName.AFRD,
         ],
         PredictionType.PREFERENCE_ORDER: {
             OrderType.PRE_ORDER: [
@@ -75,6 +77,12 @@ class EvaluationConfig:
                 EvaluationMetricName.SUBSET0_1_PARTIAL_ORDER,
             ],
         },
+    }
+
+    # Metrics that should be calculated on the entire dataset, not per fold
+    DATASET_LEVEL_METRICS = {
+        EvaluationMetricName.MEAN_IR,
+        EvaluationMetricName.CV_IR,
     }
 
 
@@ -167,6 +175,10 @@ class EvaluationFramework:
             return self.evaluation_metric.mean_ir(true_labels)
         elif metric_name == EvaluationMetricName.CV_IR:
             return self.evaluation_metric.cv_ir(true_labels)
+        elif metric_name == EvaluationMetricName.MFRD:
+            return self.evaluation_metric.mfrd(predictions, true_labels)
+        elif metric_name == EvaluationMetricName.AFRD:
+            return self.evaluation_metric.afrd(predictions, true_labels)
         else:
             raise ValueError(f"Unknown metric: {metric_name}")
 
@@ -187,6 +199,10 @@ class EvaluationFramework:
             return self.evaluation_metric.mean_ir(true_labels)
         elif metric_name == EvaluationMetricName.CV_IR:
             return self.evaluation_metric.cv_ir(true_labels)
+        elif metric_name == EvaluationMetricName.MFRD:
+            return self.evaluation_metric.mfrd(predictions, true_labels)
+        elif metric_name == EvaluationMetricName.AFRD:
+            return self.evaluation_metric.afrd(predictions, true_labels)
         else:
             raise ValueError(f"Unknown metric: {metric_name}")
 
@@ -498,8 +514,8 @@ class EvaluationFramework:
                     EvaluationMetricName.HAMMING_ACCURACY,
                     EvaluationMetricName.SUBSET0_1,
                     EvaluationMetricName.F1,
-                    EvaluationMetricName.MEAN_IR,
-                    EvaluationMetricName.CV_IR,
+                    EvaluationMetricName.MFRD,
+                    EvaluationMetricName.AFRD,
                 ]:
                     log(INFO, f"Evaluation metric: {eval_metric}")
                     result_folds = self._evaluate_fold(
@@ -550,8 +566,8 @@ class EvaluationFramework:
                     EvaluationMetricName.HAMMING_ACCURACY,
                     EvaluationMetricName.SUBSET0_1,
                     EvaluationMetricName.F1,
-                    EvaluationMetricName.MEAN_IR,
-                    EvaluationMetricName.CV_IR,
+                    EvaluationMetricName.MFRD,
+                    EvaluationMetricName.AFRD,
                 ]:
                     log(INFO, f"Evaluation metric: {eval_metric}")
                     result_folds = self._evaluate_fold(
@@ -602,8 +618,8 @@ class EvaluationFramework:
                     EvaluationMetricName.HAMMING_ACCURACY,
                     EvaluationMetricName.SUBSET0_1,
                     EvaluationMetricName.F1,
-                    EvaluationMetricName.MEAN_IR,
-                    EvaluationMetricName.CV_IR,
+                    EvaluationMetricName.MFRD,
+                    EvaluationMetricName.AFRD,
                 ]:
                     log(INFO, f"Evaluation metric: {eval_metric}")
                     result_folds = self._evaluate_fold(
@@ -655,6 +671,66 @@ class EvaluationFramework:
         except Exception as e:
             raise Exception(f"Failed to save results: {str(e)}")
 
+    def evaluate_dataset_dataset_level(self, dataset_name: str, noisy_rate: float):
+        """Evaluate dataset-level metrics (MEAN_IR and CV_IR) on the entire dataset."""
+        try:
+            if self.df is None:
+                log(ERROR, "No data loaded. Call load_results() first.")
+                return
+
+            log(
+                INFO,
+                f"Processing dataset-level metrics for {dataset_name} with noise rate {noisy_rate}",
+            )
+
+            self.eval_results = []
+
+            for base_learner_name in self.df["base_learner_name"].unique():
+                log(INFO, f"Processing results for {base_learner_name}")
+                data_df = self.get_data_df(dataset_name, base_learner_name)
+
+                try:
+                    # Get all test labels from the dataset
+                    all_test_labels = np.concatenate(
+                        [data_df["Y_test"].values[0] for _ in range(len(data_df))]
+                    )
+
+                    # Calculate MEAN_IR
+                    mean_ir = self.evaluation_metric.mean_ir(all_test_labels)
+                    self.eval_results.append(
+                        {
+                            "Base_Learner": base_learner_name,
+                            "Algorithm": "Dataset",
+                            "Metric": EvaluationMetricName.MEAN_IR.value,
+                            "Mean": mean_ir,
+                            "Std": 0.0,  # No standard deviation for dataset-level metrics
+                        },
+                    )
+
+                    # Calculate CV_IR
+                    cv_ir = self.evaluation_metric.cv_ir(all_test_labels)
+                    self.eval_results.append(
+                        {
+                            "Base_Learner": base_learner_name,
+                            "Algorithm": "Dataset",
+                            "Metric": EvaluationMetricName.CV_IR.value,
+                            "Mean": cv_ir,
+                            "Std": 0.0,  # No standard deviation for dataset-level metrics
+                        },
+                    )
+
+                except Exception as e:
+                    log(ERROR, f"Error calculating dataset-level metrics: {str(e)}")
+                    continue
+
+        except Exception as e:
+            log(
+                ERROR,
+                f"Dataset-level evaluation failed for {dataset_name}: {str(e)}",
+                exc_info=True,
+            )
+            raise
+
 
 def parse_args():
     """Parse command line arguments."""
@@ -691,6 +767,14 @@ def main():
     # Process each noise rate
     for noisy_rate in noisy_rates:
         try:
+            # Evaluate dataset-level metrics
+            log(INFO, "Start for dataset-level metrics:")
+            evaluator.load_results(dataset_name, noisy_rate)
+            evaluator.evaluate_dataset_dataset_level(dataset_name, noisy_rate)
+            evaluator.save_results(
+                f"{results_dir}/evaluation_{dataset_name}_noisy_{noisy_rate}_dataset_level"
+            )
+
             # Evaluate BOPOs
             evaluator.load_results(dataset_name, noisy_rate)
             evaluator.evaluate_dataset(dataset_name, noisy_rate)
