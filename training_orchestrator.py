@@ -31,7 +31,7 @@ class TrainingOrchestrator:
         self.experiment_dataset.load_datasets()
         log(INFO, f"Loading datasets time taken: {time.time() - load_time} seconds")
 
-    def process_dataset(
+    def process_training_data(
         self,
         dataset_index: int,
         noisy_rate: float,
@@ -374,7 +374,7 @@ class TrainingOrchestrator:
                     log(INFO, f"Processing algorithm: {algorithm.value}")
 
                     # Process dataset for this algorithm
-                    results = self.process_dataset(
+                    results = self.process_training_data(
                         0, noisy_rate, dataset_config.name, algorithm
                     )
 

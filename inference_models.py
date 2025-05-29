@@ -580,7 +580,7 @@ class PredictBOPOs:
 
         # Create ClassifierChain with random order
         self.cc_classifier = ClassifierChain(
-            base_clf, order="random", random_state=RANDOM_STATE  # type: ignore
+            base_clf, order=None, random_state=RANDOM_STATE  # type: ignore
         )
         # Train the model
         self.cc_classifier.fit(X, Y)
