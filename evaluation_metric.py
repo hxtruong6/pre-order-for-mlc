@@ -337,9 +337,6 @@ class EvaluationMetric:
 
             # Calculate absolute difference
             diff = abs(fpr - fnr)
-            print(
-                f"diff: {diff} \n fpr: {fpr} \n fnr: {fnr} Predicted: {predicted_Y[:, k]} True: {true_Y[:, k]}"
-            )
             max_diff = max(max_diff, diff)
 
         return float(max_diff)

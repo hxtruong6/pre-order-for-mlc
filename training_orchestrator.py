@@ -354,7 +354,7 @@ class TrainingOrchestrator:
             "Y_predicted": list(predict_results[0]),
             "Y_BOPOs": list(predict_results[1]),
             "indices_vector": indices_vector,
-            "prediction_with_partial_abstention": prediction_with_partial_abstention,
+            "partial_abstention": prediction_with_partial_abstention,
             "target_metric": target_metric,
             "preference_order": order_type,
             "height": height,

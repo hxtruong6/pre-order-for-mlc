@@ -9,6 +9,8 @@ import ast
 
 import logging
 
+from config import AlgorithmType
+
 
 class ResultProcessor:
     """Class to handle processing of list-type columns in results DataFrame."""
@@ -91,7 +93,10 @@ class ExperimentResults:
 
     @staticmethod
     def load_results(
-        path, dataset_name, noisy_rate, is_clr=False, is_br=False, is_cc=False
+        path,
+        dataset_name,
+        noisy_rate,
+        algorithm_type: AlgorithmType = AlgorithmType.BOPOS,
     ):
         """
         Loads results from pickle file.
@@ -110,12 +115,12 @@ class ExperimentResults:
         dataset_name = dataset_name.lower().replace(" ", "_")
 
         # Determine suffix based on method type
-        suffix = ""
-        if is_clr:
+        suffix = ""  # default is BOPOs
+        if algorithm_type == AlgorithmType.CLR:
             suffix = "_clr"
-        elif is_br:
+        elif algorithm_type == AlgorithmType.BR:
             suffix = "_br"
-        elif is_cc:
+        elif algorithm_type == AlgorithmType.CC:
             suffix = "_cc"
 
         filename = f"{path}/dataset_{dataset_name}_noisy_{noisy_rate}{suffix}.pkl"
