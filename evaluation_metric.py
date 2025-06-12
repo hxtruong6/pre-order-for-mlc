@@ -12,6 +12,17 @@ class EvaluationMetricName(Enum):
     CV_IR = "cv_ir"  # for coefficient of variation of imbalance ratio
     MFRD = "mfrd"  # Maximum False Rate Difference
     AFRD = "afrd"  # Average False Rate Difference
+    # Partial Abstention Metrics
+    HAMMING_ACCURACY_PA = (
+        "hamming_accuracy_pa"  # Hamming accuracy with partial abstention
+    )
+    SUBSET0_1_PA = "subset0_1_pa"  # Subset accuracy with partial abstention
+    F1_PA = "f1_pa"  # F1 score with partial abstention
+    # New Abstention Metrics
+    AREC = "arec"  # Average Recall per Label
+    AABS = "aabs"  # Average Abstention per Label
+    REC = "rec"  # Instance-Wise Recall
+    ABS = "abs"  # Instance-Wise Abstention
     # SUBSET_EXACT_MATCH = "subset_exact_match"
     # RECALL = "recall"
     # HAMMING_ACCURACY_PL = "hamming_accuracy_PL"
@@ -48,6 +59,20 @@ class EvaluationMetric:
             return self.mfrd(predicted_Y, true_Y)
         elif metric_name == EvaluationMetricName.AFRD.value:
             return self.afrd(predicted_Y, true_Y)
+        elif metric_name == EvaluationMetricName.HAMMING_ACCURACY_PA.value:
+            return self.hamming_accuracy_pa(predicted_Y, true_Y)
+        elif metric_name == EvaluationMetricName.SUBSET0_1_PA.value:
+            return self.subset0_1_pa(predicted_Y, true_Y)
+        elif metric_name == EvaluationMetricName.F1_PA.value:
+            return self.f1_pa(predicted_Y, true_Y)
+        elif metric_name == EvaluationMetricName.AREC.value:
+            return self.arec(predicted_Y, true_Y)
+        elif metric_name == EvaluationMetricName.AABS.value:
+            return self.aabs(predicted_Y, true_Y)
+        elif metric_name == EvaluationMetricName.REC.value:
+            return self.rec(predicted_Y, true_Y)
+        elif metric_name == EvaluationMetricName.ABS.value:
+            return self.abs(predicted_Y, true_Y)
         else:
             raise ValueError("Invalid metric name")
 
@@ -312,6 +337,9 @@ class EvaluationMetric:
 
             # Calculate absolute difference
             diff = abs(fpr - fnr)
+            print(
+                f"diff: {diff} \n fpr: {fpr} \n fnr: {fnr} Predicted: {predicted_Y[:, k]} True: {true_Y[:, k]}"
+            )
             max_diff = max(max_diff, diff)
 
         return float(max_diff)
@@ -346,3 +374,208 @@ class EvaluationMetric:
             total_diff += diff
 
         return float(total_diff / n_labels)
+
+    def hamming_accuracy_pa(self, predicted_Y: np.ndarray, true_Y: np.ndarray) -> float:
+        """
+        Calculate Hamming accuracy with partial abstention.
+        In this case, -1 in predicted_Y indicates abstention.
+
+        Args:
+            predicted_Y: Binary matrix of shape (n_samples, n_labels) containing predicted labels (-1 for abstention)
+            true_Y: Binary matrix of shape (n_samples, n_labels) containing true labels
+
+        Returns:
+            float: Hamming accuracy considering partial abstention
+        """
+        n_samples, n_labels = predicted_Y.shape
+        correct_predictions = 0
+        total_predictions = 0
+
+        for i in range(n_samples):
+            for j in range(n_labels):
+                if predicted_Y[i, j] != -1:  # Only count non-abstained predictions
+                    if predicted_Y[i, j] == true_Y[i, j]:
+                        correct_predictions += 1
+                    total_predictions += 1
+
+        return (
+            float(correct_predictions / total_predictions)
+            if total_predictions > 0
+            else 0.0
+        )
+
+    def subset0_1_pa(self, predicted_Y: np.ndarray, true_Y: np.ndarray) -> float:
+        """
+        Calculate Subset accuracy with partial abstention.
+        In this case, -1 in predicted_Y indicates abstention.
+
+        Args:
+            predicted_Y: Binary matrix of shape (n_samples, n_labels) containing predicted labels (-1 for abstention)
+            true_Y: Binary matrix of shape (n_samples, n_labels) containing true labels
+
+        Returns:
+            float: Subset accuracy considering partial abstention
+        """
+        n_samples = len(predicted_Y)
+        correct_predictions = 0
+        total_predictions = 0
+
+        for i in range(n_samples):
+            # Get non-abstained predictions
+            non_abstained_mask = predicted_Y[i] != -1
+            if np.any(
+                non_abstained_mask
+            ):  # Only count if there are non-abstained predictions
+                if np.array_equal(
+                    predicted_Y[i][non_abstained_mask], true_Y[i][non_abstained_mask]
+                ):
+                    correct_predictions += 1
+                total_predictions += 1
+
+        return (
+            float(correct_predictions / total_predictions)
+            if total_predictions > 0
+            else 0.0
+        )
+
+    def f1_pa(self, predicted_Y: np.ndarray, true_Y: np.ndarray) -> float:
+        """
+        Calculate F1 score with partial abstention.
+        In this case, -1 in predicted_Y indicates abstention.
+
+        Args:
+            predicted_Y: Binary matrix of shape (n_samples, n_labels) containing predicted labels (-1 for abstention)
+            true_Y: Binary matrix of shape (n_samples, n_labels) containing true labels
+
+        Returns:
+            float: F1 score considering partial abstention
+        """
+        n_samples = len(predicted_Y)
+        f1_sum = 0
+        total_instances = 0
+
+        for i in range(n_samples):
+            # Get non-abstained predictions
+            non_abstained_mask = predicted_Y[i] != -1
+            if np.any(
+                non_abstained_mask
+            ):  # Only count if there are non-abstained predictions
+                pred = predicted_Y[i][non_abstained_mask]
+                true = true_Y[i][non_abstained_mask]
+
+                if np.sum(pred) == 0 and np.sum(true) == 0:
+                    f1_sum += 1
+                else:
+                    tp = np.sum((pred == 1) & (true == 1))
+                    fp = np.sum((pred == 1) & (true == 0))
+                    fn = np.sum((pred == 0) & (true == 1))
+
+                    precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+                    recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+
+                    f1 = (
+                        2 * precision * recall / (precision + recall)
+                        if (precision + recall) > 0
+                        else 0
+                    )
+                    f1_sum += f1
+
+                total_instances += 1
+
+        return float(f1_sum / total_instances) if total_instances > 0 else 0.0
+
+    def arec(self, predicted_Y: np.ndarray, true_Y: np.ndarray) -> float:
+        """
+        Compute Average Recall per Label (AREC).
+
+        Args:
+            predicted_Y: Predicted label vectors, shape (T, K), with -1 for abstention.
+            true_Y: True label vectors, shape (T, K).
+
+        Returns:
+            float: AREC score.
+        """
+        T, K = true_Y.shape
+
+        # Initialize sum for correct predictions
+        correct_sum = 0
+
+        # Iterate over instances and labels
+        for t in range(T):
+            for k in range(K):
+                # If prediction is not abstention (-1), check if it matches true label
+                # If prediction is abstention (-1), count as correct
+                if predicted_Y[t, k] == -1 or predicted_Y[t, k] == true_Y[t, k]:
+                    correct_sum += 1
+
+        # Compute AREC
+        return float(correct_sum / (K * T))
+
+    def aabs(self, predicted_Y: np.ndarray, true_Y: np.ndarray) -> float:
+        """
+        Compute Average Abstention per Label (AABS).
+
+        Args:
+            predicted_Y: Predicted label vectors, shape (T, K), with -1 for abstention.
+            true_Y: True label vectors, shape (T, K).
+
+        Returns:
+            float: AABS score.
+        """
+        T, K = true_Y.shape
+
+        # Count abstentions (-1)
+        abstention_sum = np.sum(predicted_Y == -1)
+
+        # Compute AABS
+        return float(abstention_sum / (K * T))
+
+    def rec(self, predicted_Y: np.ndarray, true_Y: np.ndarray) -> float:
+        """
+        Compute Instance-Wise Recall (REC).
+
+        Args:
+            predicted_Y: Predicted label vectors, shape (T, K), with -1 for abstention.
+            true_Y: True label vectors, shape (T, K).
+
+        Returns:
+            float: REC score.
+        """
+        T = true_Y.shape[0]
+
+        # Initialize sum for correct instances
+        correct_instances = 0
+
+        # Iterate over instances
+        for t in range(T):
+            is_correct = True
+            for k in range(true_Y.shape[1]):
+                # If prediction is not abstention (-1), it must match true label
+                # If prediction is abstention (-1), it is considered correct
+                if predicted_Y[t, k] != -1 and predicted_Y[t, k] != true_Y[t, k]:
+                    is_correct = False
+                    break
+            if is_correct:
+                correct_instances += 1
+
+        # Compute REC
+        return float(correct_instances / T)
+
+    def abs(self, predicted_Y: np.ndarray, true_Y: np.ndarray) -> float:
+        """
+        Compute Instance-Wise Abstention (ABS).
+
+        Args:
+            predicted_Y: Predicted label vectors, shape (T, K), with -1 for abstention.
+            true_Y: True label vectors, shape (T, K).
+
+        Returns:
+            float: ABS score.
+        """
+        T = true_Y.shape[0]
+
+        # Sum abstentions per instance
+        abstention_sum = np.sum(predicted_Y == -1, axis=1)
+
+        # Compute ABS (average over instances)
+        return float(np.mean(abstention_sum))

@@ -58,7 +58,7 @@ class PredictBOPOs:
         n_instances,
         target_metric: TargetMetric,
         height: int | None = None,
-    ) -> tuple[list[int], list[float], list[int] | None]:
+    ) -> tuple[list[int], list[float], list[int] | None, list[int] | None]:
         # 4 cases for pre-order and 4 cases for partial-order
         log(
             INFO,
@@ -83,13 +83,19 @@ class PredictBOPOs:
         # Using after training the model.
         if target_metric == TargetMetric.Hamming:
             if self.preference_order == PreferenceOrder.PRE_ORDER:
-                predict_BOPOS, predict_binary_vectors, indices_vector = (
-                    search_BOPrerOs.PRE_ORDER()
-                )
+                (
+                    predict_BOPOS,
+                    predict_binary_vectors,
+                    indices_vector,
+                    prediction_with_partial_abstention,
+                ) = search_BOPrerOs.PRE_ORDER()
             elif self.preference_order == PreferenceOrder.PARTIAL_ORDER:
-                predict_BOPOS, predict_binary_vectors, indices_vector = (
-                    search_BOParOs.PARTIAL_ORDER()
-                )
+                (
+                    predict_BOPOS,
+                    predict_binary_vectors,
+                    indices_vector,
+                    prediction_with_partial_abstention,
+                ) = search_BOParOs.PARTIAL_ORDER()
             else:
                 raise ValueError(
                     f"[Hamming] Unknown preference order: {self.preference_order}"
@@ -97,20 +103,31 @@ class PredictBOPOs:
 
         elif target_metric == TargetMetric.Subset:
             if self.preference_order == PreferenceOrder.PRE_ORDER:
-                predict_BOPOS, predict_binary_vectors, indices_vector = (
-                    search_BOPrerOs.PRE_ORDER()
-                )
+                (
+                    predict_BOPOS,
+                    predict_binary_vectors,
+                    indices_vector,
+                    prediction_with_partial_abstention,
+                ) = search_BOPrerOs.PRE_ORDER()
             elif self.preference_order == PreferenceOrder.PARTIAL_ORDER:
-                predict_BOPOS, predict_binary_vectors, indices_vector = (
-                    search_BOParOs.PARTIAL_ORDER()
-                )
+                (
+                    predict_BOPOS,
+                    predict_binary_vectors,
+                    indices_vector,
+                    prediction_with_partial_abstention,
+                ) = search_BOParOs.PARTIAL_ORDER()
 
             else:
                 raise ValueError(
                     f"[Subset] Unknown preference order: {self.preference_order}"
                 )
 
-        return predict_BOPOS, predict_binary_vectors, indices_vector  # type: ignore
+        return (
+            predict_BOPOS,
+            predict_binary_vectors,
+            indices_vector,  # type: ignore
+            prediction_with_partial_abstention,
+        )  # type: ignore
 
     def predict_proba(self, X, n_labels):
         n_test_instances, _ = X.shape

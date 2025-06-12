@@ -68,7 +68,12 @@ class ConfigManager:
         Path(results_dir).mkdir(parents=True, exist_ok=True)
 
         # NOISY_RATES = [0.0, 0.1, 0.2, 0.3]
-        NOISY_RATES = [0.0]
+        NOISY_RATES = [
+            0.0,
+            0.1,
+            # 0.2,
+            # 0.3,
+        ]
         BASE_LEARNERS = [BaseLearnerName.RF]
         ALGORITHMS = [
             AlgorithmType.BOPOS,

@@ -66,6 +66,15 @@ class EvaluationConfig:
             EvaluationMetricName.CV_IR,
             EvaluationMetricName.MFRD,
             EvaluationMetricName.AFRD,
+            # Partial Abstention Metrics
+            EvaluationMetricName.HAMMING_ACCURACY_PA,
+            EvaluationMetricName.SUBSET0_1_PA,
+            EvaluationMetricName.F1_PA,
+            # New Abstention Metrics
+            EvaluationMetricName.AREC,
+            EvaluationMetricName.AABS,
+            EvaluationMetricName.REC,
+            EvaluationMetricName.ABS,
         ],
         PredictionType.PREFERENCE_ORDER: {
             OrderType.PRE_ORDER: [
@@ -126,9 +135,9 @@ class EvaluationFramework:
         indices_vector: Optional[np.ndarray],
         bopos: Optional[np.ndarray],
         order_type: Optional[OrderType] = None,
-        is_clr: bool = False,
-        is_br: bool = False,
-        is_cc: bool = False,
+        is_clr: bool = False,  # clr: calibrate classifier ranking
+        is_br: bool = False,  # binary relevant
+        is_cc: bool = False,  # classifier chain
     ) -> float:
         """Calculate specific evaluation metric."""
         try:
@@ -179,6 +188,12 @@ class EvaluationFramework:
             return self.evaluation_metric.mfrd(predictions, true_labels)
         elif metric_name == EvaluationMetricName.AFRD:
             return self.evaluation_metric.afrd(predictions, true_labels)
+        elif metric_name == EvaluationMetricName.HAMMING_ACCURACY_PA:
+            return self.evaluation_metric.hamming_accuracy_pa(predictions, true_labels)
+        elif metric_name == EvaluationMetricName.SUBSET0_1_PA:
+            return self.evaluation_metric.subset0_1_pa(predictions, true_labels)
+        elif metric_name == EvaluationMetricName.F1_PA:
+            return self.evaluation_metric.f1_pa(predictions, true_labels)
         else:
             raise ValueError(f"Unknown metric: {metric_name}")
 

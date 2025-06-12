@@ -344,14 +344,17 @@ class TrainingOrchestrator:
     ):
         """Update results with prediction data."""
         indices_vector = None
-        if len(predict_results) == 3:
+        prediction_with_partial_abstention = None
+        if len(predict_results) == 4:
             indices_vector = predict_results[2]
+            prediction_with_partial_abstention = predict_results[3]
 
         data = {
             "Y_test": Y_test.tolist(),
             "Y_predicted": list(predict_results[0]),
             "Y_BOPOs": list(predict_results[1]),
             "indices_vector": indices_vector,
+            "prediction_with_partial_abstention": prediction_with_partial_abstention,
             "target_metric": target_metric,
             "preference_order": order_type,
             "height": height,
