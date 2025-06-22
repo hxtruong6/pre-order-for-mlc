@@ -8,8 +8,8 @@ class EvaluationMetricName(Enum):
     F1 = "f1"
     JACCARD = "jaccard"
     SUBSET0_1 = "subset0_1"
-    MEAN_IR = "mean_ir"  # for imbalance ratio
-    CV_IR = "cv_ir"  # for coefficient of variation of imbalance ratio
+    MEAN_IR = "mean_ir"  # imbalance ratio (for whole dataset)
+    CV_IR = "cv_ir"  # coefficient of variation of imbalance ratio (for whole dataset)
     MFRD = "mfrd"  # Maximum False Rate Difference
     AFRD = "afrd"  # Average False Rate Difference
     # Partial Abstention Metrics
@@ -39,42 +39,42 @@ class EvaluationMetric:
     def list_metrics(self):
         return [metric.value for metric in EvaluationMetricName]
 
-    def calculate(
-        self,
-        metric_name: EvaluationMetricName,
-        predicted_Y: np.ndarray,
-        true_Y: np.ndarray,
-    ) -> float:
-        if metric_name == EvaluationMetricName.HAMMING_ACCURACY.value:
-            return self.hamming_accuracy(predicted_Y, true_Y)
-        elif metric_name == EvaluationMetricName.F1.value:
-            return self.f1(predicted_Y, true_Y)
-        elif metric_name == EvaluationMetricName.SUBSET0_1.value:
-            return self.subset0_1(predicted_Y, true_Y)
-        elif metric_name == EvaluationMetricName.MEAN_IR.value:
-            return self.mean_ir(true_Y)
-        elif metric_name == EvaluationMetricName.CV_IR.value:
-            return self.cv_ir(true_Y)
-        elif metric_name == EvaluationMetricName.MFRD.value:
-            return self.mfrd(predicted_Y, true_Y)
-        elif metric_name == EvaluationMetricName.AFRD.value:
-            return self.afrd(predicted_Y, true_Y)
-        elif metric_name == EvaluationMetricName.HAMMING_ACCURACY_PA.value:
-            return self.hamming_accuracy_pa(predicted_Y, true_Y)
-        elif metric_name == EvaluationMetricName.SUBSET0_1_PA.value:
-            return self.subset0_1_pa(predicted_Y, true_Y)
-        elif metric_name == EvaluationMetricName.F1_PA.value:
-            return self.f1_pa(predicted_Y, true_Y)
-        elif metric_name == EvaluationMetricName.AREC.value:
-            return self.arec(predicted_Y, true_Y)
-        elif metric_name == EvaluationMetricName.AABS.value:
-            return self.aabs(predicted_Y, true_Y)
-        elif metric_name == EvaluationMetricName.REC.value:
-            return self.rec(predicted_Y, true_Y)
-        elif metric_name == EvaluationMetricName.ABS.value:
-            return self.abs(predicted_Y, true_Y)
-        else:
-            raise ValueError("Invalid metric name")
+    # def calculate(
+    #     self,
+    #     metric_name: EvaluationMetricName,
+    #     predicted_Y: np.ndarray,
+    #     true_Y: np.ndarray,
+    # ) -> float:
+    #     if metric_name == EvaluationMetricName.HAMMING_ACCURACY.value:
+    #         return self.hamming_accuracy(predicted_Y, true_Y)
+    #     elif metric_name == EvaluationMetricName.F1.value:
+    #         return self.f1(predicted_Y, true_Y)
+    #     elif metric_name == EvaluationMetricName.SUBSET0_1.value:
+    #         return self.subset0_1(predicted_Y, true_Y)
+    #     elif metric_name == EvaluationMetricName.MEAN_IR.value:
+    #         return self.mean_ir(true_Y)
+    #     elif metric_name == EvaluationMetricName.CV_IR.value:
+    #         return self.cv_ir(true_Y)
+    #     elif metric_name == EvaluationMetricName.MFRD.value:
+    #         return self.mfrd(predicted_Y, true_Y)
+    #     elif metric_name == EvaluationMetricName.AFRD.value:
+    #         return self.afrd(predicted_Y, true_Y)
+    #     elif metric_name == EvaluationMetricName.HAMMING_ACCURACY_PA.value:
+    #         return self.hamming_accuracy_pa(predicted_Y, true_Y)
+    #     elif metric_name == EvaluationMetricName.SUBSET0_1_PA.value:
+    #         return self.subset0_1_pa(predicted_Y, true_Y)
+    #     elif metric_name == EvaluationMetricName.F1_PA.value:
+    #         return self.f1_pa(predicted_Y, true_Y)
+    #     elif metric_name == EvaluationMetricName.AREC.value:
+    #         return self.arec(predicted_Y, true_Y)
+    #     elif metric_name == EvaluationMetricName.AABS.value:
+    #         return self.aabs(predicted_Y, true_Y)
+    #     elif metric_name == EvaluationMetricName.REC.value:
+    #         return self.rec(predicted_Y, true_Y)
+    #     elif metric_name == EvaluationMetricName.ABS.value:
+    #         return self.abs(predicted_Y, true_Y)
+    #     else:
+    #         raise ValueError("Invalid metric name")
 
     def hamming_accuracy(self, predicted_Y, true_Y) -> float:
         return 1 - hamming_loss(predicted_Y, true_Y)  # type: ignore

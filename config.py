@@ -71,8 +71,8 @@ class ConfigManager:
         NOISY_RATES = [
             0.0,
             0.1,
-            # 0.2,
-            # 0.3,
+            0.2,
+            0.3,
         ]
         BASE_LEARNERS = [BaseLearnerName.RF]
         ALGORITHMS = [
@@ -87,7 +87,7 @@ class ConfigManager:
             results_dir=results_dir,
             noisy_rates=NOISY_RATES,
             base_learners=BASE_LEARNERS,
-            total_repeat_times=1,
-            number_folds=2,
+            total_repeat_times=2,
+            number_folds=5,
             algorithms=ALGORITHMS,  # Default to just BOPOS
         )

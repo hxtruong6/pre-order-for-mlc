@@ -53,6 +53,7 @@ class Search_BOPreOs:
         G, h, A, b, I, B = self._encode_parameters_PRE_ORDER(indices_vector)  # type: ignore
         predicted_Y = []
         predicted_preorders = []
+        prediction_with_partial_abstentions = []
         for n in range(self.n_instances):
             #            print(index, n_instances)
             vector = []
@@ -102,11 +103,14 @@ class Search_BOPreOs:
 
             predicted_Y.append(hard_prediction)
             predicted_preorders.append(predicted_preorder)
+            prediction_with_partial_abstentions.append(
+                prediction_with_partial_abstention
+            )
         return (
             predicted_Y,
             predicted_preorders,
             indices_vector,
-            prediction_with_partial_abstention,
+            prediction_with_partial_abstentions,
         )
 
     def _encode_parameters_PRE_ORDER(self, indices_vector):
@@ -405,6 +409,7 @@ class Search_BOParOs:
         G, h, A, b, I, B = self._encode_parameters_PARTIAL_ORDER(indices_vector)  # type: ignore
         predicted_Y = []
         predicted_partial_orders = []
+        prediction_with_partial_abstentions = []
         for n in range(self.n_instances):
             vector = []
             if self.target_metric == TargetMetric.Hamming:
@@ -447,11 +452,14 @@ class Search_BOParOs:
             )
             predicted_Y.append(hard_prediction)
             predicted_partial_orders.append(predicted_partial_order)
+            prediction_with_partial_abstentions.append(
+                prediction_with_partial_abstention
+            )
         return (
             predicted_Y,
             predicted_partial_orders,
             indices_vector,
-            prediction_with_partial_abstention,
+            prediction_with_partial_abstentions,
         )
 
     def _encode_parameters_PARTIAL_ORDER(self, indices_vector):
