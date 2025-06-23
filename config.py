@@ -35,12 +35,12 @@ class ConfigManager:
         "chd_49": DatasetConfig("CHD_49", "CHD_49.arff", 6),
         "emotions": DatasetConfig("emotions", "emotions.arff", 6),
         "scene": DatasetConfig("scene", "scene.arff", 6),
-        "viruspseacc": DatasetConfig("VirusPseAAC", "VirusPseAAC.arff", 6),
+        "viruspseaac": DatasetConfig("VirusPseAAC", "VirusPseAAC.arff", 6),
         "yeast": DatasetConfig("Yeast", "Yeast.arff", 14),
         "water_quality": DatasetConfig("Water-quality", "Water-quality.arff", 14),
-        "humanpseacc": DatasetConfig("HumanPseAAC", "HumanPseAAC.arff", 14),
-        "gpositivepseacc": DatasetConfig("GpositivePseAAC", "GpositivePseAAC.arff", 4),
-        "plantpseacc": DatasetConfig("PlantPseAAC", "PlantPseAAC.arff", 12),
+        "humanpseaac": DatasetConfig("HumanPseAAC", "HumanPseAAC.arff", 14),
+        "gpositivepseaac": DatasetConfig("GpositivePseAAC", "GpositivePseAAC.arff", 4),
+        "plantpseaac": DatasetConfig("PlantPseAAC", "PlantPseAAC.arff", 12),
     }
 
     DATASET_KEY = {

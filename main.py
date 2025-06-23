@@ -520,6 +520,7 @@ def main():
 
     # Parse arguments
     args = parse_args()
+    print(args)
 
     try:
         # Get configurations

@@ -1,0 +1,6 @@
+Base_Learner,Algorithm,Algorithm_Metric,Algorithm_Height,Algorithm_Order,Prediction_Type,Metric,Mean,Std
+RF,,,,,BinaryVector,hamming_accuracy,0.7942577030812326,0.015318853081082502
+RF,,,,,BinaryVector,subset0_1,0.25213644779945876,0.04214791825901885
+RF,,,,,BinaryVector,f1,0.5840210321416699,0.036698220096082826
+RF,,,,,BinaryVector,mfrd,0.6405550685513457,0.13352544153492205
+RF,,,,,BinaryVector,afrd,0.31999030301126247,0.04363858200055065

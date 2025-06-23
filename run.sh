@@ -34,12 +34,12 @@ run_and_log() {
 }
 
 # Run the commands for each dataset
-run_and_log "chd_49"
-run_and_log "emotions"
+# run_and_log "chd_49"
+# run_and_log "emotions"
 run_and_log "VirusPseAAC"
 run_and_log "GpositivePseAAC"
 run_and_log "PlantPseAAC"
 run_and_log "water-quality"
-run_and_log "scene"
+# run_and_log "scene"
 run_and_log "yeast"
 run_and_log "HumanPseAAC"
