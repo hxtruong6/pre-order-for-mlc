@@ -47,12 +47,12 @@ class ConfigManager:
         "chd_49": "CHD_49",
         "emotions": "emotions",
         "scene": "scene",
-        "viruspseacc": "VirusPseAAC",
+        "viruspseaac": "VirusPseAAC",
         "yeast": "Yeast",
         "water_quality": "Water-quality",
-        "humanpseacc": "HumanPseAAC",
-        "gpositivepseacc": "GpositivePseAAC",
-        "plantpseacc": "PlantPseAAC",
+        "humanpseaac": "HumanPseAAC",
+        "gpositivepseaac": "GpositivePseAAC",
+        "plantpseaac": "PlantPseAAC",
     }
 
     @staticmethod
