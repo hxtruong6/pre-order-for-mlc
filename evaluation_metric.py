@@ -573,6 +573,6 @@ class EvaluationMetric:
 
         # Sum abstentions per instance
         abstention_sum = np.sum(predicted_Y == -1, axis=1)
-
+        abstention_indices = np.where(abstention_sum = 0, 0, 1)
         # Compute ABS (average over instances)
-        return float(np.mean(abstention_sum))
+        return float(np.mean(abstention_indices))
