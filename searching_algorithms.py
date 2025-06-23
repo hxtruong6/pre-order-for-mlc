@@ -371,7 +371,7 @@ class Search_BOPreOs:
         for ind in range(n_labels):
             if scores_d[ind] > 0:
                 prediction_with_partial_abstention[ind] = 1
-            elif scores_n[ind] == 0 and scores_d[ind] > 0:
+            elif scores_n[ind] == 0 and scores_d[ind] == 0:
                 prediction_with_partial_abstention[ind] = -1
         # optX: [n*(n-1)*2, 1] -> [1]
         #  [[0.1], [0.2],] => [0.1, 0.2]
