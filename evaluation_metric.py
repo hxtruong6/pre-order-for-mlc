@@ -567,12 +567,17 @@ class EvaluationMetric:
             true_Y: True label vectors, shape (T, K).
 
         Returns:
-            float: ABS score.
+            float: ABS score - proportion of instances with at least one rejected label.
         """
         T = true_Y.shape[0]
 
-        # Sum abstentions per instance
-        abstention_sum = np.sum(predicted_Y == -1, axis=1)
-        abstention_indices = np.where(abstention_sum = 0, 0, 1)
-        # Compute ABS (average over instances)
-        return float(np.mean(abstention_indices))
+        # Count instances that have at least one rejected label
+        instances_with_rejection = 0
+
+        for t in range(T):
+            # Check if this instance has at least one abstention (-1)
+            if np.any(predicted_Y[t] == -1):
+                instances_with_rejection += 1
+
+        # Compute ABS (proportion of instances with at least one rejected label)
+        return float(instances_with_rejection / T)
