@@ -6,15 +6,16 @@ import random
 import numpy as np
 from pathlib import Path
 from dataclasses import dataclass
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from enum import Enum
 from collections import defaultdict
 import pandas as pd
+from config import AlgorithmType, ConfigManager
 from utils.results_manager import ExperimentResults
 from evaluation_metric import EvaluationMetric, EvaluationMetricName
 
 # basicConfig(level=INFO)
-basicConfig(level=ERROR)
+# basicConfig(level=ERROR)
 
 
 class OrderType(Enum):
@@ -30,6 +31,7 @@ class MetricType(Enum):
 class PredictionType(Enum):
     BINARY_VECTOR = "BinaryVector"
     PREFERENCE_ORDER = "PreferenceOrder"
+    PARTIAL_ABSTENTION = "PartialAbstention"
 
 
 @dataclass
@@ -61,6 +63,8 @@ class EvaluationConfig:
             EvaluationMetricName.HAMMING_ACCURACY,
             EvaluationMetricName.SUBSET0_1,
             EvaluationMetricName.F1,
+            EvaluationMetricName.MFRD,
+            EvaluationMetricName.AFRD,
         ],
         PredictionType.PREFERENCE_ORDER: {
             OrderType.PRE_ORDER: [
@@ -72,6 +76,21 @@ class EvaluationConfig:
                 EvaluationMetricName.SUBSET0_1_PARTIAL_ORDER,
             ],
         },
+        PredictionType.PARTIAL_ABSTENTION: [
+            EvaluationMetricName.HAMMING_ACCURACY_PA,
+            EvaluationMetricName.SUBSET0_1_PA,
+            EvaluationMetricName.F1_PA,
+            EvaluationMetricName.AREC,
+            EvaluationMetricName.AABS,
+            EvaluationMetricName.REC,
+            EvaluationMetricName.ABS,
+        ],
+    }
+
+    # Metrics that should be calculated on the entire dataset, not per fold
+    DATASET_LEVEL_METRICS = {
+        EvaluationMetricName.MEAN_IR,
+        EvaluationMetricName.CV_IR,
     }
 
 
@@ -82,86 +101,174 @@ class EvaluationFramework:
         self.results_dir = Path(results_dir)
         self.results: Dict[str, Dict[str, Dict[str, Any]]] = {}
         self.evaluation_metric = EvaluationMetric()
+        self.df = None
 
-    def load_results(self, dataset_name: str, noisy_rate: float, is_clr=False):
-        """Load results from pickle file and process predictions."""
-        results = ExperimentResults.load_results(
-            self.results_dir,
-            dataset_name,
-            noisy_rate,
-            is_clr,
-        )
-        log(INFO, f"Loaded results for {dataset_name} with shape {results.shape}")
-        self.df = results
+    def load_results(
+        self,
+        dataset_name: str,
+        noisy_rate: float,
+        algorithm_type: AlgorithmType = AlgorithmType.BOPOS,
+    ):
+        """Load results from file"""
+        try:
+            self.df = ExperimentResults.load_results(
+                self.results_dir,
+                dataset_name,
+                noisy_rate,
+                algorithm_type=algorithm_type,
+            )
+        except Exception as e:
+            log(ERROR, f"Failed to load results: {str(e)}")
+            raise
 
     def evaluate_metric(
         self,
         metric_name: EvaluationMetricName,
-        prediction_type: PredictionType | None,
+        prediction_type: Optional[PredictionType],
         predictions: np.ndarray,
         true_labels: np.ndarray,
-        indices_vector: np.ndarray | None,
-        bopos: np.ndarray | None,
-        is_clr: bool = False,
-        order_type: OrderType | None = None,
-    ) -> float:  # type: ignore
+        indices_vector: Optional[np.ndarray],
+        partial_abstention: Optional[np.ndarray],
+        bopos: Optional[np.ndarray],
+        order_type: Optional[OrderType] = None,
+    ) -> float:
         """Calculate specific evaluation metric."""
         try:
-            if is_clr:
-                if metric_name == EvaluationMetricName.HAMMING_ACCURACY:
-                    return self.evaluation_metric.hamming_accuracy(
-                        predictions, true_labels
-                    )
-                elif metric_name == EvaluationMetricName.SUBSET0_1:
-                    return self.evaluation_metric.subset0_1(predictions, true_labels)
-                elif metric_name == EvaluationMetricName.F1:
-                    return self.evaluation_metric.f1(predictions, true_labels)
-                else:
-                    raise ValueError(f"Unknown metric: {metric_name}")
+            if prediction_type == PredictionType.PARTIAL_ABSTENTION:
+                return self._evaluate_partial_abstention(
+                    metric_name=metric_name,
+                    true_labels=true_labels,
+                    partial_abstention=partial_abstention,  # type: ignore
+                )
 
-            # print(
-            #     f"*** Evaluating metric: {metric_name} for {prediction_type} {'\t| OrderType' if order_type is not None else ''} {order_type.value if order_type is not None else ''}"
-            # )
             if prediction_type == PredictionType.BINARY_VECTOR:
-                if metric_name == EvaluationMetricName.HAMMING_ACCURACY:
-                    return self.evaluation_metric.hamming_accuracy(
-                        predictions, true_labels
-                    )
-                elif metric_name == EvaluationMetricName.SUBSET0_1:
-                    return self.evaluation_metric.subset0_1(predictions, true_labels)
-                elif metric_name == EvaluationMetricName.F1:
-                    return self.evaluation_metric.f1(predictions, true_labels)
-                else:
-                    raise ValueError(f"Unknown metric: {metric_name}")
+                return self._evaluate_binary_vector(
+                    metric_name, predictions, true_labels
+                )
             elif prediction_type == PredictionType.PREFERENCE_ORDER:
-                if order_type == OrderType.PRE_ORDER:
-                    if metric_name == EvaluationMetricName.HAMMING_ACCURACY_PRE_ORDER:
-                        return self.evaluation_metric.hamming_accuracy_PRE_ORDER(
-                            true_labels, indices_vector, bopos
-                        )
-                    elif metric_name == EvaluationMetricName.SUBSET0_1_PRE_ORDER:
-                        return self.evaluation_metric.subset0_1_accuracy_PRE_ORDER(
-                            true_labels, indices_vector, bopos
-                        )
-                elif order_type == OrderType.PARTIAL_ORDER:
-                    if (
-                        metric_name
-                        == EvaluationMetricName.HAMMING_ACCURACY_PARTIAL_ORDER
-                    ):
-                        return self.evaluation_metric.hamming_accuracy_PARTIAL_ORDER(
-                            true_labels, indices_vector, bopos
-                        )
-                    elif metric_name == EvaluationMetricName.SUBSET0_1_PARTIAL_ORDER:
-                        return self.evaluation_metric.subset0_1_accuracy_PARTIAL_ORDER(
-                            true_labels, indices_vector, bopos
-                        )
+                return self._evaluate_preference_order(
+                    metric_name,
+                    predictions,
+                    true_labels,
+                    indices_vector,
+                    bopos,
+                    order_type,
+                )
             else:
                 raise ValueError(f"Unknown prediction type: {prediction_type}")
         except Exception as e:
             raise Exception(f"Error calculating {metric_name}: {e}")
 
+    def _evaluate_binary_vector(
+        self,
+        metric_name: EvaluationMetricName,
+        predictions: np.ndarray,
+        true_labels: np.ndarray,
+    ) -> float:
+        """Evaluate metrics for binary vector predictions"""
+        if metric_name == EvaluationMetricName.HAMMING_ACCURACY:
+            return self.evaluation_metric.hamming_accuracy(predictions, true_labels)
+        elif metric_name == EvaluationMetricName.SUBSET0_1:
+            return self.evaluation_metric.subset0_1(predictions, true_labels)
+        elif metric_name == EvaluationMetricName.F1:
+            return self.evaluation_metric.f1(predictions, true_labels)
+        elif metric_name == EvaluationMetricName.MFRD:
+            return self.evaluation_metric.mfrd(predictions, true_labels)
+        elif metric_name == EvaluationMetricName.AFRD:
+            return self.evaluation_metric.afrd(predictions, true_labels)
+        # elif metric_name == EvaluationMetricName.HAMMING_ACCURACY_PA:
+        #     return self.evaluation_metric.hamming_accuracy_pa(predictions, true_labels)
+        # elif metric_name == EvaluationMetricName.SUBSET0_1_PA:
+        #     return self.evaluation_metric.subset0_1_pa(predictions, true_labels)
+        # elif metric_name == EvaluationMetricName.F1_PA:
+        #     return self.evaluation_metric.f1_pa(predictions, true_labels)
+        else:
+            raise ValueError(f"Unknown metric: {metric_name}")
+
+    def _evaluate_preference_order(
+        self,
+        metric_name: EvaluationMetricName,
+        predictions: np.ndarray,
+        true_labels: np.ndarray,
+        indices_vector: Optional[np.ndarray],
+        bopos: Optional[np.ndarray],
+        order_type: Optional[OrderType],
+    ) -> float:
+        """Evaluate metrics for preference order predictions"""
+        if order_type == OrderType.PRE_ORDER:
+            if metric_name == EvaluationMetricName.HAMMING_ACCURACY_PRE_ORDER:
+                return self.evaluation_metric.hamming_accuracy_PRE_ORDER(
+                    true_labels, indices_vector, bopos
+                )
+            elif metric_name == EvaluationMetricName.SUBSET0_1_PRE_ORDER:
+                return self.evaluation_metric.subset0_1_accuracy_PRE_ORDER(
+                    true_labels, indices_vector, bopos
+                )
+        elif order_type == OrderType.PARTIAL_ORDER:
+            if metric_name == EvaluationMetricName.HAMMING_ACCURACY_PARTIAL_ORDER:
+                return self.evaluation_metric.hamming_accuracy_PARTIAL_ORDER(
+                    true_labels, indices_vector, bopos
+                )
+            elif metric_name == EvaluationMetricName.SUBSET0_1_PARTIAL_ORDER:
+                return self.evaluation_metric.subset0_1_accuracy_PARTIAL_ORDER(
+                    true_labels, indices_vector, bopos
+                )
+        raise ValueError(f"Unknown metric or order type: {metric_name}, {order_type}")
+
+    def _evaluate_partial_abstention(
+        self,
+        metric_name: EvaluationMetricName,
+        true_labels: np.ndarray,
+        partial_abstention: np.ndarray,
+    ) -> float:
+        # if true_labels.shape[0] != partial_abstention.shape[0]:
+        #     raise ValueError(
+        #         "True labels and partial abstention must have the same number of instances"
+        #     )
+
+        # print("xxx001 true_labels", true_labels)
+        # print("xxx002 partial_abstention", partial_abstention)
+
+        """Evaluate metrics for partial abstention only for BOPOs"""
+        if metric_name == EvaluationMetricName.HAMMING_ACCURACY_PA:
+            return self.evaluation_metric.hamming_accuracy_pa(
+                predicted_Y=partial_abstention,
+                true_Y=true_labels,
+            )
+        elif metric_name == EvaluationMetricName.SUBSET0_1_PA:
+            return self.evaluation_metric.subset0_1_pa(
+                predicted_Y=partial_abstention,
+                true_Y=true_labels,
+            )
+        elif metric_name == EvaluationMetricName.F1_PA:
+            return self.evaluation_metric.f1_pa(
+                predicted_Y=partial_abstention,
+                true_Y=true_labels,
+            )
+        elif metric_name == EvaluationMetricName.AREC:
+            return self.evaluation_metric.arec(
+                predicted_Y=partial_abstention,
+                true_Y=true_labels,
+            )
+        elif metric_name == EvaluationMetricName.AABS:
+            return self.evaluation_metric.aabs(
+                predicted_Y=partial_abstention,
+                true_Y=true_labels,
+            )
+        elif metric_name == EvaluationMetricName.REC:
+            return self.evaluation_metric.rec(
+                predicted_Y=partial_abstention,
+                true_Y=true_labels,
+            )
+        elif metric_name == EvaluationMetricName.ABS:
+            return self.evaluation_metric.abs(
+                predicted_Y=partial_abstention,
+                true_Y=true_labels,
+            )
+        else:
+            raise ValueError(f"Unknown metric for partial abstention: {metric_name}")
+
     def aggregate_results(self, metric_values: List[float]) -> Dict[str, float]:
-        # print(metric_values, "metric_values")
         """Calculate mean and standard deviation across folds."""
         if not metric_values:
             return {"mean": 0.0, "std": 0.0}
@@ -174,26 +281,44 @@ class EvaluationFramework:
         self,
         dataset_name: str,
         base_learner_name: str,
-    ):
-        """Get data values for a specific dataset, base learner, target metric, preference order, and height."""
+    ) -> pd.DataFrame:
+        """Get data values for a specific dataset and base learner."""
+        if self.df is None:
+            log(ERROR, "No data loaded. Call load_results() first.")
+            return pd.DataFrame()
+
         log(
             INFO,
             f"Getting data values for {dataset_name}, {base_learner_name}",
         )
 
-        return self.df[
+        filtered_df = self.df[
             (self.df["dataset_name"].str.lower() == dataset_name.lower())
             & (self.df["base_learner_name"].str.lower() == base_learner_name.lower())
-            # & (self.results_df["target_metric"] == target_metric)
-            # & (self.results_df["preference_order"] == preference_order)
-            # & (
-            #     self.results_df["height"].isna()
-            #     if height is None
-            #     else self.results_df["height"] == height
-            # )
         ]
 
-    def _evaluate(self, data_df, df1, eval_metric, prediction_type, order_type=None):
+        if filtered_df.empty:
+            log(
+                ERROR,
+                f"No data found for dataset {dataset_name} and base learner {base_learner_name}",
+            )
+            return pd.DataFrame()
+
+        return filtered_df
+
+    def _evaluate_fold(
+        self,
+        data_df: pd.DataFrame,
+        df1: pd.DataFrame,
+        eval_metric: EvaluationMetricName,
+        prediction_type: Optional[PredictionType],
+        order_type: Optional[OrderType] = None,
+    ) -> List[float]:
+        """Evaluate a single fold of results."""
+        if data_df.empty or df1.empty:
+            log(ERROR, "Empty DataFrame provided for evaluation")
+            return []
+
         result_folds = []
         for repeat_time in data_df["repeat_time"].unique():
             log(INFO, f"Repeat time: {repeat_time}")
@@ -202,187 +327,116 @@ class EvaluationFramework:
                 log(INFO, f"Fold: {fold}")
                 df2 = df1[(df1["repeat_time"] == repeat_time) & (df1["fold"] == fold)]
 
-                # print(
-                #     "index",
-                #     df2["indices_vector"].values[0],
-                #     np.array(df2["indices_vector"].values[0]).shape,
-                # )
-                # print(
-                #     "bopo",
-                #     np.array(df2["Y_BOPOs"].values[0]),
-                #     np.array(df2["Y_BOPOs"].values[0]).shape,
-                # )
-                # print(
-                #     "pred",
-                #     np.array(df2["Y_predicted"].values[0]),
-                #     np.array(df2["Y_predicted"].values[0]).shape,
-                # )
-                # print("test", df2["Y_test"].values[0])
-
-                result_folds.append(
-                    self.evaluate_metric(
-                        metric_name=eval_metric,
-                        prediction_type=prediction_type,
-                        predictions=df2["Y_predicted"].values[0],  # type: ignore
-                        true_labels=df2["Y_test"].values[0],  # type: ignore
-                        indices_vector=df2["indices_vector"].values[0],  # type: ignore
-                        bopos=df2["Y_BOPOs"].values[0],  # type: ignore
-                        is_clr=False,
-                        order_type=order_type,
+                if df2.empty:
+                    log(
+                        ERROR,
+                        f"No data found for repeat_time {repeat_time} and fold {fold}",
                     )
-                )
+                    continue
 
-        # print(result_folds, "result_folds")
-        res = self.aggregate_results(result_folds)
-        return res
-
-    def _evaluate_clr(self, data_df, df1, eval_metric):
-        result_folds = []
-        for repeat_time in data_df["repeat_time"].unique():
-            log(INFO, f"Repeat time: {repeat_time}")
-
-            for fold in data_df["fold"].unique():
-                log(INFO, f"Fold: {fold}")
-                df2 = df1[(df1["repeat_time"] == repeat_time) & (df1["fold"] == fold)]
-                # print("df2", df2["Y_predicted"].values)
-
-                result_folds.append(
-                    self.evaluate_metric(
-                        metric_name=eval_metric,
-                        prediction_type=None,
-                        predictions=df2["Y_predicted"].values[0],  # type: ignore
-                        true_labels=df2["Y_test"].values[0],  # type: ignore
-                        indices_vector=None,  # type: ignore
-                        bopos=None,  # type: ignore
-                        is_clr=True,
+                try:
+                    # Extract values with type checking
+                    y_pred = df2["Y_predicted"].values[0]
+                    y_test = df2["Y_test"].values[0]
+                    indices = (
+                        df2["indices_vector"].values[0]
+                        if "indices_vector" in df2.columns
+                        else None
                     )
-                )
+                    bopos = (
+                        df2["Y_BOPOs"].values[0] if "Y_BOPOs" in df2.columns else None
+                    )
+                    partial_abstention = (
+                        np.array(df2["partial_abstention"].values[0])
+                        if "partial_abstention" in df2.columns
+                        else None
+                    )
 
-        # print(result_folds, "result_folds")
-        res = self.aggregate_results(result_folds)
-        return res
+                    if not isinstance(y_pred, np.ndarray) or not isinstance(
+                        y_test, np.ndarray
+                    ):
+                        log(
+                            ERROR,
+                            f"Invalid prediction or test data type for fold {fold}",
+                        )
+                        continue
 
-    def evaluate_dataset(self, dataset_name: str, noisy_rate: float):
-        """
-        Evaluate results for a specific dataset and noise rate.
+                    result_folds.append(
+                        self.evaluate_metric(
+                            metric_name=eval_metric,
+                            prediction_type=prediction_type,
+                            predictions=y_pred,
+                            true_labels=y_test,
+                            indices_vector=indices,
+                            partial_abstention=partial_abstention,
+                            bopos=bopos,
+                            order_type=order_type,
+                        )
+                    )
+                except (IndexError, KeyError) as e:
+                    log(ERROR, f"Error accessing data for fold {fold}: {str(e)}")
+                    continue
 
-        Args:
-            dataset_name: Name of the dataset
-            noisy_rate: Noise rate used in the experiment
-        """
+        return result_folds
+
+    def evaluate_dataset(
+        self,
+        dataset_name: str,
+        noisy_rate: float,
+        algorithm_type: AlgorithmType = AlgorithmType.BOPOS,
+    ):
+        """Evaluate results for a specific dataset and noise rate."""
         try:
+            if self.df is None:
+                log(ERROR, "No data loaded. Call load_results() first.")
+                return
+
             log(
                 INFO,
                 f"Processing results for {dataset_name} with noise rate {noisy_rate}",
             )
 
-            self.eval_results = []
+            self.eval_results: List[Dict[str, Any]] = []
 
+            # for each base learner such as random forest, xgboost, etc.
             for base_learner_name in self.df["base_learner_name"].unique():
                 log(INFO, f"Processing results for {base_learner_name}")
+                data_df = self.get_data_df(dataset_name, base_learner_name)
 
-                # Get the data values
-                data_df = self.get_data_df(
-                    dataset_name,
-                    base_learner_name,
-                )
+                # For other algorithms (BR, CC, CLR)
+                if algorithm_type != AlgorithmType.BOPOS:
+                    self._evaluate_binary_vector_results(
+                        data_df, data_df, None, base_learner_name
+                    )
+                    continue
 
-                # With each evaluation metric, we need to get the data values
-                for prediction_type in PredictionType:
-                    log(INFO, f"Prediction type: {prediction_type}")
+                # Handle for BOPOs
+                self._evaluate_preference_order_results(data_df, base_learner_name)
 
-                    # With each inference algorithm, we need to evaluate by repeat_time and fold then aggregate the results
-                    for inference_algorithm in EvaluationConfig.INFERENCE_ALGORITHMS:
-                        log(INFO, f"Inference algorithm: {inference_algorithm.key}")
+                # elif prediction_type == PredictionType.PARTIAL_ABSTENTION:
+                #     self._evaluate_partial_abstention_results(
+                #         data_df, data_df, None, base_learner_name
+                #     )
 
-                        preference_order = inference_algorithm.order_type.value
-                        metric = inference_algorithm.metric.value
-                        height = inference_algorithm.height
+                # # DOC: for BOPOs, preference order and partial abstention evaluation
+                # if algorithm_type != AlgorithmType.BOPOS:
+                #     continue
 
-                        log(INFO, f"Preference order: {preference_order}")
-                        log(INFO, f"Metric: {metric}")
-                        log(INFO, f"Height: {height}")
+                # df1 = self._filter_data_for_algorithm(data_df, inference_algorithm)
+                # if df1.empty:
+                #     log(
+                #         ERROR,
+                #         f"No data found for inference algorithm {inference_algorithm.key} and prediction type {prediction_type} and dataset {dataset_name} and base learner {base_learner_name}",
+                #     )
+                #     continue
 
-                        df1 = data_df[
-                            (data_df["preference_order"] == preference_order)
-                            & (data_df["target_metric"] == metric)
-                            & (
-                                data_df["height"] == height
-                                if height is not None
-                                else data_df["height"].isna()
-                            )
-                        ]  # [["repeat_time", "fold", "Y_predicted", "Y_test"]]
+                # for inference_algorithm in EvaluationConfig.INFERENCE_ALGORITHMS:
+                #     log(INFO, f"Inference algorithm: {inference_algorithm.key}")
 
-                        if prediction_type == PredictionType.PREFERENCE_ORDER:
-                            for order_type in EvaluationConfig.EVALUATION_METRICS[
-                                PredictionType.PREFERENCE_ORDER
-                            ].keys():
-                                log(
-                                    INFO,
-                                    f"Order type: {order_type.value} | Preference order: {preference_order}",
-                                )
-                                if preference_order != order_type.value:
-                                    log(
-                                        INFO,
-                                        f"Preference order mismatch: {preference_order} != {order_type.value} |* Skip this order type",
-                                    )
-                                    continue
-
-                                for eval_metric in EvaluationConfig.EVALUATION_METRICS[
-                                    PredictionType.PREFERENCE_ORDER
-                                ][order_type]:
-                                    log(INFO, f"Evaluation metric: {eval_metric}")
-                                    res = self._evaluate(
-                                        data_df,
-                                        df1,
-                                        eval_metric,
-                                        prediction_type,
-                                        order_type,
-                                    )
-                                    # Add the results to the evaluation dataframe
-                                    self.eval_results.append(
-                                        {
-                                            "Base_Learner": base_learner_name,
-                                            "Algorithm": inference_algorithm.key,
-                                            "Algorithm_Metric": inference_algorithm.metric.value,
-                                            "Algorithm_Height": inference_algorithm.height,
-                                            "Algorithm_Order": inference_algorithm.order_type.value,
-                                            "Prediction_Type": prediction_type.value,
-                                            "Metric": eval_metric.value,
-                                            "Mean": res["mean"],
-                                            "Std": res["std"],
-                                        },
-                                    )
-
-                        else:
-                            log(INFO, f"Prediction type: {prediction_type}")
-                            for eval_metric in EvaluationConfig.EVALUATION_METRICS[
-                                prediction_type
-                            ]:
-                                log(INFO, f"Evaluation metric: {eval_metric}")
-
-                                res = self._evaluate(
-                                    data_df,
-                                    df1,
-                                    eval_metric,
-                                    prediction_type,
-                                )
-                                # Add the results to the evaluation dataframe
-                                self.eval_results.append(
-                                    {
-                                        "Base_Learner": base_learner_name,
-                                        "Algorithm": inference_algorithm.key,
-                                        "Algorithm_Metric": inference_algorithm.metric.value,
-                                        "Algorithm_Height": inference_algorithm.height,
-                                        "Algorithm_Order": inference_algorithm.order_type.value,
-                                        "Prediction_Type": prediction_type.value,
-                                        "Metric": eval_metric.value,
-                                        "Mean": res["mean"],
-                                        "Std": res["std"],
-                                    },
-                                )
-
-            # log(INFO, f"Evaluation completed for {dataset_name}")
+                #     if prediction_type == PredictionType.PREFERENCE_ORDER:
+                #         self._evaluate_preference_order_results(
+                #             data_df, df1, inference_algorithm, base_learner_name
+                #         )
 
         except Exception as e:
             log(
@@ -392,102 +446,163 @@ class EvaluationFramework:
             )
             raise
 
-    def evaluate_dataset_clr(self, dataset_name: str, noisy_rate: float):
-        """
-        Evaluate results for a specific dataset and noise rate.
-
-        Args:
-            dataset_name: Name of the dataset
-            noisy_rate: Noise rate used in the experiment
-        """
-        try:
-            log(
-                INFO,
-                f"Processing results for {dataset_name} with noise rate {noisy_rate}",
+    def _filter_data_for_algorithm(
+        self, data_df: pd.DataFrame, inference_algorithm: InferenceAlgorithm
+    ) -> pd.DataFrame:
+        """Filter data for a specific inference algorithm."""
+        return data_df[
+            (data_df["preference_order"] == inference_algorithm.order_type.value)
+            & (data_df["target_metric"] == inference_algorithm.metric.value)
+            & (
+                data_df["height"] == inference_algorithm.height
+                if inference_algorithm.height is not None
+                else data_df["height"].isna()
             )
+        ]
 
-            self.eval_results = []
+    def _evaluate_preference_order_results(
+        self,
+        data_df: pd.DataFrame,
+        base_learner_name: str,
+    ):
+        """Evaluate results for preference order predictions."""
+        for inference_algorithm in EvaluationConfig.INFERENCE_ALGORITHMS:
+            log(INFO, f"Inference algorithm: {inference_algorithm.key}")
 
-            for base_learner_name in self.df["base_learner_name"].unique():
-                log(INFO, f"Processing results for {base_learner_name}")
+            # filter data for the inference algorithm
+            df1 = self._filter_data_for_algorithm(data_df, inference_algorithm)
+            if df1.empty:
+                # log(
+                #     ERROR,
+                #     f"No data found for inference algorithm {inference_algorithm.key} and base learner {base_learner_name}",
+                # )
+                return
 
-                # Get the data values
-                data_df = self.get_data_df(
-                    dataset_name,
-                    base_learner_name,
+            # for each order type
+            for order_type in EvaluationConfig.EVALUATION_METRICS[
+                PredictionType.PREFERENCE_ORDER
+            ].keys():
+                if inference_algorithm.order_type.value != order_type.value:
+                    continue
+
+                log(INFO, f"Order type: {order_type.value}")
+
+                # For Binary Vector
+                self._evaluate_binary_vector_results(
+                    data_df, df1, inference_algorithm, base_learner_name
                 )
-                # print("data_df", data_df)
 
-                # With each evaluation metric, we need to get the data values
-                for eval_metric in [
-                    EvaluationMetricName.HAMMING_ACCURACY,
-                    EvaluationMetricName.SUBSET0_1,
-                    EvaluationMetricName.F1,
-                ]:
+                # For Partial Abstention
+                self._evaluate_partial_abstention_results(
+                    data_df, df1, inference_algorithm, base_learner_name
+                )
 
+                # For preference metrics
+                for eval_metric in EvaluationConfig.EVALUATION_METRICS[
+                    PredictionType.PREFERENCE_ORDER
+                ][order_type]:
                     log(INFO, f"Evaluation metric: {eval_metric}")
-
-                    res = self._evaluate_clr(
+                    result_folds = self._evaluate_fold(
                         data_df,
-                        data_df,
+                        df1,
                         eval_metric,
+                        PredictionType.PREFERENCE_ORDER,
+                        order_type,
                     )
-                    # Add the results to the evaluation dataframe
-                    self.eval_results.append(
-                        {
-                            "Base_Learner": base_learner_name,
-                            "Algorithm": "CLR",
-                            "Metric": eval_metric.value,
-                            "Mean": res["mean"],
-                            "Std": res["std"],
-                        },
+                    res = self.aggregate_results(result_folds)
+                    self._add_evaluation_result(
+                        base_learner_name,
+                        inference_algorithm,
+                        PredictionType.PREFERENCE_ORDER,
+                        eval_metric,
+                        res,
                     )
 
-            # log(INFO, f"Evaluation completed for {dataset_name}")
+    def _add_evaluation_result(
+        self,
+        base_learner_name: str,
+        inference_algorithm: InferenceAlgorithm | None,
+        prediction_type: PredictionType | None,
+        eval_metric: EvaluationMetricName,
+        res: Dict[str, float],
+    ):
+        """Add evaluation result to the results list."""
+        self.eval_results.append(
+            {
+                "Base_Learner": base_learner_name,
+                "Algorithm": inference_algorithm.key if inference_algorithm else None,
+                "Algorithm_Metric": (
+                    inference_algorithm.metric.value if inference_algorithm else None
+                ),
+                "Algorithm_Height": (
+                    inference_algorithm.height if inference_algorithm else None
+                ),
+                "Algorithm_Order": (
+                    inference_algorithm.order_type.value
+                    if inference_algorithm
+                    else None
+                ),
+                "Prediction_Type": prediction_type.value if prediction_type else None,
+                "Metric": eval_metric.value,
+                "Mean": res["mean"],
+                "Std": res["std"],
+            },
+        )
 
-        except Exception as e:
-            log(
-                ERROR,
-                f"Evaluation failed for {dataset_name}: {str(e)}",
-                exc_info=True,
+    def _evaluate_binary_vector_results(
+        self,
+        data_df: pd.DataFrame,
+        df1: pd.DataFrame,
+        inference_algorithm: InferenceAlgorithm | None,
+        base_learner_name: str,
+    ):
+        """Evaluate results for binary vector predictions."""
+        for eval_metric in EvaluationConfig.EVALUATION_METRICS[
+            PredictionType.BINARY_VECTOR
+        ]:
+            log(INFO, f"Evaluation metric: {eval_metric}")
+            result_folds = self._evaluate_fold(
+                data_df,
+                df1,
+                eval_metric,
+                PredictionType.BINARY_VECTOR,
             )
-            raise
-
-    def _validate_shapes(
-        self, predictions: np.ndarray, true_labels: np.ndarray, algo_id: str
-    ) -> bool:
-        """
-        Validate shapes of prediction and true label arrays.
-
-        Args:
-            predictions: Predicted labels
-            true_labels: True labels
-            algo_id: Algorithm identifier for logging
-
-        Returns:
-            bool: Whether shapes are valid
-        """
-        if predictions is None or true_labels is None:
-            log(ERROR, f"Missing data for {algo_id}")
-            return False
-
-        if predictions.shape != true_labels.shape:
-            log(
-                ERROR,
-                f"Shape mismatch in {algo_id}: {predictions.shape} vs {true_labels.shape}",
+            res = self.aggregate_results(result_folds)
+            self._add_evaluation_result(
+                base_learner_name,
+                inference_algorithm,
+                PredictionType.BINARY_VECTOR,
+                eval_metric,
+                res,
             )
-            return False
 
-        return True
+    def _evaluate_partial_abstention_results(
+        self,
+        data_df: pd.DataFrame,
+        df1: pd.DataFrame,
+        inference_algorithm: InferenceAlgorithm | None,
+        base_learner_name: str,
+    ):
+        """Evaluate results for partial abstention predictions."""
+        for eval_metric in EvaluationConfig.EVALUATION_METRICS[
+            PredictionType.PARTIAL_ABSTENTION
+        ]:
+            log(INFO, f"Evaluation metric: {eval_metric}")
+            result_folds = self._evaluate_fold(
+                data_df, df1, eval_metric, PredictionType.PARTIAL_ABSTENTION
+            )
+            res = self.aggregate_results(result_folds)
+            self._add_evaluation_result(
+                base_learner_name,
+                inference_algorithm,
+                PredictionType.PARTIAL_ABSTENTION,
+                eval_metric,
+                res,
+            )
 
     def save_results(self, output_path: str):
         """Save evaluation results to CSV and Excel."""
         try:
-            # Prepare data for DataFrame
-            rows = []
-            # print("self.eval_results", self.eval_results)
-
-            # Create DataFrame
             df = pd.DataFrame(self.eval_results)
 
             # Save as CSV
@@ -508,29 +623,91 @@ class EvaluationFramework:
         except Exception as e:
             raise Exception(f"Failed to save results: {str(e)}")
 
+    def evaluate_dataset_dataset_level(self, dataset_name: str, noisy_rate: float):
+        """Evaluate dataset-level metrics (MEAN_IR and CV_IR) on the entire dataset."""
+        try:
+            if self.df is None:
+                log(ERROR, "No data loaded. Call load_results() first.")
+                return
+
+            log(
+                INFO,
+                f"Processing dataset-level metrics for {dataset_name} with noise rate {noisy_rate}",
+            )
+
+            self.eval_results: List[Dict[str, Any]] = []
+
+            for base_learner_name in self.df["base_learner_name"].unique():
+                log(INFO, f"Processing results for {base_learner_name}")
+                data_df = self.get_data_df(dataset_name, base_learner_name)
+
+                try:
+                    # Get all test labels from the dataset
+                    all_test_labels = np.concatenate(
+                        [data_df["Y_test"].values[0] for _ in range(len(data_df))]
+                    )
+
+                    # Calculate MEAN_IR
+                    mean_ir = self.evaluation_metric.mean_ir(all_test_labels)
+                    self.eval_results.append(
+                        {
+                            "Base_Learner": base_learner_name,
+                            "Algorithm": "Dataset",
+                            "Metric": EvaluationMetricName.MEAN_IR.value,
+                            "Mean": mean_ir,
+                            "Std": 0.0,  # No standard deviation for dataset-level metrics
+                        },
+                    )
+
+                    # Calculate CV_IR
+                    cv_ir = self.evaluation_metric.cv_ir(all_test_labels)
+                    self.eval_results.append(
+                        {
+                            "Base_Learner": base_learner_name,
+                            "Algorithm": "Dataset",
+                            "Metric": EvaluationMetricName.CV_IR.value,
+                            "Mean": cv_ir,
+                            "Std": 0.0,  # No standard deviation for dataset-level metrics
+                        },
+                    )
+
+                except Exception as e:
+                    log(ERROR, f"Error calculating dataset-level metrics: {str(e)}")
+                    continue
+
+        except Exception as e:
+            log(
+                ERROR,
+                f"Dataset-level evaluation failed for {dataset_name}: {str(e)}",
+                exc_info=True,
+            )
+            raise
+
+
+def parse_args():
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--dataset", type=str)
+    parser.add_argument("--results_dir", type=str)
+    return parser.parse_args()
+
 
 def main():
+    """Main entry point for evaluation."""
+    args = parse_args()
 
-    arg = argparse.ArgumentParser()
-    arg.add_argument("--dataset", type=str)
-    arg.add_argument("--results_dir", type=str)
-    args = arg.parse_args()
+    # Set up results directory
+    results_dir = args.results_dir if args.results_dir else "./results"
+    Path(results_dir).mkdir(parents=True, exist_ok=True)
 
-    if args.results_dir is None:
-        results_dir = "./results"
-    else:
-        results_dir = args.results_dir
-        # create the results directory if it doesn't exist
-        Path(results_dir).mkdir(parents=True, exist_ok=True)
-
+    # Validate dataset
     if args.dataset is None:
-        dataset_name = "yeast"  # emotions, chd_49, scene, yeast, water-quality, virusgo
         raise ValueError("Dataset is required")
-    else:
-        dataset_name = args.dataset
+    dataset_name = ConfigManager.DATASET_KEY[args.dataset]
 
     log(INFO, f"Args: Dataset: {dataset_name}, Results dir: {results_dir}")
 
+    # Define noise rates
     noisy_rates = [
         0.0,
         0.1,
@@ -538,28 +715,35 @@ def main():
         0.3,
     ]
 
+    # Initialize evaluator
     evaluator = EvaluationFramework(results_dir)
+    # Algorithm types
 
+    algorithm_types = [
+        AlgorithmType.BOPOS,
+        AlgorithmType.BR,
+        AlgorithmType.CC,
+        AlgorithmType.CLR,
+    ]
+
+    # Process each noise rate
     for noisy_rate in noisy_rates:
         try:
+            # Evaluate dataset-level metrics
+            log(INFO, "Start for dataset-level metrics:")
             evaluator.load_results(dataset_name, noisy_rate)
-            # Evaluate dataset
-            evaluator.evaluate_dataset(dataset_name, noisy_rate)
-
-            # Save results
-            output_base = f"{results_dir}/evaluation_{dataset_name}_noisy_{noisy_rate}"
-            evaluator.save_results(output_base)
-
-            log(INFO, "Start for CLR:")
-
-            # For clr
-            evaluator.load_results(dataset_name, noisy_rate, is_clr=True)
-            evaluator.evaluate_dataset_clr(dataset_name, noisy_rate)
-
-            output_base = (
-                f"{results_dir}/evaluation_{dataset_name}_noisy_{noisy_rate}_clr"
+            evaluator.evaluate_dataset_dataset_level(dataset_name, noisy_rate)
+            evaluator.save_results(
+                f"{results_dir}/evaluation_{dataset_name}_noisy_{noisy_rate}_dataset_level"
             )
-            evaluator.save_results(output_base)
+
+            for algorithm_type in algorithm_types:
+                log(INFO, f"\n-----Start for algorithm: {algorithm_type.value}:")
+                evaluator.load_results(dataset_name, noisy_rate, algorithm_type)
+                evaluator.evaluate_dataset(dataset_name, noisy_rate, algorithm_type)
+                evaluator.save_results(
+                    f"{results_dir}/evaluation_{dataset_name}_noisy_{noisy_rate}_{algorithm_type.value}"
+                )
 
             log(INFO, f"Evaluation completed successfully for {dataset_name}")
 

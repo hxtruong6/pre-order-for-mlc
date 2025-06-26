@@ -4,6 +4,9 @@ results/**
 # !results/**/*.csv
 !results/**/evaluation_*.csv
 !results/**/evaluation_*.xlsx
+!results/**/*_summary.csv
+!results/**/*_summary.xlsx
+!results/final_0624_summary/visualization/**/*
 
 .vscode/
 

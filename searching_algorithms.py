@@ -53,6 +53,7 @@ class Search_BOPreOs:
         G, h, A, b, I, B = self._encode_parameters_PRE_ORDER(indices_vector)  # type: ignore
         predicted_Y = []
         predicted_preorders = []
+        prediction_with_partial_abstentions = []
         for n in range(self.n_instances):
             #            print(index, n_instances)
             vector = []
@@ -84,26 +85,33 @@ class Search_BOPreOs:
             #            for indCol in indexEmpty:
             #                Gtest[:, indCol] = 0
             #                Atest[:, indCol] = 0
-            hard_prediction_indices, predicted_preorder = (
-                self._reasoning_procedure_PRE_ORDER(
-                    vector,
-                    indices_vector,
-                    self.n_labels,
-                    Gtest,
-                    h,
-                    Atest,
-                    b,
-                    I,
-                    B,
-                )
+            (
+                hard_prediction,
+                predicted_preorder,
+                prediction_with_partial_abstention,
+            ) = self._reasoning_procedure_PRE_ORDER(
+                vector,
+                indices_vector,
+                self.n_labels,
+                Gtest,
+                h,
+                Atest,
+                b,
+                I,
+                B,
             )
-            # , indexEmpty)
-            hard_prediction = [
-                1 if x in hard_prediction_indices else 0 for x in range(self.n_labels)
-            ]
+
             predicted_Y.append(hard_prediction)
             predicted_preorders.append(predicted_preorder)
-        return predicted_Y, predicted_preorders, indices_vector
+            prediction_with_partial_abstentions.append(
+                prediction_with_partial_abstention
+            )
+        return (
+            predicted_Y,
+            predicted_preorders,
+            indices_vector,
+            prediction_with_partial_abstentions,
+        )
 
     def _encode_parameters_PRE_ORDER(self, indices_vector):
         assert self.n_labels is not None
@@ -351,13 +359,24 @@ class Search_BOPreOs:
                 scores_n[i] += optX[indices_vector[f"{i}_{j}_{1}"], 0]
         #                epist_00 += optX[indicesVector["%i_%i_%i"%(i,j,2)],0]
         #                aleat_11 += optX[indicesVector["%i_%i_%i"%(i,j,3)],0]
-        hard_prediction = [
-            ind for ind in range(n_labels) if scores_d[ind] > 0 or scores_n[ind] == 0
-        ]
+        #        hard_prediction = [
+        #            ind for ind in range(n_labels) if scores_d[ind] > 0 or scores_n[ind] == 0
+        #        ]
+        hard_prediction = [0 for x in range(n_labels)]
+        for ind in range(n_labels):
+            if scores_d[ind] > 0 or scores_n[ind] == 0:
+                hard_prediction[ind] = 1
+
+        prediction_with_partial_abstention = [0 for x in range(n_labels)]
+        for ind in range(n_labels):
+            if scores_d[ind] > 0:
+                prediction_with_partial_abstention[ind] = 1
+            elif scores_n[ind] == 0 and scores_d[ind] == 0:
+                prediction_with_partial_abstention[ind] = -1
         # optX: [n*(n-1)*2, 1] -> [1]
         #  [[0.1], [0.2],] => [0.1, 0.2]
         predicted_partial_order = optX.flatten()
-        return hard_prediction, predicted_partial_order
+        return hard_prediction, predicted_partial_order, prediction_with_partial_abstention
 
 
 class Search_BOParOs:
@@ -390,6 +409,7 @@ class Search_BOParOs:
         G, h, A, b, I, B = self._encode_parameters_PARTIAL_ORDER(indices_vector)  # type: ignore
         predicted_Y = []
         predicted_partial_orders = []
+        prediction_with_partial_abstentions = []
         for n in range(self.n_instances):
             vector = []
             if self.target_metric == TargetMetric.Hamming:
@@ -416,24 +436,31 @@ class Search_BOParOs:
                 raise ValueError(f"Unknown target metric: {self.target_metric}")
             Gtest = np.array(G)
             Atest = np.array(A)
-            hard_prediction_indices, predicted_partial_order = (
-                self._reasoning_procedure_PARTIAL_ORDER(
-                    vector,
-                    indices_vector,
-                    Gtest,
-                    h,
-                    Atest,
-                    b,
-                    I,
-                    B,
-                )
+            (
+                hard_prediction,
+                predicted_partial_order,
+                prediction_with_partial_abstention,
+            ) = self._reasoning_procedure_PARTIAL_ORDER(
+                vector,
+                indices_vector,
+                Gtest,
+                h,
+                Atest,
+                b,
+                I,
+                B,
             )
-            hard_prediction = [
-                1 if x in hard_prediction_indices else 0 for x in range(self.n_labels)
-            ]
             predicted_Y.append(hard_prediction)
             predicted_partial_orders.append(predicted_partial_order)
-        return predicted_Y, predicted_partial_orders, indices_vector
+            prediction_with_partial_abstentions.append(
+                prediction_with_partial_abstention
+            )
+        return (
+            predicted_Y,
+            predicted_partial_orders,
+            indices_vector,
+            prediction_with_partial_abstentions,
+        )
 
     def _encode_parameters_PARTIAL_ORDER(self, indices_vector):
         assert self.n_labels is not None
@@ -649,13 +676,23 @@ class Search_BOParOs:
                 scores_n[i] += optX[indices_vector[f"{i}_{j}_{1}"], 0]
         #                epist_00 += optX[indicesVector["%i_%i_%i"%(i,j,2)],0]
         #                aleat_11 += optX[indicesVector["%i_%i_%i"%(i,j,3)],0]
-        hard_prediction = [
-            ind
-            for ind in range(self.n_labels)
-            if scores_d[ind] > 0 or scores_n[ind] == 0
-        ]
+        #    hard_prediction = [
+        #        ind
+        #        for ind in range(self.n_labels)
+        #        if scores_d[ind] > 0 or scores_n[ind] == 0
+        #    ]
+        hard_prediction = [0 for x in range(self.n_labels)]
+        for ind in range(self.n_labels):
+            if scores_d[ind] > 0 or scores_n[ind] == 0:
+                hard_prediction[ind] = 1
 
+        prediction_with_partial_abstention = [0 for x in range(self.n_labels)]
+        for ind in range(self.n_labels):
+            if scores_d[ind] > 0:
+                prediction_with_partial_abstention[ind] = 1
+            elif scores_n[ind] == 0 and scores_d[ind] == 0:
+                prediction_with_partial_abstention[ind] = -1
         # optX: [n*(n-1)*2, 1] -> [1]
         #  [[0.1], [0.2],] => [0.1, 0.2]
         predicted_partial_order = optX.flatten()
-        return hard_prediction, predicted_partial_order
+        return hard_prediction, predicted_partial_order, prediction_with_partial_abstention

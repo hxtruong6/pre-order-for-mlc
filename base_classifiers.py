@@ -30,6 +30,9 @@ class BaseClassifiers:
         )
         self.name = name
 
+    def get_classifier(self) -> BaseEstimator:
+        return Estimator(self.name).get_classifier()  # type: ignore
+
     def pairwise_calibrated_classifier(
         self, X: NDArray[np.float64], Y: NDArray[np.int32]
     ):
