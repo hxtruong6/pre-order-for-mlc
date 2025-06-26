@@ -50,15 +50,13 @@ def extract_noise_level(filename):
 
 
 def format_mean_std(mean, std):
-    """Format mean and std as 'mean±std' with rounding."""
+    """Format mean and std as separate values for three-column output."""
     try:
-        # mean = float(mean)
-        # std = float(std)
-        mean = round(mean, 4)
-        std = round(std, 4)
-        return f"{mean:.4f}±{std:.4f}"
+        mean_val = round(float(mean), 4)
+        std_val = round(float(std), 4)
+        return mean_val, "±", std_val
     except Exception:
-        return ""
+        return None, None, None
 
 
 def collect_metrics(files):
@@ -157,7 +155,7 @@ def collect_metrics(files):
 
 
 def build_summary_table(metrics, all_metrics):
-    """Build a summary DataFrame with algorithms as rows and metric__noise as columns."""
+    """Build a summary DataFrame with algorithms as rows and metric__noise__type as columns."""
     # Collect all algorithms
     algorithms = sorted(metrics.keys())
     print(f"  Building table with {len(algorithms)} algorithms: {algorithms}")
@@ -165,8 +163,15 @@ def build_summary_table(metrics, all_metrics):
     columns = []
     for metric in all_metrics:
         for noise in NOISE_LEVELS:
-            columns.append(f"{metric}__{noise}")
-    print(f"  Creating {len(columns)} metric columns")
+            # Create three columns for each metric and noise level
+            columns.extend(
+                [
+                    f"{metric}__{noise}__mean",
+                    f"{metric}__{noise}__operator",
+                    f"{metric}__{noise}__std",
+                ]
+            )
+    print(f"  Creating {len(columns)} metric columns (3 per metric per noise level)")
 
     data = []
     for algo in algorithms:
@@ -175,9 +180,10 @@ def build_summary_table(metrics, all_metrics):
             for noise in NOISE_LEVELS:
                 val = metrics[algo][metric].get(noise, (None, None))
                 if val[0] is not None and val[1] is not None:
-                    row.append(format_mean_std(val[0], val[1]))
+                    mean_val, operator, std_val = format_mean_std(val[0], val[1])
+                    row.extend([mean_val, operator, std_val])
                 else:
-                    row.append("")
+                    row.extend(["", "", ""])
         data.append([algo] + row)
 
     df = pd.DataFrame(data, columns=["Algorithm"] + columns)
