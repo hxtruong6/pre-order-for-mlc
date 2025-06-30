@@ -4,7 +4,7 @@ import pandas as pd
 from glob import glob
 from collections import defaultdict
 
-RESULTS_DIR = "results/20250624"  # Updated to match the new folder
+RESULTS_DIR = "results/20250625"  # Updated to match the new folder
 OUTPUT_DIR = "results/final_0624_summary"
 NOISE_LEVELS = ["0.0", "0.1", "0.2", "0.3"]
 
@@ -20,7 +20,7 @@ FILE_PATTERNS = {
 BOPOS_PREDICTION_TYPES = ["BinaryVector", "PartialAbstention"]
 
 # Helper to extract dataset and noise level from filename
-dataset_regex = re.compile(r"evaluation_([A-Za-z0-9_]+)_noisy_")
+dataset_regex = re.compile(r"evaluation_([A-Za-z0-9_-]+)_noisy_")
 NOISE_REGEX = re.compile(r"noisy_(\d\.\d)")
 
 
