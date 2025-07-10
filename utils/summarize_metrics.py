@@ -4,8 +4,8 @@ import pandas as pd
 from glob import glob
 from collections import defaultdict
 
-RESULTS_DIR = "results/20250625"  # Updated to match the new folder
-OUTPUT_DIR = "results/final_0624_summary"
+RESULTS_DIR = "results/20250624"  # Updated to match the new folder
+OUTPUT_DIR = "results/final_summary_0710"
 NOISE_LEVELS = ["0.0", "0.1", "0.2", "0.3"]
 
 # File patterns for each algorithm type
@@ -52,7 +52,7 @@ def extract_noise_level(filename):
 def format_mean_std(mean, std):
     """Format mean and std as separate values for three-column output."""
     try:
-        mean_val = round(float(mean), 4)
+        mean_val = round(round(float(mean), 4) * 100, 2)
         std_val = round(float(std), 4)
         return mean_val, "±", std_val
     except Exception:
@@ -167,8 +167,8 @@ def build_summary_table(metrics, all_metrics):
             columns.extend(
                 [
                     f"{metric}__{noise}__mean",
-                    f"{metric}__{noise}__operator",
-                    f"{metric}__{noise}__std",
+                    # f"{metric}__{noise}__operator",
+                    # f"{metric}__{noise}__std",
                 ]
             )
     print(f"  Creating {len(columns)} metric columns (3 per metric per noise level)")
@@ -181,9 +181,11 @@ def build_summary_table(metrics, all_metrics):
                 val = metrics[algo][metric].get(noise, (None, None))
                 if val[0] is not None and val[1] is not None:
                     mean_val, operator, std_val = format_mean_std(val[0], val[1])
-                    row.extend([mean_val, operator, std_val])
+                    # row.extend([mean_val, operator, std_val])
+                    row.extend([mean_val])
                 else:
-                    row.extend(["", "", ""])
+                    # row.extend(["", "", ""])
+                    row.extend([""])
         data.append([algo] + row)
 
     df = pd.DataFrame(data, columns=["Algorithm"] + columns)
