@@ -7,7 +7,7 @@ results/**
 !results/**/*_summary.csv
 !results/**/*_summary.xlsx
 !results/final_0624_summary/visualization/**/*
-
+!results/**/*.md
 .vscode/
 
 # Created by https://www.toptal.com/developers/gitignore/api/python
