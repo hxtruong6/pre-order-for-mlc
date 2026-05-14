@@ -32,6 +32,7 @@ class PredictionType(Enum):
     BINARY_VECTOR = "BinaryVector"
     PREFERENCE_ORDER = "PreferenceOrder"
     PARTIAL_ABSTENTION = "PartialAbstention"
+    SCORE_VECTOR = "ScoreVector"
 
 
 @dataclass
@@ -94,6 +95,16 @@ class EvaluationConfig:
             EvaluationMetricName.REC,
             EvaluationMetricName.ABS,
         ],
+        PredictionType.SCORE_VECTOR: [
+            EvaluationMetricName.RANKING_LOSS,
+            EvaluationMetricName.ONE_ERROR,
+            EvaluationMetricName.COVERAGE,
+            EvaluationMetricName.LR_AP,
+            EvaluationMetricName.AUC_MACRO,
+            EvaluationMetricName.AUC_MICRO,
+            EvaluationMetricName.AUPRC_MACRO,
+            EvaluationMetricName.AUPRC_MICRO,
+        ],
     }
 
     # Metrics that should be calculated on the entire dataset, not per fold
@@ -140,6 +151,7 @@ class EvaluationFramework:
         partial_abstention: Optional[np.ndarray],
         bopos: Optional[np.ndarray],
         order_type: Optional[OrderType] = None,
+        y_proba: Optional[np.ndarray] = None,
     ) -> float:
         """Calculate specific evaluation metric."""
         try:
@@ -162,6 +174,10 @@ class EvaluationFramework:
                     indices_vector,
                     bopos,
                     order_type,
+                )
+            elif prediction_type == PredictionType.SCORE_VECTOR:
+                return self._evaluate_score_vector(
+                    metric_name, y_proba, true_labels  # type: ignore[arg-type]
                 )
             else:
                 raise ValueError(f"Unknown prediction type: {prediction_type}")
@@ -211,6 +227,31 @@ class EvaluationFramework:
         #     return self.evaluation_metric.f1_pa(predictions, true_labels)
         else:
             raise ValueError(f"Unknown metric: {metric_name}")
+
+    def _evaluate_score_vector(
+        self,
+        metric_name: EvaluationMetricName,
+        Y_proba: np.ndarray,
+        true_labels: np.ndarray,
+    ) -> float:
+        """Evaluate ranking metrics on per-label score vector Y_proba in [0, 1]."""
+        if metric_name == EvaluationMetricName.RANKING_LOSS:
+            return self.evaluation_metric.ranking_loss(Y_proba, true_labels)
+        elif metric_name == EvaluationMetricName.ONE_ERROR:
+            return self.evaluation_metric.one_error(Y_proba, true_labels)
+        elif metric_name == EvaluationMetricName.COVERAGE:
+            return self.evaluation_metric.coverage(Y_proba, true_labels)
+        elif metric_name == EvaluationMetricName.LR_AP:
+            return self.evaluation_metric.lr_ap(Y_proba, true_labels)
+        elif metric_name == EvaluationMetricName.AUC_MACRO:
+            return self.evaluation_metric.auc_macro(Y_proba, true_labels)
+        elif metric_name == EvaluationMetricName.AUC_MICRO:
+            return self.evaluation_metric.auc_micro(Y_proba, true_labels)
+        elif metric_name == EvaluationMetricName.AUPRC_MACRO:
+            return self.evaluation_metric.auprc_macro(Y_proba, true_labels)
+        elif metric_name == EvaluationMetricName.AUPRC_MICRO:
+            return self.evaluation_metric.auprc_micro(Y_proba, true_labels)
+        raise ValueError(f"Unknown score-vector metric: {metric_name}")
 
     def _evaluate_preference_order(
         self,
@@ -378,8 +419,26 @@ class EvaluationFramework:
                         if "partial_abstention" in df2.columns
                         else None
                     )
+                    # Y_proba is optional (added in rerun-v2). Old pickles do
+                    # not have it; skip the row for score-vector metrics in
+                    # that case.
+                    y_proba = None
+                    if (
+                        "Y_proba" in df2.columns
+                        and df2["Y_proba"].values[0] is not None
+                    ):
+                        y_proba_raw = df2["Y_proba"].values[0]
+                        if y_proba_raw is not None:
+                            y_proba = np.asarray(y_proba_raw, dtype=float)
 
-                    if not isinstance(y_pred, np.ndarray) or not isinstance(
+                    if prediction_type == PredictionType.SCORE_VECTOR:
+                        if y_proba is None:
+                            log(
+                                INFO,
+                                f"Y_proba missing for fold {fold}; skipping score-vector metric",
+                            )
+                            continue
+                    elif not isinstance(y_pred, np.ndarray) or not isinstance(
                         y_test, np.ndarray
                     ):
                         log(
@@ -398,6 +457,7 @@ class EvaluationFramework:
                             partial_abstention=partial_abstention,
                             bopos=bopos,
                             order_type=order_type,
+                            y_proba=y_proba,
                         )
                     )
                 except (IndexError, KeyError) as e:
@@ -433,6 +493,10 @@ class EvaluationFramework:
                 # For other algorithms (BR, CC, CLR)
                 if algorithm_type != AlgorithmType.BOPOS:
                     self._evaluate_binary_vector_results(
+                        data_df, data_df, None, base_learner_name
+                    )
+                    # Score-vector ranking metrics (no-op for old pickles).
+                    self._evaluate_score_vector_results(
                         data_df, data_df, None, base_learner_name
                     )
                     continue
@@ -521,6 +585,12 @@ class EvaluationFramework:
 
                 # For Partial Abstention
                 self._evaluate_partial_abstention_results(
+                    data_df, df1, inference_algorithm, base_learner_name
+                )
+
+                # For Score Vector (ranking metrics, rerun-v2). Skips if no
+                # Y_proba column (backward-compat).
+                self._evaluate_score_vector_results(
                     data_df, df1, inference_algorithm, base_learner_name
                 )
 
@@ -623,6 +693,43 @@ class EvaluationFramework:
                 base_learner_name,
                 inference_algorithm,
                 PredictionType.PARTIAL_ABSTENTION,
+                eval_metric,
+                res,
+            )
+
+    def _evaluate_score_vector_results(
+        self,
+        data_df: pd.DataFrame,
+        df1: pd.DataFrame,
+        inference_algorithm: InferenceAlgorithm | None,
+        base_learner_name: str,
+    ):
+        """Evaluate score-vector ranking metrics on per-label proba Y_proba.
+
+        Skips gracefully if the pickle does not contain a `Y_proba` column
+        (backward compatibility with the v1 run).
+        """
+        if "Y_proba" not in df1.columns:
+            log(
+                INFO,
+                "Y_proba column missing; skipping score-vector metrics for "
+                f"{base_learner_name}",
+            )
+            return
+        for eval_metric in EvaluationConfig.EVALUATION_METRICS[
+            PredictionType.SCORE_VECTOR
+        ]:
+            log(INFO, f"Evaluation metric: {eval_metric}")
+            result_folds = self._evaluate_fold(
+                data_df, df1, eval_metric, PredictionType.SCORE_VECTOR
+            )
+            if not result_folds:
+                continue
+            res = self.aggregate_results(result_folds)
+            self._add_evaluation_result(
+                base_learner_name,
+                inference_algorithm,
+                PredictionType.SCORE_VECTOR,
                 eval_metric,
                 res,
             )

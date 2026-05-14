@@ -5,6 +5,11 @@ from sklearn.metrics import (
     precision_score,
     recall_score,
     f1_score,
+    label_ranking_loss,
+    label_ranking_average_precision_score,
+    coverage_error,
+    roc_auc_score,
+    average_precision_score,
 )
 
 
@@ -37,6 +42,16 @@ class EvaluationMetricName(Enum):
     AABS = "aabs"  # Average Abstention per Label
     REC = "rec"  # Instance-Wise Recall
     ABS = "abs"  # Instance-Wise Abstention
+    # Ranking / score-vector metrics (added for rerun-v2). Operate on real-valued
+    # per-label scores Y_proba in [0, 1], not on thresholded 0/1 predictions.
+    RANKING_LOSS = "ranking_loss"
+    ONE_ERROR = "one_error"
+    COVERAGE = "coverage"
+    LR_AP = "lr_ap"  # label-ranking average precision
+    AUC_MACRO = "auc_macro"
+    AUC_MICRO = "auc_micro"
+    AUPRC_MACRO = "auprc_macro"  # macro-averaged area under PR curve
+    AUPRC_MICRO = "auprc_micro"  # micro-averaged area under PR curve
     # SUBSET_EXACT_MATCH = "subset_exact_match"
     # RECALL = "recall"
     # HAMMING_ACCURACY_PL = "hamming_accuracy_PL"
@@ -185,6 +200,84 @@ class EvaluationMetric:
             else:
                 total += float(np.dot(predicted_Y[i], true_Y[i])) / t_sum
         return total / n_instances
+
+    # ------------------------------------------------------------------
+    # Ranking / score-vector metrics (rerun-v2)
+    # ------------------------------------------------------------------
+    def ranking_loss(self, Y_proba, true_Y) -> float:
+        return float(label_ranking_loss(true_Y, Y_proba))
+
+    def one_error(self, Y_proba, true_Y) -> float:
+        # Fraction of instances whose top-scored label is NOT a positive label.
+        Y_proba = np.asarray(Y_proba)
+        true_Y = np.asarray(true_Y)
+        top = np.argmax(Y_proba, axis=1)
+        n = true_Y.shape[0]
+        miss = sum(1 for i in range(n) if true_Y[i, top[i]] == 0)
+        return float(miss / n)
+
+    def coverage(self, Y_proba, true_Y) -> float:
+        # sklearn returns 1-based avg rank; subtract 1 to match the classic MLC formulation.
+        return float(coverage_error(true_Y, Y_proba) - 1.0)
+
+    def lr_ap(self, Y_proba, true_Y) -> float:
+        return float(label_ranking_average_precision_score(true_Y, Y_proba))
+
+    def auc_macro(self, Y_proba, true_Y) -> float:
+        # roc_auc_score requires at least one positive AND one negative per label for macro.
+        try:
+            return float(roc_auc_score(true_Y, Y_proba, average="macro"))
+        except ValueError:
+            # Filter out degenerate labels (all-0 or all-1 in this fold).
+            true_Y = np.asarray(true_Y)
+            Y_proba = np.asarray(Y_proba)
+            keep = [
+                k
+                for k in range(true_Y.shape[1])
+                if 0 < true_Y[:, k].sum() < true_Y.shape[0]
+            ]
+            if not keep:
+                return float("nan")
+            return float(
+                roc_auc_score(true_Y[:, keep], Y_proba[:, keep], average="macro")
+            )
+
+    def auc_micro(self, Y_proba, true_Y) -> float:
+        try:
+            return float(roc_auc_score(true_Y, Y_proba, average="micro"))
+        except ValueError:
+            return float("nan")
+
+    def auprc_macro(self, Y_proba, true_Y) -> float:
+        # average_precision_score (= area under PR curve). Degenerate labels
+        # (all-0 in the fold) raise; filter them out and average over the rest.
+        try:
+            return float(
+                average_precision_score(true_Y, Y_proba, average="macro")
+            )
+        except ValueError:
+            true_Y = np.asarray(true_Y)
+            Y_proba = np.asarray(Y_proba)
+            keep = [
+                k
+                for k in range(true_Y.shape[1])
+                if 0 < true_Y[:, k].sum() < true_Y.shape[0]
+            ]
+            if not keep:
+                return float("nan")
+            return float(
+                average_precision_score(
+                    true_Y[:, keep], Y_proba[:, keep], average="macro"
+                )
+            )
+
+    def auprc_micro(self, Y_proba, true_Y) -> float:
+        try:
+            return float(
+                average_precision_score(true_Y, Y_proba, average="micro")
+            )
+        except ValueError:
+            return float("nan")
 
     def subset_exact_match(self, predicted_Y, true_Y):
         n_instances = len(predicted_Y)

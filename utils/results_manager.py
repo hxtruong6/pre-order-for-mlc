@@ -24,11 +24,17 @@ class ResultProcessor:
 
     @staticmethod
     def process_predictions(df: pd.DataFrame) -> pd.DataFrame:
-        """Process Y_predicted, Y_true, and Y_BOPOs columns."""
+        """Process Y_predicted, Y_true, Y_BOPOs, and Y_proba columns."""
         # Convert string representations to numpy arrays if needed
-        for col in ["Y_test", "Y_predicted", "Y_BOPOs"]:
+        for col in ["Y_test", "Y_predicted", "Y_BOPOs", "Y_proba"]:
             if col in df.columns:
-                df[col] = df[col].apply(ResultProcessor.convert_string_to_array)  # type: ignore
+                df[col] = df[col].apply(  # type: ignore[assignment]
+                    lambda v: (
+                        ResultProcessor.convert_string_to_array(v)
+                        if v is not None
+                        else None
+                    )
+                )
 
         # convert to int for Y_BOPOs
         df["Y_BOPOs"] = df["Y_BOPOs"].apply(lambda x: x.astype(int))
