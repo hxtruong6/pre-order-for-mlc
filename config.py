@@ -68,12 +68,18 @@ class ConfigManager:
         Path(results_dir).mkdir(parents=True, exist_ok=True)
 
         # NOISY_RATES = [0.0, 0.1, 0.2, 0.3]
-        NOISY_RATES = [
-            0.0,
-            0.1,
-            0.2,
-            0.3,
-        ]
+        # If --noise_rate is passed on the CLI, restrict to that single level
+        # so the run can be split across slurm jobs by noise.
+        single_noise = getattr(args, "noise_rate", None)
+        if single_noise is not None:
+            NOISY_RATES = [float(single_noise)]
+        else:
+            NOISY_RATES = [
+                0.0,
+                0.1,
+                0.2,
+                0.3,
+            ]
         BASE_LEARNERS = [BaseLearnerName.RF]
         ALGORITHMS = [
             AlgorithmType.BOPOS,
@@ -87,7 +93,7 @@ class ConfigManager:
             results_dir=results_dir,
             noisy_rates=NOISY_RATES,
             base_learners=BASE_LEARNERS,
-            total_repeat_times=2,
+            total_repeat_times=5,
             number_folds=5,
             algorithms=ALGORITHMS,  # Default to just BOPOS
         )

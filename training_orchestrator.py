@@ -159,6 +159,13 @@ class TrainingOrchestrator:
             )
             log(INFO, f"Prediction time {(time.time() - predict_time1)} seconds")
 
+            # Per-label marginal probability via auxiliary BR head.
+            try:
+                Y_proba_bopos = predict_BOPOs.predict_marginal_proba(X_test)
+            except Exception as e:
+                log(INFO, f"Marginal proba unavailable: {e}")
+                Y_proba_bopos = None
+
             predict_tasks = []
             for target_metric in [TargetMetric.Hamming, TargetMetric.Subset]:
                 for height in [2, None]:
@@ -199,6 +206,7 @@ class TrainingOrchestrator:
                         height,
                         dataset_name,
                         noisy_rate,
+                        Y_proba=Y_proba_bopos,
                     )
                     index_result += 1
             log(INFO, f"Saving time {(time.time() - save_time1)} seconds")
@@ -225,7 +233,12 @@ class TrainingOrchestrator:
         log(INFO, f"CLR Training time: {(time.time() - clr_time1)} seconds")
 
         predict_time1 = time.time()
-        predicted_Y, _ = clr.predict_CLR(X_test, Y_test.shape[1])
+        clr_predict_results = clr.predict_CLR(X_test, Y_test.shape[1])
+        if len(clr_predict_results) == 3:
+            predicted_Y, _, Y_proba_clr = clr_predict_results
+        else:  # backward compat
+            predicted_Y, _ = clr_predict_results
+            Y_proba_clr = None
         log(INFO, f"CLR Prediction time {(time.time() - predict_time1)} seconds")
 
         save_time1 = time.time()
@@ -241,6 +254,7 @@ class TrainingOrchestrator:
             None,
             dataset_name,
             noisy_rate,
+            Y_proba=Y_proba_clr,
         )
         log(INFO, f"CLR Saving time {(time.time() - save_time1)} seconds")
 
@@ -266,7 +280,12 @@ class TrainingOrchestrator:
         log(INFO, f"BR Training time: {(time.time() - br_time1)} seconds")
 
         predict_time1 = time.time()
-        predicted_Y, _ = br.predict_BR(X_test, Y_test.shape[1])
+        br_predict_results = br.predict_BR(X_test, Y_test.shape[1])
+        if len(br_predict_results) == 3:
+            predicted_Y, _, Y_proba_br = br_predict_results
+        else:  # backward compat
+            predicted_Y, _ = br_predict_results
+            Y_proba_br = None
         log(INFO, f"BR Prediction time {(time.time() - predict_time1)} seconds")
 
         save_time1 = time.time()
@@ -282,6 +301,7 @@ class TrainingOrchestrator:
             None,
             dataset_name,
             noisy_rate,
+            Y_proba=Y_proba_br,
         )
         log(INFO, f"BR Saving time {(time.time() - save_time1)} seconds")
 
@@ -307,7 +327,12 @@ class TrainingOrchestrator:
         log(INFO, f"CC Training time: {(time.time() - cc_time1)} seconds")
 
         predict_time1 = time.time()
-        predicted_Y, _ = cc.predict_CC(X_test, Y_test.shape[1])
+        cc_predict_results = cc.predict_CC(X_test, Y_test.shape[1])
+        if len(cc_predict_results) == 3:
+            predicted_Y, _, Y_proba_cc = cc_predict_results
+        else:  # backward compat
+            predicted_Y, _ = cc_predict_results
+            Y_proba_cc = None
         log(INFO, f"CC Prediction time {(time.time() - predict_time1)} seconds")
 
         save_time1 = time.time()
@@ -323,6 +348,7 @@ class TrainingOrchestrator:
             None,
             dataset_name,
             noisy_rate,
+            Y_proba=Y_proba_cc,
         )
         log(INFO, f"CC Saving time {(time.time() - save_time1)} seconds")
 
@@ -341,6 +367,7 @@ class TrainingOrchestrator:
         height,
         dataset_name,
         noisy_rate,
+        Y_proba=None,
     ):
         """Update results with prediction data."""
         indices_vector = None
@@ -349,10 +376,19 @@ class TrainingOrchestrator:
             indices_vector = predict_results[2]
             prediction_with_partial_abstention = predict_results[3]
 
+        if Y_proba is not None:
+            try:
+                Y_proba_serialized = Y_proba.tolist()
+            except AttributeError:
+                Y_proba_serialized = list(Y_proba)
+        else:
+            Y_proba_serialized = None
+
         data = {
             "Y_test": Y_test.tolist(),
             "Y_predicted": list(predict_results[0]),
             "Y_BOPOs": list(predict_results[1]),
+            "Y_proba": Y_proba_serialized,
             "indices_vector": indices_vector,
             "partial_abstention": prediction_with_partial_abstention,
             "target_metric": target_metric,

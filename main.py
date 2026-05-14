@@ -510,6 +510,12 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", type=str, required=True)
     parser.add_argument("--results_dir", type=str)
+    parser.add_argument(
+        "--noise_rate",
+        type=float,
+        default=None,
+        help="If set, override config.noisy_rates with [noise_rate] only (single-noise run for slurm splitting).",
+    )
     return parser.parse_args()
 
 

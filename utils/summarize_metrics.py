@@ -1,11 +1,12 @@
+import argparse
 import os
 import re
 import pandas as pd
 from glob import glob
 from collections import defaultdict
 
-RESULTS_DIR = "results/20250624"  # Updated to match the new folder
-OUTPUT_DIR = "results/final_0624_summary"
+RESULTS_DIR = "results/20260514_v2"
+OUTPUT_DIR = "results/final_20260514_v2_summary"
 NOISE_LEVELS = ["0.0", "0.1", "0.2", "0.3"]
 
 # File patterns for each algorithm type
@@ -20,7 +21,7 @@ FILE_PATTERNS = {
 }
 
 # Prediction types to include for bopos files (skip PreferenceOrder)
-BOPOS_PREDICTION_TYPES = ["BinaryVector", "PartialAbstention"]
+BOPOS_PREDICTION_TYPES = ["BinaryVector", "PartialAbstention", "ScoreVector"]
 
 # Helper to extract dataset and noise level from filename
 dataset_regex = re.compile(r"evaluation_([A-Za-z0-9_\-]+)_noisy_")
@@ -196,16 +197,24 @@ def build_summary_table(metrics, all_metrics):
 
 def main():
     """Main function to generate per-dataset and per-prediction-type summary metrics tables."""
-    print("=== Starting Metrics Summary Generation ===")
-    print(f"Results directory: {RESULTS_DIR}")
-    print(f"BOPOS prediction types to include: {BOPOS_PREDICTION_TYPES}")
-    print(f"Output directory: {OUTPUT_DIR}")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--results_dir", default=RESULTS_DIR)
+    parser.add_argument("--output_dir", default=OUTPUT_DIR)
+    args = parser.parse_args()
 
-    if not os.path.exists(OUTPUT_DIR):
-        os.makedirs(OUTPUT_DIR)
+    results_dir = args.results_dir
+    output_dir = args.output_dir
+
+    print("=== Starting Metrics Summary Generation ===")
+    print(f"Results directory: {results_dir}")
+    print(f"BOPOS prediction types to include: {BOPOS_PREDICTION_TYPES}")
+    print(f"Output directory: {output_dir}")
+
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
 
     # Find all relevant files
-    files = find_files(RESULTS_DIR)
+    files = find_files(results_dir)
 
     # Collect metrics grouped by dataset and prediction type
     dataset_metrics, dataset_all_metrics = collect_metrics(files)
@@ -223,10 +232,10 @@ def main():
 
             # Create output filenames with prediction type
             output_csv = os.path.join(
-                OUTPUT_DIR, f"{dataset}_{prediction_type}_summary.csv"
+                output_dir, f"{dataset}_{prediction_type}_summary.csv"
             )
             output_xlsx = os.path.join(
-                OUTPUT_DIR, f"{dataset}_{prediction_type}_summary.xlsx"
+                output_dir, f"{dataset}_{prediction_type}_summary.xlsx"
             )
 
             # Save files

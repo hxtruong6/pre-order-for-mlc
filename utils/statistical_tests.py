@@ -56,6 +56,12 @@ HIGHER_IS_BETTER = {
     "rec",
     "hamming_accuracy_PRE_ORDER",
     "hamming_accuracy_PARTIAL_ORDER",
+    # Ranking metrics (rerun-v2)
+    "lr_ap",
+    "auc_macro",
+    "auc_micro",
+    "auprc_macro",
+    "auprc_micro",
 }
 LOWER_IS_BETTER = {
     "afrd",
@@ -64,6 +70,10 @@ LOWER_IS_BETTER = {
     "abs",
     "subset0_1_PRE_ORDER",
     "subset0_1_PARTIAL_ORDER",
+    # Ranking metrics (rerun-v2)
+    "ranking_loss",
+    "one_error",
+    "coverage",
 }
 
 BASELINES = {"br", "cc", "clr"}
@@ -106,7 +116,9 @@ def metric_direction(metric: str) -> int:
 
 # --- Loading ----------------------------------------------------------------
 
-SUMMARY_RE = re.compile(r"^(?P<dataset>.+)_(?P<ptype>BinaryVector|PartialAbstention)_summary\.csv$")
+SUMMARY_RE = re.compile(
+    r"^(?P<dataset>.+)_(?P<ptype>BinaryVector|PartialAbstention|ScoreVector)_summary\.csv$"
+)
 
 
 def discover_summaries(results_dir: str) -> List[Tuple[str, str, str]]:
@@ -408,8 +420,10 @@ def run(results_dir: str, output_dir: str, alpha: float = 0.05) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--results_dir", default="results/final_0624_summary")
-    ap.add_argument("--output_dir", default="results/final_0624_summary/stats")
+    ap.add_argument("--results_dir", default="results/final_20260514_v2_summary")
+    ap.add_argument(
+        "--output_dir", default="results/final_20260514_v2_summary/stats"
+    )
     ap.add_argument("--alpha", type=float, default=0.05)
     args = ap.parse_args()
     run(args.results_dir, args.output_dir, alpha=args.alpha)

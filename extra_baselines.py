@@ -12,10 +12,12 @@ Output:
 """
 
 import argparse
+import logging
 import pickle
 import time
 from logging import INFO, basicConfig, log
 from pathlib import Path
+from typing import Tuple
 
 import numpy as np
 import scipy.sparse as sparse
@@ -71,7 +73,7 @@ from datasets4experiments import Datasets4Experiments  # noqa: E402
 
 
 NOISY_RATES = [0.0, 0.1, 0.2, 0.3]
-N_REPEAT = 2
+N_REPEAT = 5
 N_FOLDS = 5
 BASE_LEARNER = "RF"
 
@@ -88,16 +90,24 @@ def _ecc_predict(
     X_test: np.ndarray,
     n_ensembles: int = 10,
     rng_seed: int = RANDOM_STATE,
-) -> np.ndarray:
-    """Ensemble of Classifier Chains with random orders + bagging-style sampling."""
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Ensemble of Classifier Chains with random orders + bagging-style sampling.
+
+    Returns:
+        Y_pred: (n_test, n_labels) binary majority-vote prediction.
+        Y_proba: (n_test, n_labels) mean per-label probability across chains
+                 in [0, 1].
+    """
     rng = np.random.RandomState(rng_seed)
     n_labels = Y_train.shape[1]
     n_train = X_train.shape[0]
 
     votes = np.zeros((X_test.shape[0], n_labels), dtype=np.float64)
+    proba_sum = np.zeros((X_test.shape[0], n_labels), dtype=np.float64)
 
     for k in range(n_ensembles):
         perm = rng.permutation(n_labels)
+        inv_perm = np.argsort(perm)
         # bootstrap sample
         idx = rng.randint(0, n_train, size=n_train)
         X_bs = X_train[idx]
@@ -113,11 +123,65 @@ def _ecc_predict(
         pred = chain.predict(X_test)
         pred = _to_dense_int(pred)
 
-        inv_perm = np.argsort(perm)
         pred = pred[:, inv_perm]
         votes += pred
 
-    return (votes >= (n_ensembles / 2.0)).astype(int)
+        # Per-chain marginal proba in the chain's (permuted) label order.
+        try:
+            proba = chain.predict_proba(X_test)
+            if sparse.issparse(proba):
+                proba = proba.toarray()
+            proba = np.asarray(proba, dtype=float)
+            # Invert permutation so columns line up with original label order.
+            proba = proba[:, inv_perm]
+            proba_sum += proba
+        except Exception as e:  # pragma: no cover - defensive
+            logging.warning("ECC chain %d predict_proba failed: %s", k, e)
+            # Fall back to using the hard prediction as a degenerate "proba".
+            proba_sum += pred
+
+    Y_pred = (votes >= (n_ensembles / 2.0)).astype(int)
+    Y_proba = np.clip(proba_sum / float(n_ensembles), 0.0, 1.0)
+    return Y_pred, Y_proba
+
+
+def _lp_marginal_proba(clf: "LabelPowerset", X: np.ndarray, n_labels: int) -> np.ndarray:
+    """Per-label marginal probabilities from a LabelPowerset.
+
+    skmultilearn (0.2.x) returns *per-label* marginals directly from
+    LabelPowerset.predict_proba (shape (n, n_labels)) -- it internally
+    aggregates the meta-class probabilities for us. We just densify and
+    clip to [0, 1].
+
+    Returns (n, n_labels) float. Returns None on unexpected shapes so the
+    caller can fall back to Y_pred.astype(float).
+    """
+    proba = clf.predict_proba(X)
+    if sparse.issparse(proba):
+        proba = proba.toarray()
+    proba = np.asarray(proba, dtype=float)
+
+    if proba.ndim != 2 or proba.shape[1] != n_labels:
+        # If the underlying skmultilearn returns meta-class probabilities
+        # instead of per-label marginals, fall back to a manual aggregation
+        # using reverse_combinations_ (a list-of-lists of positive label
+        # indices, one entry per meta-class).
+        reverse = getattr(clf, "reverse_combinations_", None)
+        if reverse is None:
+            return None  # type: ignore[return-value]
+        n_meta = proba.shape[1]
+        if len(reverse) != n_meta:
+            return None  # type: ignore[return-value]
+        bit_mat = np.zeros((n_meta, n_labels), dtype=float)
+        for m, pos_indices in enumerate(reverse):
+            for k in pos_indices:
+                if 0 <= k < n_labels:
+                    bit_mat[m, k] = 1.0
+                else:
+                    return None  # type: ignore[return-value]
+        proba = proba @ bit_mat
+
+    return np.clip(proba, 0.0, 1.0)
 
 
 def train_one(
@@ -125,11 +189,27 @@ def train_one(
     X_train: np.ndarray,
     Y_train: np.ndarray,
     X_test: np.ndarray,
-) -> np.ndarray:
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Train one baseline and return (Y_pred, Y_proba).
+
+    Y_pred is (n_test, n_labels) int array; Y_proba is (n_test, n_labels)
+    float array in [0, 1] giving per-label marginal probability.
+    """
+    n_labels = Y_train.shape[1]
+
     if algo == "mlknn":
         clf = MLkNN(k=10)
         clf.fit(X_train, Y_train)
-        return _to_dense_int(clf.predict(X_test))
+        Y_pred = _to_dense_int(clf.predict(X_test))
+        try:
+            proba = clf.predict_proba(X_test)
+            if sparse.issparse(proba):
+                proba = proba.toarray()
+            Y_proba = np.clip(np.asarray(proba, dtype=float), 0.0, 1.0)
+        except Exception as e:
+            logging.warning("MLkNN predict_proba failed: %s", e)
+            Y_proba = Y_pred.astype(float)
+        return Y_pred, Y_proba
 
     if algo == "lp":
         clf = LabelPowerset(
@@ -139,7 +219,19 @@ def train_one(
             require_dense=[True, True],
         )
         clf.fit(X_train, Y_train)
-        return _to_dense_int(clf.predict(X_test))
+        Y_pred = _to_dense_int(clf.predict(X_test))
+        try:
+            Y_proba = _lp_marginal_proba(clf, X_test, n_labels)
+        except Exception as e:
+            logging.warning("LP marginal proba failed: %s", e)
+            Y_proba = None
+        if Y_proba is None:
+            logging.warning(
+                "LabelPowerset.unique_combinations_ unavailable or malformed; "
+                "falling back to Y_pred as degenerate proba."
+            )
+            Y_proba = Y_pred.astype(float)
+        return Y_pred, Y_proba
 
     if algo == "ecc":
         return _ecc_predict(X_train, Y_train, X_test, n_ensembles=10)
@@ -174,17 +266,19 @@ def run(dataset_key: str, results_dir: str, algo: str) -> None:
                 )
             ):
                 t0 = time.time()
-                Y_pred = train_one(algo, X_train, Y_train, X_test)
+                Y_pred, Y_proba = train_one(algo, X_train, Y_train, X_test)
                 log(
                     INFO,
                     f"fold={fold+1} time={(time.time()-t0):.2f}s "
-                    f"Y_test={Y_test.shape} Y_pred={Y_pred.shape}",
+                    f"Y_test={Y_test.shape} Y_pred={Y_pred.shape} "
+                    f"Y_proba={Y_proba.shape}",
                 )
 
                 record = {
                     "Y_test": Y_test.tolist(),
                     "Y_predicted": Y_pred.tolist(),
                     "Y_BOPOs": [],
+                    "Y_proba": Y_proba.tolist(),
                     "indices_vector": None,
                     "partial_abstention": None,
                     "target_metric": None,

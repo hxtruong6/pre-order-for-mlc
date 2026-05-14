@@ -51,6 +51,10 @@ class PredictBOPOs:
         self.cc_classifiers: dict[str, Estimator] = {}  # Classifier Chain classifiers
         self.cc_order: list[int] = []  # Order of labels for Classifier Chain
 
+        # Auxiliary BR head used to derive per-label marginal probabilities for
+        # BOPOs (both PRE_ORDER and PARTIAL_ORDER). Set in fit().
+        self.br_head_for_proba: MultiOutputClassifier | None = None
+
     def predict_preference_orders(
         self,
         pairwise_probabilistic_predictions,
@@ -515,7 +519,12 @@ class PredictBOPOs:
             predicted_Y.append(prediction)
             predicted_ranks.append(rank)
 
-        return predicted_Y, predicted_ranks
+        # Marginal-like score: vote-fraction over pairwise comparisons in [0, 1].
+        # voting_scores has shape (n_labels, n_instances). Transpose to (n, K).
+        Y_proba = voting_scores.T / max(1, n_labels - 1)
+        Y_proba = np.clip(Y_proba, 0.0, 1.0)
+
+        return predicted_Y, predicted_ranks, Y_proba
 
     def fit(self, X, Y):
         """Training the model for each pair of labels (i, j), which could be pre-order or partial-order
@@ -539,6 +548,19 @@ class PredictBOPOs:
             pass
         else:
             raise ValueError(f"Unknown preference order: {self.preference_order}")
+
+        # Auxiliary BR head to produce per-label marginal probabilities for
+        # downstream ranking metrics. We train this for both PRE_ORDER and
+        # PARTIAL_ORDER so the marginal-derivation rule is identical across
+        # BOPOs variants.
+        try:
+            base_clf = self.base_classifier.get_classifier()  # type: ignore
+            self.br_head_for_proba = MultiOutputClassifier(base_clf)
+            self.br_head_for_proba.fit(X, Y)
+            log(INFO, "Auxiliary BR head for marginal proba trained")
+        except Exception as e:  # pragma: no cover - defensive
+            log(INFO, f"Auxiliary BR head training failed: {e}")
+            self.br_head_for_proba = None
 
     def fit_CLR(self, X, Y):
         self.pairwise_classifier, self.calibrated_classifier, self.single_label_pair = (  # type: ignore
@@ -574,11 +596,18 @@ class PredictBOPOs:
             n_labels: Number of labels
 
         Returns:
-            tuple: (predicted_Y, None) to match CLR interface
+            tuple: (predicted_Y, None, Y_proba) where Y_proba is (n, K) float
+            in [0, 1] with P(y_k = 1 | x).
         """
         # Get predictions from MultiOutputClassifier and convert to list
         predicted_Y = self.br_classifier.predict(X)
-        return np.array(predicted_Y).tolist(), None
+
+        # Per-label marginal probability of the positive class.
+        proba_list = self.br_classifier.predict_proba(X)
+        Y_proba = _stack_positive_class_proba(
+            self.br_classifier.estimators_, proba_list
+        )
+        return np.array(predicted_Y).tolist(), None, Y_proba
 
     def fit_CC(self, X, Y):
         """Train Classifier Chain model using scikit-learn's ClassifierChain
@@ -613,8 +642,63 @@ class PredictBOPOs:
             n_labels: Number of labels
 
         Returns:
-            tuple: (predicted_Y, None) to match CLR interface
+            tuple: (predicted_Y, None, Y_proba) where Y_proba is the (n, K)
+            per-label probability matrix returned by ClassifierChain.
         """
         # Get predictions from ClassifierChain and convert to list
         predicted_Y = self.cc_classifier.predict(X)
-        return np.array(predicted_Y).tolist(), None
+        # ClassifierChain.predict_proba already returns shape (n, K).
+        Y_proba = np.asarray(self.cc_classifier.predict_proba(X), dtype=float)
+        Y_proba = np.clip(Y_proba, 0.0, 1.0)
+        return np.array(predicted_Y).tolist(), None, Y_proba
+
+    def predict_marginal_proba(self, X) -> np.ndarray:
+        """Return per-label marginal probabilities from the auxiliary BR head.
+
+        Output shape: (n_instances, n_labels), values in [0, 1].
+        """
+        if self.br_head_for_proba is None:
+            raise RuntimeError(
+                "predict_marginal_proba called before BR head was trained"
+            )
+        proba_list = self.br_head_for_proba.predict_proba(X)
+        Y_proba = _stack_positive_class_proba(
+            self.br_head_for_proba.estimators_, proba_list
+        )
+        return Y_proba
+
+
+def _stack_positive_class_proba(estimators, proba_list) -> np.ndarray:
+    """Stack per-label probability of the positive class (label==1).
+
+    Each estimator's predict_proba returns shape (n, n_classes_k). For binary
+    labels this is (n, 2) with columns [P(y=0), P(y=1)]. For constant-label
+    folds it can be (n, 1) with a single class; in that case we emit the
+    appropriate constant column based on which class is present.
+    """
+    cols = []
+    for k, p in enumerate(proba_list):
+        p = np.asarray(p, dtype=float)
+        classes = getattr(estimators[k], "classes_", None)
+        if p.ndim == 2 and p.shape[1] == 2:
+            # Standard binary case; column index of class==1.
+            if classes is not None:
+                try:
+                    idx_pos = list(classes).index(1)
+                except ValueError:
+                    idx_pos = 1
+            else:
+                idx_pos = 1
+            cols.append(p[:, idx_pos])
+        elif p.ndim == 2 and p.shape[1] == 1:
+            # Single-class fold: emit 1 if the present class is the positive
+            # one, else 0. The probability column is uninformative (all ones).
+            if classes is not None and 1 in list(classes):
+                cols.append(np.ones(p.shape[0], dtype=float))
+            else:
+                cols.append(np.zeros(p.shape[0], dtype=float))
+        else:
+            # Defensive fallback: collapse to a constant column.
+            cols.append(np.zeros(p.shape[0], dtype=float))
+    Y_proba = np.column_stack(cols)
+    return np.clip(Y_proba, 0.0, 1.0)

@@ -39,8 +39,24 @@ BINARY_METRICS = [
     EvaluationMetricName.AFRD,
 ]
 
+RANKING_METRICS = [
+    EvaluationMetricName.RANKING_LOSS,
+    EvaluationMetricName.ONE_ERROR,
+    EvaluationMetricName.COVERAGE,
+    EvaluationMetricName.LR_AP,
+    EvaluationMetricName.AUC_MACRO,
+    EvaluationMetricName.AUC_MICRO,
+    EvaluationMetricName.AUPRC_MACRO,
+    EvaluationMetricName.AUPRC_MICRO,
+]
 
-def _eval_one(metric_name: EvaluationMetricName, y_pred: np.ndarray, y_test: np.ndarray) -> float:
+
+def _eval_one(
+    metric_name: EvaluationMetricName,
+    y_pred: np.ndarray,
+    y_test: np.ndarray,
+    y_proba: np.ndarray = None,  # type: ignore[assignment]
+) -> float:
     em = EvaluationMetric()
     if metric_name == EvaluationMetricName.HAMMING_ACCURACY:
         return em.hamming_accuracy(y_pred, y_test)
@@ -70,6 +86,23 @@ def _eval_one(metric_name: EvaluationMetricName, y_pred: np.ndarray, y_test: np.
         return em.mfrd(y_pred, y_test)
     if metric_name == EvaluationMetricName.AFRD:
         return em.afrd(y_pred, y_test)
+    # Ranking metrics (operate on the real-valued score vector y_proba).
+    if metric_name == EvaluationMetricName.RANKING_LOSS:
+        return em.ranking_loss(y_proba, y_test)
+    if metric_name == EvaluationMetricName.ONE_ERROR:
+        return em.one_error(y_proba, y_test)
+    if metric_name == EvaluationMetricName.COVERAGE:
+        return em.coverage(y_proba, y_test)
+    if metric_name == EvaluationMetricName.LR_AP:
+        return em.lr_ap(y_proba, y_test)
+    if metric_name == EvaluationMetricName.AUC_MACRO:
+        return em.auc_macro(y_proba, y_test)
+    if metric_name == EvaluationMetricName.AUC_MICRO:
+        return em.auc_micro(y_proba, y_test)
+    if metric_name == EvaluationMetricName.AUPRC_MACRO:
+        return em.auprc_macro(y_proba, y_test)
+    if metric_name == EvaluationMetricName.AUPRC_MICRO:
+        return em.auprc_micro(y_proba, y_test)
     raise ValueError(f"Unknown metric: {metric_name}")
 
 
@@ -79,6 +112,7 @@ def evaluate_pickle(pkl_path: Path) -> pd.DataFrame:
     df = pd.DataFrame(records)
 
     rows = []
+    has_proba = "Y_proba" in df.columns
     for base_learner in df["base_learner_name"].unique():
         sub = df[df["base_learner_name"] == base_learner]
         for metric_name in BINARY_METRICS:
@@ -104,6 +138,40 @@ def evaluate_pickle(pkl_path: Path) -> pd.DataFrame:
                     "Metric": metric_name.value,
                     "Mean": float(arr.mean()),
                     "Std": float(arr.std()),
+                }
+            )
+
+        # Ranking / score-vector metrics. Skip silently if Y_proba absent
+        # (backward compat with the v1 pickles).
+        if not has_proba:
+            continue
+        for metric_name in RANKING_METRICS:
+            per_fold = []
+            for _, row in sub.iterrows():
+                if row.get("Y_proba") is None:
+                    continue
+                y_proba = np.asarray(row["Y_proba"], dtype=float)
+                y_test = np.asarray(row["Y_test"])
+                try:
+                    per_fold.append(
+                        _eval_one(metric_name, None, y_test, y_proba=y_proba)  # type: ignore[arg-type]
+                    )
+                except Exception as e:
+                    log(ERROR, f"Ranking metric {metric_name} failed: {e}")
+            if not per_fold:
+                continue
+            arr = np.asarray(per_fold, dtype=float)
+            rows.append(
+                {
+                    "Base_Learner": base_learner,
+                    "Algorithm": None,
+                    "Algorithm_Metric": None,
+                    "Algorithm_Height": None,
+                    "Algorithm_Order": None,
+                    "Prediction_Type": "ScoreVector",
+                    "Metric": metric_name.value,
+                    "Mean": float(np.nanmean(arr)),
+                    "Std": float(np.nanstd(arr)),
                 }
             )
     return pd.DataFrame(rows)
