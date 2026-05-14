@@ -63,6 +63,15 @@ class EvaluationConfig:
             EvaluationMetricName.HAMMING_ACCURACY,
             EvaluationMetricName.SUBSET0_1,
             EvaluationMetricName.F1,
+            EvaluationMetricName.JACCARD,
+            EvaluationMetricName.MACRO_F1,
+            EvaluationMetricName.MICRO_F1,
+            EvaluationMetricName.MACRO_PRECISION,
+            EvaluationMetricName.MICRO_PRECISION,
+            EvaluationMetricName.MACRO_RECALL,
+            EvaluationMetricName.MICRO_RECALL,
+            EvaluationMetricName.EXAMPLE_PRECISION,
+            EvaluationMetricName.EXAMPLE_RECALL,
             EvaluationMetricName.MFRD,
             EvaluationMetricName.AFRD,
         ],
@@ -172,6 +181,24 @@ class EvaluationFramework:
             return self.evaluation_metric.subset0_1(predictions, true_labels)
         elif metric_name == EvaluationMetricName.F1:
             return self.evaluation_metric.f1(predictions, true_labels)
+        elif metric_name == EvaluationMetricName.JACCARD:
+            return self.evaluation_metric.jaccard(predictions, true_labels)
+        elif metric_name == EvaluationMetricName.MACRO_F1:
+            return self.evaluation_metric.macro_f1(predictions, true_labels)
+        elif metric_name == EvaluationMetricName.MICRO_F1:
+            return self.evaluation_metric.micro_f1(predictions, true_labels)
+        elif metric_name == EvaluationMetricName.MACRO_PRECISION:
+            return self.evaluation_metric.macro_precision(predictions, true_labels)
+        elif metric_name == EvaluationMetricName.MICRO_PRECISION:
+            return self.evaluation_metric.micro_precision(predictions, true_labels)
+        elif metric_name == EvaluationMetricName.MACRO_RECALL:
+            return self.evaluation_metric.macro_recall(predictions, true_labels)
+        elif metric_name == EvaluationMetricName.MICRO_RECALL:
+            return self.evaluation_metric.micro_recall(predictions, true_labels)
+        elif metric_name == EvaluationMetricName.EXAMPLE_PRECISION:
+            return self.evaluation_metric.example_precision(predictions, true_labels)
+        elif metric_name == EvaluationMetricName.EXAMPLE_RECALL:
+            return self.evaluation_metric.example_recall(predictions, true_labels)
         elif metric_name == EvaluationMetricName.MFRD:
             return self.evaluation_metric.mfrd(predictions, true_labels)
         elif metric_name == EvaluationMetricName.AFRD:

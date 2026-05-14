@@ -174,10 +174,9 @@ class PredictBOPOs:
                     for l in range(4):
                         if l in presented_classes:
                             pairwise_probabilistic_predictions_ij[:, l] = (
-                                # original_pairwise_probabilistic_predictions_ij[
-                                #     :, presented_classes.index(l)
-                                # ]
-                                pairwise_predict_proba[key_classifier][:, l]  # type: ignore
+                                original_pairwise_probabilistic_predictions_ij[
+                                    :, presented_classes.index(l)
+                                ]
                             )
                     for n in range(n_test_instances):
 
@@ -244,10 +243,9 @@ class PredictBOPOs:
                     for l in range(3):
                         if l in presented_classes:
                             pairwise_probabilistic_predictions_ij[:, l] = (
-                                # original_pairwise_probabilistic_predictions_ij[
-                                #     :, presented_classes.index(l)
-                                # ]
-                                pairwise_predict_proba[key_classifier][:, l]  # type: ignore
+                                original_pairwise_probabilistic_predictions_ij[
+                                    :, presented_classes.index(l)
+                                ]
                             )
                     for n in range(n_test_instances):
 

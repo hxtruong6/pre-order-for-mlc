@@ -14,13 +14,16 @@ FILE_PATTERNS = {
     "br": "evaluation_*_noisy_*_br.csv",
     "cc": "evaluation_*_noisy_*_cc.csv",
     "clr": "evaluation_*_noisy_*_clr.csv",
+    "mlknn": "evaluation_*_noisy_*_mlknn.csv",
+    "ecc": "evaluation_*_noisy_*_ecc.csv",
+    "lp": "evaluation_*_noisy_*_lp.csv",
 }
 
 # Prediction types to include for bopos files (skip PreferenceOrder)
 BOPOS_PREDICTION_TYPES = ["BinaryVector", "PartialAbstention"]
 
 # Helper to extract dataset and noise level from filename
-dataset_regex = re.compile(r"evaluation_([A-Za-z0-9_]+)_noisy_")
+dataset_regex = re.compile(r"evaluation_([A-Za-z0-9_\-]+)_noisy_")
 NOISE_REGEX = re.compile(r"noisy_(\d\.\d)")
 
 
@@ -112,13 +115,19 @@ def collect_metrics(files):
                 )
 
         else:
-            # Handle br, cc, clr files - all prediction types included
+            # Handle br, cc, clr, mlknn, ecc, lp files - all prediction types included
             if file.endswith("_br.csv"):
                 algo = "br"
             elif file.endswith("_cc.csv"):
                 algo = "cc"
             elif file.endswith("_clr.csv"):
                 algo = "clr"
+            elif file.endswith("_mlknn.csv"):
+                algo = "mlknn"
+            elif file.endswith("_ecc.csv"):
+                algo = "ecc"
+            elif file.endswith("_lp.csv"):
+                algo = "lp"
             else:
                 continue
 

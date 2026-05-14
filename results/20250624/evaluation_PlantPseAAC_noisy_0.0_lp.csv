@@ -1,0 +1,15 @@
+Base_Learner,Algorithm,Algorithm_Metric,Algorithm_Height,Algorithm_Order,Prediction_Type,Metric,Mean,Std
+RF,,,,,BinaryVector,hamming_accuracy,0.8872701901273331,0.006118463650425468
+RF,,,,,BinaryVector,subset0_1,0.3435531135531136,0.034300730717942464
+RF,,,,,BinaryVector,f1,0.35719693005407294,0.03292941075321896
+RF,,,,,BinaryVector,jaccard,0.3537859759288331,0.033145493686451796
+RF,,,,,BinaryVector,macro_f1,0.1195599004680193,0.020983836000493528
+RF,,,,,BinaryVector,micro_f1,0.3500057676108173,0.03285675215924488
+RF,,,,,BinaryVector,macro_precision,0.23150645954919863,0.05943225752505139
+RF,,,,,BinaryVector,micro_precision,0.3632587185596613,0.03255647582983335
+RF,,,,,BinaryVector,macro_recall,0.13233125250557096,0.012625785438126353
+RF,,,,,BinaryVector,micro_recall,0.3377006850559289,0.03305969877713734
+RF,,,,,BinaryVector,example_precision,0.3640188383045526,0.03276175321181524
+RF,,,,,BinaryVector,example_recall,0.3537859759288331,0.033145493686451796
+RF,,,,,BinaryVector,mfrd,1.0,0.0
+RF,,,,,BinaryVector,afrd,0.9088675662243689,0.01538048230943972

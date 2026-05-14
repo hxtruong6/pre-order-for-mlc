@@ -1,17 +1,31 @@
 from enum import Enum
 import numpy as np
-from sklearn.metrics import hamming_loss
+from sklearn.metrics import (
+    hamming_loss,
+    precision_score,
+    recall_score,
+    f1_score,
+)
 
 
 class EvaluationMetricName(Enum):
     HAMMING_ACCURACY = "hamming_accuracy"
-    F1 = "f1"
-    JACCARD = "jaccard"
+    F1 = "f1"  # example-based (instance-averaged) F1
+    JACCARD = "jaccard"  # example-based Jaccard
     SUBSET0_1 = "subset0_1"
     MEAN_IR = "mean_ir"  # imbalance ratio (for whole dataset)
     CV_IR = "cv_ir"  # coefficient of variation of imbalance ratio (for whole dataset)
     MFRD = "mfrd"  # Maximum False Rate Difference
     AFRD = "afrd"  # Average False Rate Difference
+    # Label-based aggregations (added for major revision)
+    MACRO_F1 = "macro_f1"
+    MICRO_F1 = "micro_f1"
+    MACRO_PRECISION = "macro_precision"
+    MICRO_PRECISION = "micro_precision"
+    MACRO_RECALL = "macro_recall"
+    MICRO_RECALL = "micro_recall"
+    EXAMPLE_PRECISION = "example_precision"
+    EXAMPLE_RECALL = "example_recall"
     # Partial Abstention Metrics
     HAMMING_ACCURACY_PA = (
         "hamming_accuracy_pa"  # Hamming accuracy with partial abstention
@@ -112,6 +126,65 @@ class EvaluationMetric:
             if list(predicted_Y[index]) == list(true_Y[index]):
                 subset0_1 += 1
         return subset0_1 / n_instances
+
+    # Label-based aggregations (macro/micro). zero_division=0 matches sklearn default.
+    def macro_f1(self, predicted_Y, true_Y) -> float:
+        return float(
+            f1_score(true_Y, predicted_Y, average="macro", zero_division=0)
+        )
+
+    def micro_f1(self, predicted_Y, true_Y) -> float:
+        return float(
+            f1_score(true_Y, predicted_Y, average="micro", zero_division=0)
+        )
+
+    def macro_precision(self, predicted_Y, true_Y) -> float:
+        return float(
+            precision_score(true_Y, predicted_Y, average="macro", zero_division=0)
+        )
+
+    def micro_precision(self, predicted_Y, true_Y) -> float:
+        return float(
+            precision_score(true_Y, predicted_Y, average="micro", zero_division=0)
+        )
+
+    def macro_recall(self, predicted_Y, true_Y) -> float:
+        return float(
+            recall_score(true_Y, predicted_Y, average="macro", zero_division=0)
+        )
+
+    def micro_recall(self, predicted_Y, true_Y) -> float:
+        return float(
+            recall_score(true_Y, predicted_Y, average="micro", zero_division=0)
+        )
+
+    def example_precision(self, predicted_Y, true_Y) -> float:
+        # Instance-averaged precision. If both pred and true are empty, count as 1.
+        predicted_Y = np.asarray(predicted_Y)
+        true_Y = np.asarray(true_Y)
+        n_instances = len(predicted_Y)
+        total = 0.0
+        for i in range(n_instances):
+            p_sum = float(np.sum(predicted_Y[i]))
+            if p_sum == 0:
+                total += 1.0 if float(np.sum(true_Y[i])) == 0 else 0.0
+            else:
+                total += float(np.dot(predicted_Y[i], true_Y[i])) / p_sum
+        return total / n_instances
+
+    def example_recall(self, predicted_Y, true_Y) -> float:
+        # Instance-averaged recall. If true is empty, treat as 1 (no positive labels to recover).
+        predicted_Y = np.asarray(predicted_Y)
+        true_Y = np.asarray(true_Y)
+        n_instances = len(predicted_Y)
+        total = 0.0
+        for i in range(n_instances):
+            t_sum = float(np.sum(true_Y[i]))
+            if t_sum == 0:
+                total += 1.0 if float(np.sum(predicted_Y[i])) == 0 else 0.0
+            else:
+                total += float(np.dot(predicted_Y[i], true_Y[i])) / t_sum
+        return total / n_instances
 
     def subset_exact_match(self, predicted_Y, true_Y):
         n_instances = len(predicted_Y)

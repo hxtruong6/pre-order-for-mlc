@@ -10,6 +10,24 @@ results/**
 
 .vscode/
 
+# Datasets (ARFF files — large, download separately into ./data/)
+data/
+
+# Archived/legacy code snapshots
+old_files/
+
+# Logs directory (the *.log rule below covers individual files;
+# this also covers the dir when other artefacts get dropped in)
+logs/
+
+# Pickle artefacts (training/eval intermediates)
+*.pkl
+
+# Claude Code: exclude all Claude-related artifacts
+.claude/
+.mcp.json
+CLAUDE.md
+
 # Created by https://www.toptal.com/developers/gitignore/api/python
 # Edit at https://www.toptal.com/developers/gitignore?templates=python
 
@@ -186,3 +204,5 @@ poetry.toml
 pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/python
+# Added by code-review-graph
+.code-review-graph/
