@@ -1,0 +1,64 @@
+# --- preorder4MLC ---------------------------------------------------------
+
+# Results: ignore everything under results/, but allow directory listings
+# plus the per-fold evaluation CSV/XLSX and the aggregated summary tables.
+results/**
+!results/**/
+!results/**/evaluation_*.csv
+!results/**/evaluation_*.xlsx
+!results/**/*_summary.csv
+!results/**/*_summary.xlsx
+!results/final_20260514_v2_summary/figures/**/*
+!results/final_20260514_v2_summary/stats/**/*
+
+# Logs (per-dataset stdout/stderr from run.sh)
+logs/
+
+# Pickle artefacts (training/eval intermediates)
+*.pkl
+
+# Editor & IDE
+.vscode/
+.idea/
+
+# Claude Code: exclude all Claude-related artefacts
+.claude/
+.mcp.json
+CLAUDE.md
+
+# code-review-graph index
+.code-review-graph/
+
+# --- Python ---------------------------------------------------------------
+
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
+build/
+dist/
+*.egg-info/
+*.egg
+MANIFEST
+
+# Test / coverage
+.coverage
+.coverage.*
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+coverage.xml
+
+# Notebook checkpoints
+.ipynb_checkpoints/
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/

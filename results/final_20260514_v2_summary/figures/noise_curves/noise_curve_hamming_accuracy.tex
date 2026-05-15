@@ -1,0 +1,160 @@
+% This file was created with matplot2tikz v0.5.4.
+\begin{tikzpicture}
+
+\definecolor{black32}{RGB}{32,32,32}
+\definecolor{crimson2143940}{RGB}{214,39,40}
+\definecolor{darkgray167}{RGB}{167,167,167}
+\definecolor{darkgray176}{RGB}{176,176,176}
+\definecolor{darkorange25512714}{RGB}{255,127,14}
+\definecolor{darkslategray71}{RGB}{71,71,71}
+\definecolor{dimgray104}{RGB}{104,104,104}
+\definecolor{forestgreen4416044}{RGB}{44,160,44}
+\definecolor{gray127}{RGB}{127,127,127}
+\definecolor{gray134}{RGB}{134,134,134}
+\definecolor{mediumpurple148103189}{RGB}{148,103,189}
+\definecolor{orchid227119194}{RGB}{227,119,194}
+\definecolor{sienna1408675}{RGB}{140,86,75}
+\definecolor{silver198}{RGB}{198,198,198}
+\definecolor{steelblue31119180}{RGB}{31,119,180}
+
+\begin{axis}[
+legend cell align={left},
+legend columns=2,
+legend style={
+  fill opacity=0.8,
+  draw opacity=1,
+  text opacity=1,
+  at={(1.01,1)},
+  anchor=north west,
+  draw=none
+},
+tick align=outside,
+tick pos=left,
+title={Rank vs noise — Hamming accuracy},
+x grid style={darkgray176},
+xlabel={Label noise rate},
+xmajorgrids,
+xmin=-0.015, xmax=0.315,
+xtick style={color=black},
+y dir=reverse,
+y grid style={darkgray176},
+ylabel={Average rank across datasets (lower is better)},
+ymajorgrids,
+ymin=0.5125, ymax=13.9875,
+ytick style={color=black}
+]
+\addplot [line width=0.72pt, steelblue31119180, mark=*, mark size=3, mark options={solid}]
+table {%
+0 7.5
+0.1 7.75
+0.2 8.125
+0.3 8.5
+};
+\addlegendentry{IA1}
+\addplot [line width=0.72pt, darkorange25512714, mark=*, mark size=3, mark options={solid}]
+table {%
+0 6.75
+0.1 7.125
+0.2 6.75
+0.3 6.75
+};
+\addlegendentry{IA2}
+\addplot [line width=0.72pt, forestgreen4416044, mark=*, mark size=3, mark options={solid}]
+table {%
+0 7.1875
+0.1 8.6875
+0.2 8.625
+0.3 9.25
+};
+\addlegendentry{IA3}
+\addplot [line width=0.72pt, crimson2143940, mark=*, mark size=3, mark options={solid}]
+table {%
+0 8.375
+0.1 7.1875
+0.2 7.25
+0.3 7
+};
+\addlegendentry{IA4}
+\addplot [line width=0.72pt, mediumpurple148103189, mark=*, mark size=3, mark options={solid}]
+table {%
+0 11.6875
+0.1 12.4375
+0.2 13
+0.3 12.875
+};
+\addlegendentry{IA5}
+\addplot [line width=0.72pt, sienna1408675, mark=*, mark size=3, mark options={solid}]
+table {%
+0 11.0625
+0.1 10.6875
+0.2 11.1875
+0.3 11.125
+};
+\addlegendentry{IA6}
+\addplot [line width=0.72pt, orchid227119194, mark=*, mark size=3, mark options={solid}]
+table {%
+0 12.4375
+0.1 13.0625
+0.2 13.25
+0.3 13.375
+};
+\addlegendentry{IA7}
+\addplot [line width=0.72pt, gray127, mark=*, mark size=3, mark options={solid}]
+table {%
+0 11.4375
+0.1 11.3125
+0.2 11.5625
+0.3 11.625
+};
+\addlegendentry{IA8}
+\addplot [line width=0.64pt, silver198, dashed, mark=square*, mark size=3, mark options={solid}]
+table {%
+0 2.875
+0.1 2.875
+0.2 3.25
+0.3 3.125
+};
+\addlegendentry{BR}
+\addplot [line width=0.64pt, darkgray167, dashed, mark=square*, mark size=3, mark options={solid}]
+table {%
+0 2.0625
+0.1 2.6875
+0.2 2.875
+0.3 2.875
+};
+\addlegendentry{CC}
+\addplot [line width=0.64pt, gray134, dashed, mark=square*, mark size=3, mark options={solid}]
+table {%
+0 7.5
+0.1 5.5
+0.2 4
+0.3 3.25
+};
+\addlegendentry{CLR}
+\addplot [line width=0.64pt, dimgray104, dashed, mark=square*, mark size=3, mark options={solid}]
+table {%
+0 7.75
+0.1 7.5
+0.2 6.375
+0.3 6.625
+};
+\addlegendentry{MLkNN}
+\addplot [line width=0.64pt, darkslategray71, dashed, mark=square*, mark size=3, mark options={solid}]
+table {%
+0 2.125
+0.1 1.4375
+0.2 1.125
+0.3 1.375
+};
+\addlegendentry{ECC}
+\addplot [line width=0.64pt, black32, dashed, mark=square*, mark size=3, mark options={solid}]
+table {%
+0 6.25
+0.1 6.75
+0.2 7.625
+0.3 7.25
+};
+\addlegendentry{LP}
+\end{axis}
+
+\end{tikzpicture}

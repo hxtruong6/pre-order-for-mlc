@@ -1,0 +1,160 @@
+% This file was created with matplot2tikz v0.5.4.
+\begin{tikzpicture}
+
+\definecolor{black32}{RGB}{32,32,32}
+\definecolor{crimson2143940}{RGB}{214,39,40}
+\definecolor{darkgray167}{RGB}{167,167,167}
+\definecolor{darkgray176}{RGB}{176,176,176}
+\definecolor{darkorange25512714}{RGB}{255,127,14}
+\definecolor{darkslategray71}{RGB}{71,71,71}
+\definecolor{dimgray104}{RGB}{104,104,104}
+\definecolor{forestgreen4416044}{RGB}{44,160,44}
+\definecolor{gray127}{RGB}{127,127,127}
+\definecolor{gray134}{RGB}{134,134,134}
+\definecolor{mediumpurple148103189}{RGB}{148,103,189}
+\definecolor{orchid227119194}{RGB}{227,119,194}
+\definecolor{sienna1408675}{RGB}{140,86,75}
+\definecolor{silver198}{RGB}{198,198,198}
+\definecolor{steelblue31119180}{RGB}{31,119,180}
+
+\begin{axis}[
+legend cell align={left},
+legend columns=2,
+legend style={
+  fill opacity=0.8,
+  draw opacity=1,
+  text opacity=1,
+  at={(1.01,1)},
+  anchor=north west,
+  draw=none
+},
+tick align=outside,
+tick pos=left,
+title={Rank vs noise — AUC (macro)},
+x grid style={darkgray176},
+xlabel={Label noise rate},
+xmajorgrids,
+xmin=-0.015, xmax=0.315,
+xtick style={color=black},
+y dir=reverse,
+y grid style={darkgray176},
+ylabel={Average rank across datasets (lower is better)},
+ymajorgrids,
+ymin=0.5, ymax=14.6428571428571,
+ytick style={color=black}
+]
+\addplot [line width=0.72pt, steelblue31119180, mark=*, mark size=3, mark options={solid}]
+table {%
+0 8.14285714285714
+0.1 7.21428571428571
+0.2 7.78571428571429
+0.3 7.64285714285714
+};
+\addlegendentry{IA1}
+\addplot [line width=0.72pt, darkorange25512714, mark=*, mark size=3, mark options={solid}]
+table {%
+0 8.14285714285714
+0.1 7.21428571428571
+0.2 7.78571428571429
+0.3 7.64285714285714
+};
+\addlegendentry{IA2}
+\addplot [line width=0.72pt, forestgreen4416044, mark=*, mark size=3, mark options={solid}]
+table {%
+0 8.14285714285714
+0.1 7.21428571428571
+0.2 7.78571428571429
+0.3 7.64285714285714
+};
+\addlegendentry{IA3}
+\addplot [line width=0.72pt, crimson2143940, mark=*, mark size=3, mark options={solid}]
+table {%
+0 8.14285714285714
+0.1 7.21428571428571
+0.2 7.78571428571429
+0.3 7.64285714285714
+};
+\addlegendentry{IA4}
+\addplot [line width=0.72pt, mediumpurple148103189, mark=*, mark size=3, mark options={solid}]
+table {%
+0 8.14285714285714
+0.1 7.21428571428571
+0.2 7.78571428571429
+0.3 7.64285714285714
+};
+\addlegendentry{IA5}
+\addplot [line width=0.72pt, sienna1408675, mark=*, mark size=3, mark options={solid}]
+table {%
+0 8.14285714285714
+0.1 7.21428571428571
+0.2 7.78571428571429
+0.3 7.64285714285714
+};
+\addlegendentry{IA6}
+\addplot [line width=0.72pt, orchid227119194, mark=*, mark size=3, mark options={solid}]
+table {%
+0 8.14285714285714
+0.1 7.21428571428571
+0.2 7.78571428571429
+0.3 7.64285714285714
+};
+\addlegendentry{IA7}
+\addplot [line width=0.72pt, gray127, mark=*, mark size=3, mark options={solid}]
+table {%
+0 8.14285714285714
+0.1 7.21428571428571
+0.2 7.78571428571429
+0.3 7.64285714285714
+};
+\addlegendentry{IA8}
+\addplot [line width=0.64pt, silver198, dashed, mark=square*, mark size=3, mark options={solid}]
+table {%
+0 8.14285714285714
+0.1 9.71428571428571
+0.2 8.71428571428571
+0.3 9.57142857142857
+};
+\addlegendentry{BR}
+\addplot [line width=0.64pt, darkgray167, dashed, mark=square*, mark size=3, mark options={solid}]
+table {%
+0 5.85714285714286
+0.1 8.14285714285714
+0.2 5.57142857142857
+0.3 7
+};
+\addlegendentry{CC}
+\addplot [line width=0.64pt, gray134, dashed, mark=square*, mark size=3, mark options={solid}]
+table {%
+0 6.5
+0.1 2.85714285714286
+0.2 2.71428571428571
+0.3 1.14285714285714
+};
+\addlegendentry{CLR}
+\addplot [line width=0.64pt, dimgray104, dashed, mark=square*, mark size=3, mark options={solid}]
+table {%
+0 14
+0.1 14
+0.2 14
+0.3 14
+};
+\addlegendentry{MLkNN}
+\addplot [line width=0.64pt, darkslategray71, dashed, mark=square*, mark size=3, mark options={solid}]
+table {%
+0 2.07142857142857
+0.1 6.14285714285714
+0.2 3.42857142857143
+0.3 1.85714285714286
+};
+\addlegendentry{ECC}
+\addplot [line width=0.64pt, black32, dashed, mark=square*, mark size=3, mark options={solid}]
+table {%
+0 3.28571428571429
+0.1 6.42857142857143
+0.2 8.28571428571429
+0.3 10.2857142857143
+};
+\addlegendentry{LP}
+\end{axis}
+
+\end{tikzpicture}

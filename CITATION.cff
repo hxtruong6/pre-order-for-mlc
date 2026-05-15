@@ -1,0 +1,33 @@
+# Citation File Format - https://citation-file-format.github.io/
+cff-version: 1.2.0
+title: "preorder4MLC: Pre-Order Based Multi-Label Classification"
+message: "If you use this software, please cite the accompanying paper."
+type: software
+authors:
+  - family-names: Hoàng
+    given-names: Xuân Trường
+    email: hxtruong6@gmail.com
+  - family-names: Nguyen
+    given-names: Vu-Linh
+    email: nguyenvulinhhus@gmail.com
+repository-code: "https://github.com/<org>/preorder4MLC"
+license: MIT
+version: "1.0.0"
+date-released: "2026-05-15"
+keywords:
+  - multi-label classification
+  - preference learning
+  - pre-order
+  - partial-abstention
+  - integer linear programming
+preferred-citation:
+  type: article
+  title: "<TODO: paper title>"
+  authors:
+    - family-names: Hoàng
+      given-names: Xuân Trường
+    - family-names: Nguyen
+      given-names: Vu-Linh
+  journal: "<TODO: journal name>"
+  year: 2026
+  doi: "<TODO: DOI once assigned>"

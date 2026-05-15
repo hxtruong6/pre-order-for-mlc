@@ -1,0 +1,201 @@
+% This file was created with matplot2tikz v0.5.4.
+\begin{tikzpicture}
+
+\definecolor{crimson2143940}{RGB}{214,39,40}
+\definecolor{darkgray141160203}{RGB}{141,160,203}
+\definecolor{darkgray176}{RGB}{176,176,176}
+\definecolor{darkorange25512714}{RGB}{255,127,14}
+\definecolor{forestgreen4416044}{RGB}{44,160,44}
+\definecolor{gold25521747}{RGB}{255,217,47}
+\definecolor{gray127}{RGB}{127,127,127}
+\definecolor{mediumaquamarine102194165}{RGB}{102,194,165}
+\definecolor{mediumpurple148103189}{RGB}{148,103,189}
+\definecolor{orchid227119194}{RGB}{227,119,194}
+\definecolor{orchid231138195}{RGB}{231,138,195}
+\definecolor{salmon25214198}{RGB}{252,141,98}
+\definecolor{sienna1408675}{RGB}{140,86,75}
+\definecolor{steelblue31119180}{RGB}{31,119,180}
+\definecolor{yellowgreen16621684}{RGB}{166,216,84}
+
+\begin{axis}[
+legend cell align={left},
+legend columns=2,
+legend style={
+  fill opacity=0.8,
+  draw opacity=1,
+  text opacity=1,
+  at={(1.01,1)},
+  anchor=north west,
+  draw=none
+},
+tick align=outside,
+tick pos=left,
+title={Hamming vs Subset trade-off (arrows: noise 0.0 → 0.3)},
+x grid style={darkgray176},
+xlabel={Mean Hamming accuracy (higher = better)},
+xmajorgrids,
+xmin=0.402753333333333, xmax=0.857468888888889,
+xtick style={color=black},
+y grid style={darkgray176},
+ylabel={Mean Subset accuracy (subset0\_1, higher = better)},
+ymajorgrids,
+ymin=0.00132229166666667, ymax=0.410276319444444,
+ytick style={color=black}
+]
+\addplot [line width=0.48pt, sienna1408675, opacity=0.9, mark=*, mark size=3, mark options={solid}]
+table {%
+0.602622222222222 0.218166666666667
+0.565344444444444 0.161688888888889
+0.501855555555556 0.0855555555555556
+0.425411111111111 0.0209444444444444
+};
+\addlegendentry{IA6}
+\addplot [line width=0.48pt, mediumpurple148103189, opacity=0.9, mark=*, mark size=3, mark options={solid}]
+table {%
+0.601511111111111 0.213244444444444
+0.563433333333333 0.157477777777778
+0.4999 0.0823444444444444
+0.423544444444444 0.0199666666666667
+};
+\addlegendentry{IA5}
+\addplot [line width=0.48pt, gray127, opacity=0.9, mark=*, mark size=3, mark options={solid}]
+table {%
+0.602344444444444 0.218555555555556
+0.565188888888889 0.161922222222222
+0.501644444444444 0.0856888888888889
+0.4252 0.0208
+};
+\addlegendentry{IA8}
+\addplot [line width=0.48pt, orchid227119194, opacity=0.9, mark=*, mark size=3, mark options={solid}]
+table {%
+0.601122222222222 0.212844444444444
+0.563311111111111 0.1575
+0.499766666666667 0.0823111111111111
+0.423422222222222 0.0199111111111111
+};
+\addlegendentry{IA7}
+\addplot [line width=0.48pt, darkorange25512714, opacity=0.9, mark=*, mark size=3, mark options={solid}]
+table {%
+0.614111111111111 0.226155555555556
+0.61 0.200111111111111
+0.608111111111111 0.170577777777778
+0.616088888888889 0.115966666666667
+};
+\addlegendentry{IA2}
+\addplot [line width=0.48pt, steelblue31119180, opacity=0.9, mark=*, mark size=3, mark options={solid}]
+table {%
+0.610922222222222 0.219644444444444
+0.604122222222222 0.191644444444444
+0.596555555555556 0.1494
+0.587911111111111 0.0752555555555556
+};
+\addlegendentry{IA1}
+\addplot [line width=0.48pt, crimson2143940, opacity=0.9, mark=*, mark size=3, mark options={solid}]
+table {%
+0.6117 0.221244444444444
+0.608333333333333 0.1966
+0.606733333333333 0.168377777777778
+0.614577777777778 0.115277777777778
+};
+\addlegendentry{IA4}
+\addplot [line width=0.48pt, forestgreen4416044, opacity=0.9, mark=*, mark size=3, mark options={solid}]
+table {%
+0.6112 0.219577777777778
+0.603244444444444 0.190722222222222
+0.596333333333333 0.1489
+0.587244444444444 0.0749888888888889
+};
+\addlegendentry{IA3}
+\addplot [line width=0.48pt, mediumaquamarine102194165, opacity=0.9, dashed, mark=square*, mark size=3, mark options={solid}]
+table {%
+0.833033333333333 0.237466666666667
+0.826655555555555 0.223922222222222
+0.816133333333333 0.2095
+0.789933333333333 0.174144444444444
+};
+\addlegendentry{BR}
+\addplot [line width=0.48pt, salmon25214198, opacity=0.9, dashed, mark=square*, mark size=3, mark options={solid}]
+table {%
+0.832622222222222 0.251744444444444
+0.826077777777778 0.2339
+0.815966666666667 0.210644444444444
+0.789811111111111 0.180855555555556
+};
+\addlegendentry{CC}
+\addplot [line width=0.48pt, darkgray141160203, opacity=0.9, dashed, mark=square*, mark size=3, mark options={solid}]
+table {%
+0.8 0.0561222222222222
+0.803122222222222 0.0790666666666667
+0.799166666666667 0.0801
+0.788422222222222 0.0693444444444444
+};
+\addlegendentry{CLR}
+\addplot [line width=0.48pt, yellowgreen16621684, opacity=0.9, dashed, mark=square*, mark size=3, mark options={solid}]
+table {%
+0.8368 0.253775
+0.8325 0.2425625
+0.8241 0.2261625
+0.8037125 0.200425
+};
+\addlegendentry{ECC}
+\addplot [line width=0.48pt, gold25521747, opacity=0.9, dashed, mark=square*, mark size=3, mark options={solid}]
+table {%
+0.8202875 0.3916875
+0.803525 0.343125
+0.758775 0.237725
+0.681275 0.1283125
+};
+\addlegendentry{LP}
+\addplot [line width=0.48pt, orchid231138195, opacity=0.9, dashed, mark=square*, mark size=3, mark options={solid}]
+table {%
+0.813975 0.2696625
+0.8036375 0.2492125
+0.7773875 0.1974625
+0.7231125 0.11835
+};
+\addlegendentry{MLkNN}
+\draw[->,draw=sienna1408675] (axis cs:0.602622222222222,0.218166666666667) -- (axis cs:0.565344444444444,0.161688888888889);
+\draw[->,draw=sienna1408675] (axis cs:0.565344444444444,0.161688888888889) -- (axis cs:0.501855555555556,0.0855555555555556);
+\draw[->,draw=sienna1408675] (axis cs:0.501855555555556,0.0855555555555556) -- (axis cs:0.425411111111111,0.0209444444444444);
+\draw[->,draw=mediumpurple148103189] (axis cs:0.601511111111111,0.213244444444444) -- (axis cs:0.563433333333333,0.157477777777778);
+\draw[->,draw=mediumpurple148103189] (axis cs:0.563433333333333,0.157477777777778) -- (axis cs:0.4999,0.0823444444444444);
+\draw[->,draw=mediumpurple148103189] (axis cs:0.4999,0.0823444444444444) -- (axis cs:0.423544444444444,0.0199666666666667);
+\draw[->,draw=gray127] (axis cs:0.602344444444444,0.218555555555556) -- (axis cs:0.565188888888889,0.161922222222222);
+\draw[->,draw=gray127] (axis cs:0.565188888888889,0.161922222222222) -- (axis cs:0.501644444444444,0.0856888888888889);
+\draw[->,draw=gray127] (axis cs:0.501644444444444,0.0856888888888889) -- (axis cs:0.4252,0.0208);
+\draw[->,draw=orchid227119194] (axis cs:0.601122222222222,0.212844444444444) -- (axis cs:0.563311111111111,0.1575);
+\draw[->,draw=orchid227119194] (axis cs:0.563311111111111,0.1575) -- (axis cs:0.499766666666667,0.0823111111111111);
+\draw[->,draw=orchid227119194] (axis cs:0.499766666666667,0.0823111111111111) -- (axis cs:0.423422222222222,0.0199111111111111);
+\draw[->,draw=darkorange25512714] (axis cs:0.614111111111111,0.226155555555556) -- (axis cs:0.61,0.200111111111111);
+\draw[->,draw=darkorange25512714] (axis cs:0.61,0.200111111111111) -- (axis cs:0.608111111111111,0.170577777777778);
+\draw[->,draw=darkorange25512714] (axis cs:0.608111111111111,0.170577777777778) -- (axis cs:0.616088888888889,0.115966666666667);
+\draw[->,draw=steelblue31119180] (axis cs:0.610922222222222,0.219644444444444) -- (axis cs:0.604122222222222,0.191644444444444);
+\draw[->,draw=steelblue31119180] (axis cs:0.604122222222222,0.191644444444444) -- (axis cs:0.596555555555556,0.1494);
+\draw[->,draw=steelblue31119180] (axis cs:0.596555555555556,0.1494) -- (axis cs:0.587911111111111,0.0752555555555556);
+\draw[->,draw=crimson2143940] (axis cs:0.6117,0.221244444444444) -- (axis cs:0.608333333333333,0.1966);
+\draw[->,draw=crimson2143940] (axis cs:0.608333333333333,0.1966) -- (axis cs:0.606733333333333,0.168377777777778);
+\draw[->,draw=crimson2143940] (axis cs:0.606733333333333,0.168377777777778) -- (axis cs:0.614577777777778,0.115277777777778);
+\draw[->,draw=forestgreen4416044] (axis cs:0.6112,0.219577777777778) -- (axis cs:0.603244444444444,0.190722222222222);
+\draw[->,draw=forestgreen4416044] (axis cs:0.603244444444444,0.190722222222222) -- (axis cs:0.596333333333333,0.1489);
+\draw[->,draw=forestgreen4416044] (axis cs:0.596333333333333,0.1489) -- (axis cs:0.587244444444444,0.0749888888888889);
+\draw[->,draw=mediumaquamarine102194165] (axis cs:0.833033333333333,0.237466666666667) -- (axis cs:0.826655555555555,0.223922222222222);
+\draw[->,draw=mediumaquamarine102194165] (axis cs:0.826655555555555,0.223922222222222) -- (axis cs:0.816133333333333,0.2095);
+\draw[->,draw=mediumaquamarine102194165] (axis cs:0.816133333333333,0.2095) -- (axis cs:0.789933333333333,0.174144444444444);
+\draw[->,draw=salmon25214198] (axis cs:0.832622222222222,0.251744444444444) -- (axis cs:0.826077777777778,0.2339);
+\draw[->,draw=salmon25214198] (axis cs:0.826077777777778,0.2339) -- (axis cs:0.815966666666667,0.210644444444444);
+\draw[->,draw=salmon25214198] (axis cs:0.815966666666667,0.210644444444444) -- (axis cs:0.789811111111111,0.180855555555556);
+\draw[->,draw=darkgray141160203] (axis cs:0.8,0.0561222222222222) -- (axis cs:0.803122222222222,0.0790666666666667);
+\draw[->,draw=darkgray141160203] (axis cs:0.803122222222222,0.0790666666666667) -- (axis cs:0.799166666666667,0.0801);
+\draw[->,draw=darkgray141160203] (axis cs:0.799166666666667,0.0801) -- (axis cs:0.788422222222222,0.0693444444444444);
+\draw[->,draw=yellowgreen16621684] (axis cs:0.8368,0.253775) -- (axis cs:0.8325,0.2425625);
+\draw[->,draw=yellowgreen16621684] (axis cs:0.8325,0.2425625) -- (axis cs:0.8241,0.2261625);
+\draw[->,draw=yellowgreen16621684] (axis cs:0.8241,0.2261625) -- (axis cs:0.8037125,0.200425);
+\draw[->,draw=gold25521747] (axis cs:0.8202875,0.3916875) -- (axis cs:0.803525,0.343125);
+\draw[->,draw=gold25521747] (axis cs:0.803525,0.343125) -- (axis cs:0.758775,0.237725);
+\draw[->,draw=gold25521747] (axis cs:0.758775,0.237725) -- (axis cs:0.681275,0.1283125);
+\draw[->,draw=orchid231138195] (axis cs:0.813975,0.2696625) -- (axis cs:0.8036375,0.2492125);
+\draw[->,draw=orchid231138195] (axis cs:0.8036375,0.2492125) -- (axis cs:0.7773875,0.1974625);
+\draw[->,draw=orchid231138195] (axis cs:0.7773875,0.1974625) -- (axis cs:0.7231125,0.11835);
+\end{axis}
+
+\end{tikzpicture}
