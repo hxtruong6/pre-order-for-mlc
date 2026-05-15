@@ -15,6 +15,11 @@ from scipy.io import arff
 from scipy.stats import bernoulli
 from sklearn.model_selection import KFold
 
+try:
+    import arff as liac_arff  # liac-arff package — handles sparse ARFF
+except ImportError:  # pragma: no cover
+    liac_arff = None
+
 TARGET_IN_END_FILE_DATASETS = [
     "emotions.arff",
     "scene.arff",
@@ -27,7 +32,25 @@ TARGET_IN_END_FILE_DATASETS = [
     "PlantGO.arff",
     "GpositivePseAAC.arff",
     "PlantPseAAC.arff",
+    # Large-K additions (COMETA convention: labels at end of attribute list).
+    "CAL500.arff",
+    "mediamill.arff",
+    "bibtex.arff",
 ]
+
+
+def _load_sparse_arff_to_dataframe(path: str) -> pd.DataFrame:
+    """Parse sparse-format ARFF via liac-arff and densify to a DataFrame.
+
+    Sparse rows look like ``{2 1, 5 1, ...}`` — every non-listed index is 0.
+    liac-arff returns a (n_samples, n_attributes) list-of-lists with zeros
+    filled in, which we wrap in a DataFrame keyed by the attribute names.
+    """
+    with open(path) as f:
+        obj = liac_arff.load(f, return_type=liac_arff.DENSE_GEN)
+        attr_names = [a[0] for a in obj["attributes"]]
+        rows = list(obj["data"])
+    return pd.DataFrame(rows, columns=attr_names)
 
 
 class Datasets4Experiments:
@@ -47,8 +70,21 @@ class Datasets4Experiments:
         for file_name, n_labels in zip(self.data_files, self.n_labels_set):
             full_path = f"{self.data_path}{file_name}"
             log(INFO, f"Loading dataset from {full_path}")
-            data, _meta = arff.loadarff(full_path)
-            df = pd.DataFrame(data)
+            try:
+                data, _meta = arff.loadarff(full_path)
+                df = pd.DataFrame(data)
+            except (ValueError, NotImplementedError) as e:
+                # scipy.io.arff cannot parse sparse ARFF format
+                # ({idx val, idx val, ...}). Fall back to liac-arff which
+                # supports it, then densify.
+                if liac_arff is None:
+                    raise RuntimeError(
+                        f"scipy.io.arff failed on {file_name} ({e}). "
+                        "Install liac-arff (`pip install liac-arff`) to handle "
+                        "sparse ARFF datasets like bibtex."
+                    ) from e
+                log(INFO, f"  scipy failed ({e!s}); retrying with liac-arff…")
+                df = _load_sparse_arff_to_dataframe(full_path)
 
             is_target_in_end = any(
                 f.lower() == file_name.lower() for f in TARGET_IN_END_FILE_DATASETS
@@ -65,6 +101,11 @@ class Datasets4Experiments:
         else:
             X = df.iloc[:, n_labels:].to_numpy()
             Y = df.iloc[:, :n_labels].to_numpy().astype(int)
+
+        # liac-arff returns object dtype when attributes are stored as strings
+        # in a sparse ARFF. Coerce to float for sklearn/LightGBM compatibility.
+        if X.dtype == object:
+            X = X.astype(float)
 
         # Map sklearn-style -1 (negative) labels to 0 so downstream pairwise
         # encoders see a clean {0,1} matrix.

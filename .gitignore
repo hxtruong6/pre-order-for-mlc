@@ -29,6 +29,14 @@ CLAUDE.md
 # code-review-graph index
 .code-review-graph/
 
+# Large-K ARFFs (downloaded from COMETA — see data/README_LARGE_K.md)
+data/CAL500.arff
+data/mediamill.arff
+data/bibtex.arff
+
+# Untracked working paper draft
+paper.tex
+
 # --- Python ---------------------------------------------------------------
 
 __pycache__/

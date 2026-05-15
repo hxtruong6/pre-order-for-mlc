@@ -26,6 +26,12 @@ def _hash(obj) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--out_dir", required=True)
+    parser.add_argument(
+        "--base_learner",
+        default=BaseLearnerName.RF.value,
+        choices=[b.value for b in BaseLearnerName],
+        help="Base learner for the pairwise/marginal estimators.",
+    )
     args = parser.parse_args()
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -49,7 +55,7 @@ def main() -> None:
     outputs = {}
 
     for po in [PreferenceOrder.PRE_ORDER, PreferenceOrder.PARTIAL_ORDER]:
-        m = PredictBOPOs(BaseLearnerName.RF.value, preference_order=po)
+        m = PredictBOPOs(args.base_learner, preference_order=po)
         m.fit(X_train, Y_train)
         proba = m.predict_proba(X_test, n_labels)
         outputs[f"predict_proba_{po.name}"] = proba
@@ -69,19 +75,19 @@ def main() -> None:
         outputs[f"marginal_{po.name}"] = marginal
 
     # CLR path.
-    m_clr = PredictBOPOs(BaseLearnerName.RF.value, preference_order=PreferenceOrder.PRE_ORDER)
+    m_clr = PredictBOPOs(args.base_learner, preference_order=PreferenceOrder.PRE_ORDER)
     m_clr.fit_CLR(X_train, Y_train)
     clr_y, clr_ranks, clr_proba = m_clr.predict_CLR(X_test, n_labels)
     outputs["predict_CLR"] = {"Y": clr_y, "ranks": clr_ranks, "proba": clr_proba}
 
     # BR baseline.
-    m_br = PredictBOPOs(BaseLearnerName.RF.value, preference_order=PreferenceOrder.PRE_ORDER)
+    m_br = PredictBOPOs(args.base_learner, preference_order=PreferenceOrder.PRE_ORDER)
     m_br.fit_BR(X_train, Y_train)
     br_y, br_ranks, br_proba = m_br.predict_BR(X_test, n_labels)
     outputs["predict_BR"] = {"Y": br_y, "ranks": br_ranks, "proba": br_proba}
 
     # CC baseline.
-    m_cc = PredictBOPOs(BaseLearnerName.RF.value, preference_order=PreferenceOrder.PRE_ORDER)
+    m_cc = PredictBOPOs(args.base_learner, preference_order=PreferenceOrder.PRE_ORDER)
     m_cc.fit_CC(X_train, Y_train)
     cc_y, cc_ranks, cc_proba = m_cc.predict_CC(X_test, n_labels)
     outputs["predict_CC"] = {"Y": cc_y, "ranks": cc_ranks, "proba": cc_proba}

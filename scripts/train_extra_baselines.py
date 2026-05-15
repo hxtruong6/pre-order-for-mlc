@@ -23,7 +23,7 @@ import scipy.sparse as sparse
 
 # Monkey-patch MLkNN._compute_cond for the modern sklearn API used in env.
 import skmultilearn.adapt.mlknn as _mlknn_mod
-from sklearn.ensemble import RandomForestClassifier
+from lightgbm import LGBMClassifier
 from sklearn.neighbors import NearestNeighbors
 from skmultilearn.utils import get_matrix_in_format
 
@@ -112,8 +112,16 @@ def _ecc_predict(
         Y_bs = Y_train[idx][:, perm]
 
         chain = ClassifierChain(
-            classifier=RandomForestClassifier(
-                n_estimators=100, random_state=rng_seed + k, n_jobs=-1
+            classifier=LGBMClassifier(
+                n_estimators=100,
+                random_state=rng_seed + k,
+                n_jobs=-1,
+                verbose=-1,
+                num_leaves=20,
+                max_depth=6,
+                learning_rate=0.1,
+                min_child_samples=5,
+                is_unbalance=True,
             ),
             require_dense=[True, True],
         )
@@ -182,6 +190,13 @@ def _lp_marginal_proba(clf: "LabelPowerset", X: np.ndarray, n_labels: int) -> np
     return np.clip(proba, 0.0, 1.0)
 
 
+import os
+
+# At K above this, LabelPowerset explodes combinatorially (2^K meta-classes).
+# Override via env if you really want to try.
+MAX_K_LP = int(os.environ.get("PREORDER_MAX_K_LP", "30"))
+
+
 def train_one(
     algo: str,
     X_train: np.ndarray,
@@ -194,6 +209,12 @@ def train_one(
     float array in [0, 1] giving per-label marginal probability.
     """
     n_labels = Y_train.shape[1]
+
+    if algo == "lp" and n_labels > MAX_K_LP:
+        raise ValueError(
+            f"LabelPowerset skipped: K={n_labels} exceeds PREORDER_MAX_K_LP={MAX_K_LP}. "
+            "Set PREORDER_MAX_K_LP=999 to force-run."
+        )
 
     if algo == "mlknn":
         clf = MLkNN(k=10)
@@ -211,8 +232,16 @@ def train_one(
 
     if algo == "lp":
         clf = LabelPowerset(
-            classifier=RandomForestClassifier(
-                n_estimators=100, random_state=RANDOM_STATE, n_jobs=-1
+            classifier=LGBMClassifier(
+                n_estimators=100,
+                random_state=RANDOM_STATE,
+                n_jobs=-1,
+                verbose=-1,
+                num_leaves=20,
+                max_depth=6,
+                learning_rate=0.1,
+                min_child_samples=5,
+                is_unbalance=True,
             ),
             require_dense=[True, True],
         )

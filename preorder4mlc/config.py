@@ -50,6 +50,12 @@ class ConfigManager:
         "humanpseaac": DatasetConfig("HumanPseAAC", "HumanPseAAC.arff", 14),
         "gpositivepseaac": DatasetConfig("GpositivePseAAC", "GpositivePseAAC.arff", 4),
         "plantpseaac": DatasetConfig("PlantPseAAC", "PlantPseAAC.arff", 12),
+        # Large-K datasets (added for the algorithm-improvement study).
+        # ARFF files are NOT in the repo — download from COMETA / MULAN and
+        # place under ./data/. See data/README_LARGE_K.md.
+        "cal500": DatasetConfig("CAL500", "CAL500.arff", 174),
+        "mediamill": DatasetConfig("mediamill", "mediamill.arff", 101),
+        "bibtex": DatasetConfig("bibtex", "bibtex.arff", 159),
     }
 
     @staticmethod
@@ -77,6 +83,10 @@ class ConfigManager:
                 0.2,
                 0.3,
             ]
+        # Default is RF (paper-equivalent). LightGBM is opt-in: pass
+        # --base_learner LightGBM on the CLI or call ConfigManager directly
+        # with a different list. See scripts/ablation_base_learner.py for
+        # the A/B/C/D comparison we use to decide whether to adopt LightGBM.
         BASE_LEARNERS = [BaseLearnerName.RF]
         ALGORITHMS = [
             AlgorithmType.BOPOS,
