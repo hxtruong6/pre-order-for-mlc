@@ -52,18 +52,6 @@ class ConfigManager:
         "plantpseaac": DatasetConfig("PlantPseAAC", "PlantPseAAC.arff", 12),
     }
 
-    DATASET_KEY = {
-        "chd_49": "CHD_49",
-        "emotions": "emotions",
-        "scene": "scene",
-        "viruspseaac": "VirusPseAAC",
-        "yeast": "Yeast",
-        "water_quality": "Water-quality",
-        "humanpseaac": "HumanPseAAC",
-        "gpositivepseaac": "GpositivePseAAC",
-        "plantpseaac": "PlantPseAAC",
-    }
-
     @staticmethod
     def get_dataset_config(dataset_name: str) -> DatasetConfig:
         dataset_name = dataset_name.lower()
@@ -104,5 +92,5 @@ class ConfigManager:
             base_learners=BASE_LEARNERS,
             total_repeat_times=5,
             number_folds=5,
-            algorithms=ALGORITHMS,  # Default to just BOPOS
+            algorithms=ALGORITHMS,
         )

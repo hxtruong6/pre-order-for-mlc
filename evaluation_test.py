@@ -815,7 +815,7 @@ def main():
     # Validate dataset
     if args.dataset is None:
         raise ValueError("Dataset is required")
-    dataset_name = ConfigManager.DATASET_KEY[args.dataset]
+    dataset_name = ConfigManager.get_dataset_config(args.dataset).name
 
     log(INFO, f"Args: Dataset: {dataset_name}, Results dir: {results_dir}")
 

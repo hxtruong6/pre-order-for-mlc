@@ -16,8 +16,6 @@ from glob import glob
 
 import pandas as pd
 
-RESULTS_DIR = "results/20260514_v2"
-OUTPUT_DIR = "results/final_20260514_v2_summary"
 NOISE_LEVELS = ["0.0", "0.1", "0.2", "0.3"]
 
 # File patterns for each algorithm type
@@ -201,8 +199,16 @@ def build_summary_table(metrics, all_metrics):
 def main():
     """Main function to generate per-dataset and per-prediction-type summary metrics tables."""
     parser = argparse.ArgumentParser()
-    parser.add_argument("--results_dir", default=RESULTS_DIR)
-    parser.add_argument("--output_dir", default=OUTPUT_DIR)
+    parser.add_argument(
+        "--results_dir",
+        required=True,
+        help="Directory containing the per-fold evaluation CSVs to aggregate.",
+    )
+    parser.add_argument(
+        "--output_dir",
+        required=True,
+        help="Directory to write the per-dataset summary tables into.",
+    )
     args = parser.parse_args()
 
     results_dir = args.results_dir
