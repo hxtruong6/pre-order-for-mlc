@@ -1,15 +1,28 @@
+"""Top-level orchestration for the training pipeline.
+
+:class:`TrainingOrchestrator` is the canonical entry point invoked from
+:mod:`main`. It loads the requested dataset, sweeps over base learners
+and noisy rates, and dispatches each fold to the appropriate algorithm
+branch (BOPOs PRE_ORDER / PARTIAL_ORDER and the CLR / BR / CC baselines),
+collecting per-fold records into pickle files via
+:class:`utils.results_manager.ExperimentResults`.
+"""
+
 import time
-from typing import List, Dict, Tuple
-from logging import INFO, ERROR, log
+from logging import ERROR, INFO, log
+
 from joblib import Parallel, delayed
-from config import TrainingConfig, DatasetConfig, AlgorithmType
+
+from config import AlgorithmType, DatasetConfig, TrainingConfig
+from constants import RANDOM_STATE, BaseLearnerName, TargetMetric
 from datasets4experiments import Datasets4Experiments
 from inference_models import PredictBOPOs, PreferenceOrder
 from utils.results_manager import ExperimentResults
-from constants import BaseLearnerName, RANDOM_STATE, TargetMetric
 
 
 class TrainingOrchestrator:
+    """Drive training across base learners, folds, and algorithm branches."""
+
     def __init__(self, config: TrainingConfig):
         self.config = config
         self.experiment_dataset: Datasets4Experiments
@@ -37,7 +50,7 @@ class TrainingOrchestrator:
         noisy_rate: float,
         dataset_name: str,
         algorithm: AlgorithmType,
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """Process a single dataset with given noise rate for a specific algorithm."""
         results = []
 
@@ -62,8 +75,8 @@ class TrainingOrchestrator:
                         random_state=RANDOM_STATE,
                     )
                 ):
-                    n_instances = X_test.shape[0]
-                    n_labels = Y_test.shape[1]
+                    X_test.shape[0]
+                    Y_test.shape[1]
                     log(
                         INFO,
                         f"Fold: {fold+1}/{self.config.number_folds} - {noisy_rate}",
@@ -154,10 +167,15 @@ class TrainingOrchestrator:
             log(INFO, f"Training time: {(time.time() - train_time1)} seconds")
 
             predict_time1 = time.time()
-            probabilistic_predictions = predict_BOPOs.predict_proba(
-                X_test, Y_test.shape[1]
-            )
+            probabilistic_predictions = predict_BOPOs.predict_proba(X_test, Y_test.shape[1])
             log(INFO, f"Prediction time {(time.time() - predict_time1)} seconds")
+
+            # Per-label marginal probability via auxiliary BR head.
+            try:
+                Y_proba_bopos = predict_BOPOs.predict_marginal_proba(X_test)
+            except Exception as e:
+                log(INFO, f"Marginal proba unavailable: {e}")
+                Y_proba_bopos = None
 
             predict_tasks = []
             for target_metric in [TargetMetric.Hamming, TargetMetric.Subset]:
@@ -174,8 +192,7 @@ class TrainingOrchestrator:
 
             predict_order_time1 = time.time()
             predict_results_list = Parallel(n_jobs=-1)(
-                delayed(predict_BOPOs.predict_preference_orders)(*task)
-                for task in predict_tasks
+                delayed(predict_BOPOs.predict_preference_orders)(*task) for task in predict_tasks
             )
             log(
                 INFO,
@@ -199,6 +216,7 @@ class TrainingOrchestrator:
                         height,
                         dataset_name,
                         noisy_rate,
+                        Y_proba=Y_proba_bopos,
                     )
                     index_result += 1
             log(INFO, f"Saving time {(time.time() - save_time1)} seconds")
@@ -225,7 +243,12 @@ class TrainingOrchestrator:
         log(INFO, f"CLR Training time: {(time.time() - clr_time1)} seconds")
 
         predict_time1 = time.time()
-        predicted_Y, _ = clr.predict_CLR(X_test, Y_test.shape[1])
+        clr_predict_results = clr.predict_CLR(X_test, Y_test.shape[1])
+        if len(clr_predict_results) == 3:
+            predicted_Y, _, Y_proba_clr = clr_predict_results
+        else:  # backward compat
+            predicted_Y, _ = clr_predict_results
+            Y_proba_clr = None
         log(INFO, f"CLR Prediction time {(time.time() - predict_time1)} seconds")
 
         save_time1 = time.time()
@@ -241,6 +264,7 @@ class TrainingOrchestrator:
             None,
             dataset_name,
             noisy_rate,
+            Y_proba=Y_proba_clr,
         )
         log(INFO, f"CLR Saving time {(time.time() - save_time1)} seconds")
 
@@ -266,7 +290,12 @@ class TrainingOrchestrator:
         log(INFO, f"BR Training time: {(time.time() - br_time1)} seconds")
 
         predict_time1 = time.time()
-        predicted_Y, _ = br.predict_BR(X_test, Y_test.shape[1])
+        br_predict_results = br.predict_BR(X_test, Y_test.shape[1])
+        if len(br_predict_results) == 3:
+            predicted_Y, _, Y_proba_br = br_predict_results
+        else:  # backward compat
+            predicted_Y, _ = br_predict_results
+            Y_proba_br = None
         log(INFO, f"BR Prediction time {(time.time() - predict_time1)} seconds")
 
         save_time1 = time.time()
@@ -282,6 +311,7 @@ class TrainingOrchestrator:
             None,
             dataset_name,
             noisy_rate,
+            Y_proba=Y_proba_br,
         )
         log(INFO, f"BR Saving time {(time.time() - save_time1)} seconds")
 
@@ -307,7 +337,12 @@ class TrainingOrchestrator:
         log(INFO, f"CC Training time: {(time.time() - cc_time1)} seconds")
 
         predict_time1 = time.time()
-        predicted_Y, _ = cc.predict_CC(X_test, Y_test.shape[1])
+        cc_predict_results = cc.predict_CC(X_test, Y_test.shape[1])
+        if len(cc_predict_results) == 3:
+            predicted_Y, _, Y_proba_cc = cc_predict_results
+        else:  # backward compat
+            predicted_Y, _ = cc_predict_results
+            Y_proba_cc = None
         log(INFO, f"CC Prediction time {(time.time() - predict_time1)} seconds")
 
         save_time1 = time.time()
@@ -323,6 +358,7 @@ class TrainingOrchestrator:
             None,
             dataset_name,
             noisy_rate,
+            Y_proba=Y_proba_cc,
         )
         log(INFO, f"CC Saving time {(time.time() - save_time1)} seconds")
 
@@ -341,6 +377,7 @@ class TrainingOrchestrator:
         height,
         dataset_name,
         noisy_rate,
+        Y_proba=None,
     ):
         """Update results with prediction data."""
         indices_vector = None
@@ -349,10 +386,19 @@ class TrainingOrchestrator:
             indices_vector = predict_results[2]
             prediction_with_partial_abstention = predict_results[3]
 
+        if Y_proba is not None:
+            try:
+                Y_proba_serialized = Y_proba.tolist()
+            except AttributeError:
+                Y_proba_serialized = list(Y_proba)
+        else:
+            Y_proba_serialized = None
+
         data = {
             "Y_test": Y_test.tolist(),
             "Y_predicted": list(predict_results[0]),
             "Y_BOPOs": list(predict_results[1]),
+            "Y_proba": Y_proba_serialized,
             "indices_vector": indices_vector,
             "partial_abstention": prediction_with_partial_abstention,
             "target_metric": target_metric,
@@ -397,7 +443,7 @@ class TrainingOrchestrator:
         self,
         dataset_name: str,
         noisy_rate: float,
-        results: List[Dict],
+        results: list[dict],
         algorithm: AlgorithmType,
     ):
         """Save results for a specific algorithm."""

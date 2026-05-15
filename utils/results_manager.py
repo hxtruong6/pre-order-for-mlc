@@ -1,13 +1,21 @@
+"""Persistence layer for per-fold experiment records.
+
+:class:`ExperimentResults` writes pickle files named
+``dataset_<name>_noisy_<rate>[_clr|_br|_cc].pkl`` containing the list of
+per-fold record dicts emitted by :mod:`training_orchestrator`.
+:class:`ResultProcessor` is the load-side companion: it deserialises the
+list-encoded numpy arrays back from the pickled dataframes so the
+evaluator can consume them uniformly.
+"""
+
+import ast
+import pickle
 from dataclasses import dataclass
 from logging import INFO, log
 from pathlib import Path
-import json
-import pickle
-import pandas as pd
-import numpy as np
-import ast
 
-import logging
+import numpy as np
+import pandas as pd
 
 from config import AlgorithmType
 
@@ -24,11 +32,15 @@ class ResultProcessor:
 
     @staticmethod
     def process_predictions(df: pd.DataFrame) -> pd.DataFrame:
-        """Process Y_predicted, Y_true, and Y_BOPOs columns."""
+        """Process Y_predicted, Y_true, Y_BOPOs, and Y_proba columns."""
         # Convert string representations to numpy arrays if needed
-        for col in ["Y_test", "Y_predicted", "Y_BOPOs"]:
+        for col in ["Y_test", "Y_predicted", "Y_BOPOs", "Y_proba"]:
             if col in df.columns:
-                df[col] = df[col].apply(ResultProcessor.convert_string_to_array)  # type: ignore
+                df[col] = df[col].apply(  # type: ignore[assignment]
+                    lambda v: (
+                        ResultProcessor.convert_string_to_array(v) if v is not None else None
+                    )
+                )
 
         # convert to int for Y_BOPOs
         df["Y_BOPOs"] = df["Y_BOPOs"].apply(lambda x: x.astype(int))
@@ -77,9 +89,7 @@ class ExperimentResults:
         elif is_cc:
             suffix = "_cc"
 
-        base_filename = (
-            f"{results_dir}/dataset_{dataset_name}_noisy_{noisy_rate}{suffix}"
-        )
+        base_filename = f"{results_dir}/dataset_{dataset_name}_noisy_{noisy_rate}{suffix}"
 
         # Save as pickle for exact Python object preservation
         with open(f"{base_filename}.pkl", "wb") as f:

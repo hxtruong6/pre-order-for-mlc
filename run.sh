@@ -1,45 +1,66 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# End-to-end reproduction driver for the preorder4MLC paper.
+#
+# For every dataset key registered in config.py::ConfigManager.DATASET_CONFIGS,
+# this script:
+#   1. Trains the BOPOs pipeline and the CLR / BR / CC baselines (main.py).
+#   2. Trains the MLkNN / ECC / LP baselines (extra_baselines.py).
+#   3. Evaluates the BOPOs pickles into per-fold CSVs (evaluation_test.py).
+#   4. Evaluates the extra-baseline pickles (evaluate_extra_baselines.py).
+#
+# Outputs land in ${RESULTS_DIR}; per-dataset stdout/stderr go to
+# ${LOG_DIR}/<dataset>.log. Run utils/summarize_metrics.py afterwards to
+# aggregate the CSVs into the per-dataset summary tables consumed by the
+# statistical tests and figure scripts.
 
-results_dir="results/20250624"
-log_dir="logs/20250624"
+set -euo pipefail
 
-# Create the results directory if it doesn't exist
-if [ ! -d "$results_dir" ]; then
-    mkdir -p $results_dir
-fi
+RESULTS_DIR="${RESULTS_DIR:-results/20260514_v2}"
+LOG_DIR="${LOG_DIR:-logs/20260514_v2}"
 
-if [ ! -d "$log_dir" ]; then
-    mkdir -p $log_dir
-fi
+mkdir -p "${RESULTS_DIR}" "${LOG_DIR}"
 
-# Function to run the Python commands and log output
-run_and_log() {
-    dataset=$1
-    log_file="$log_dir/$dataset.log"
-    # create the log file
-    touch $log_file
+DATASETS=(
+    chd_49
+    emotions
+    viruspseaac
+    gpositivepseaac
+    plantpseaac
+    water_quality
+    scene
+    yeast
+    humanpseaac
+)
 
-    echo "Running for dataset: $dataset" # >> $log_file
-    echo "===================="          # >> $log_file
-    python main.py --dataset "$dataset" --results_dir "$results_dir" >>$log_file 2>&1
-    python evaluation_test.py --dataset "$dataset" --results_dir "$results_dir" >>$log_file 2>&1
-    echo "Finished for dataset: $dataset" # >> $log_file
-    echo "===================="           # >> $log_file
+EXTRA_BASELINES=(mlknn ecc lp)
 
-    # # Split the log file into smaller chunks (e.g., 10MB each)
-    # split -b 10M $log_file ${log_file}_part_
+run_dataset() {
+    local dataset="$1"
+    local log_file="${LOG_DIR}/${dataset}.log"
 
-    # # Optional: Remove the original log file after splitting
-    # rm $log_file
+    {
+        echo "===================="
+        echo "[$(date -Is)] Running ${dataset}"
+        echo "===================="
+
+        python main.py --dataset "${dataset}" --results_dir "${RESULTS_DIR}"
+        python evaluation_test.py --dataset "${dataset}" --results_dir "${RESULTS_DIR}"
+
+        for algo in "${EXTRA_BASELINES[@]}"; do
+            python extra_baselines.py \
+                --dataset "${dataset}" \
+                --algorithm "${algo}" \
+                --results_dir "${RESULTS_DIR}"
+            python evaluate_extra_baselines.py \
+                --dataset "${dataset}" \
+                --algorithm "${algo}" \
+                --results_dir "${RESULTS_DIR}"
+        done
+
+        echo "[$(date -Is)] Finished ${dataset}"
+    } &>"${log_file}"
 }
 
-# Run the commands for each dataset
-run_and_log "chd_49"
-run_and_log "emotions"
-run_and_log "viruspseaac"
-run_and_log "gpositivepseaac"
-run_and_log "plantpseaac"
-run_and_log "water_quality"
-run_and_log "scene"
-run_and_log "yeast"
-run_and_log "humanpseaac"
+for dataset in "${DATASETS[@]}"; do
+    run_dataset "${dataset}"
+done

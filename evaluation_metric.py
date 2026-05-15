@@ -1,21 +1,56 @@
+"""Evaluation metrics for multi-label and partial-abstention predictions.
+
+Implements the example-based, label-based, ranking, and partial-abstention
+metrics reported in the paper:
+
+* binary-vector metrics (Hamming accuracy, subset 0/1, F1, Jaccard, ...);
+* preference-order metrics for pre- and partial-order predictions;
+* partial-abstention metrics (AREC, AABS, REC, ABS as defined in the
+  README example);
+* ranking metrics (ranking loss, one-error, coverage, lr_ap, AUC) wrapping
+  :mod:`sklearn.metrics`.
+
+The dispatcher used by :mod:`evaluation_test` consumes the
+:class:`EvaluationMetricName` enum and routes to the corresponding
+:class:`EvaluationMetric` method.
+"""
+
 from enum import Enum
+
 import numpy as np
-from sklearn.metrics import hamming_loss
+from sklearn.metrics import (
+    average_precision_score,
+    coverage_error,
+    f1_score,
+    hamming_loss,
+    label_ranking_average_precision_score,
+    label_ranking_loss,
+    precision_score,
+    recall_score,
+    roc_auc_score,
+)
 
 
 class EvaluationMetricName(Enum):
     HAMMING_ACCURACY = "hamming_accuracy"
-    F1 = "f1"
-    JACCARD = "jaccard"
+    F1 = "f1"  # example-based (instance-averaged) F1
+    JACCARD = "jaccard"  # example-based Jaccard
     SUBSET0_1 = "subset0_1"
     MEAN_IR = "mean_ir"  # imbalance ratio (for whole dataset)
     CV_IR = "cv_ir"  # coefficient of variation of imbalance ratio (for whole dataset)
     MFRD = "mfrd"  # Maximum False Rate Difference
     AFRD = "afrd"  # Average False Rate Difference
+    # Label-based aggregations (added for major revision)
+    MACRO_F1 = "macro_f1"
+    MICRO_F1 = "micro_f1"
+    MACRO_PRECISION = "macro_precision"
+    MICRO_PRECISION = "micro_precision"
+    MACRO_RECALL = "macro_recall"
+    MICRO_RECALL = "micro_recall"
+    EXAMPLE_PRECISION = "example_precision"
+    EXAMPLE_RECALL = "example_recall"
     # Partial Abstention Metrics
-    HAMMING_ACCURACY_PA = (
-        "hamming_accuracy_pa"  # Hamming accuracy with partial abstention
-    )
+    HAMMING_ACCURACY_PA = "hamming_accuracy_pa"  # Hamming accuracy with partial abstention
     SUBSET0_1_PA = "subset0_1_pa"  # Subset accuracy with partial abstention
     F1_PA = "f1_pa"  # F1 score with partial abstention
     # New Abstention Metrics
@@ -23,6 +58,16 @@ class EvaluationMetricName(Enum):
     AABS = "aabs"  # Average Abstention per Label
     REC = "rec"  # Instance-Wise Recall
     ABS = "abs"  # Instance-Wise Abstention
+    # Ranking / score-vector metrics (added for rerun-v2). Operate on real-valued
+    # per-label scores Y_proba in [0, 1], not on thresholded 0/1 predictions.
+    RANKING_LOSS = "ranking_loss"
+    ONE_ERROR = "one_error"
+    COVERAGE = "coverage"
+    LR_AP = "lr_ap"  # label-ranking average precision
+    AUC_MACRO = "auc_macro"
+    AUC_MICRO = "auc_micro"
+    AUPRC_MACRO = "auprc_macro"  # macro-averaged area under PR curve
+    AUPRC_MICRO = "auprc_micro"  # micro-averaged area under PR curve
     # SUBSET_EXACT_MATCH = "subset_exact_match"
     # RECALL = "recall"
     # HAMMING_ACCURACY_PL = "hamming_accuracy_PL"
@@ -38,43 +83,6 @@ class EvaluationMetric:
 
     def list_metrics(self):
         return [metric.value for metric in EvaluationMetricName]
-
-    # def calculate(
-    #     self,
-    #     metric_name: EvaluationMetricName,
-    #     predicted_Y: np.ndarray,
-    #     true_Y: np.ndarray,
-    # ) -> float:
-    #     if metric_name == EvaluationMetricName.HAMMING_ACCURACY.value:
-    #         return self.hamming_accuracy(predicted_Y, true_Y)
-    #     elif metric_name == EvaluationMetricName.F1.value:
-    #         return self.f1(predicted_Y, true_Y)
-    #     elif metric_name == EvaluationMetricName.SUBSET0_1.value:
-    #         return self.subset0_1(predicted_Y, true_Y)
-    #     elif metric_name == EvaluationMetricName.MEAN_IR.value:
-    #         return self.mean_ir(true_Y)
-    #     elif metric_name == EvaluationMetricName.CV_IR.value:
-    #         return self.cv_ir(true_Y)
-    #     elif metric_name == EvaluationMetricName.MFRD.value:
-    #         return self.mfrd(predicted_Y, true_Y)
-    #     elif metric_name == EvaluationMetricName.AFRD.value:
-    #         return self.afrd(predicted_Y, true_Y)
-    #     elif metric_name == EvaluationMetricName.HAMMING_ACCURACY_PA.value:
-    #         return self.hamming_accuracy_pa(predicted_Y, true_Y)
-    #     elif metric_name == EvaluationMetricName.SUBSET0_1_PA.value:
-    #         return self.subset0_1_pa(predicted_Y, true_Y)
-    #     elif metric_name == EvaluationMetricName.F1_PA.value:
-    #         return self.f1_pa(predicted_Y, true_Y)
-    #     elif metric_name == EvaluationMetricName.AREC.value:
-    #         return self.arec(predicted_Y, true_Y)
-    #     elif metric_name == EvaluationMetricName.AABS.value:
-    #         return self.aabs(predicted_Y, true_Y)
-    #     elif metric_name == EvaluationMetricName.REC.value:
-    #         return self.rec(predicted_Y, true_Y)
-    #     elif metric_name == EvaluationMetricName.ABS.value:
-    #         return self.abs(predicted_Y, true_Y)
-    #     else:
-    #         raise ValueError("Invalid metric name")
 
     def hamming_accuracy(self, predicted_Y, true_Y) -> float:
         return 1 - hamming_loss(predicted_Y, true_Y)  # type: ignore
@@ -113,6 +121,115 @@ class EvaluationMetric:
                 subset0_1 += 1
         return subset0_1 / n_instances
 
+    # Label-based aggregations (macro/micro). zero_division=0 matches sklearn default.
+    def macro_f1(self, predicted_Y, true_Y) -> float:
+        return float(f1_score(true_Y, predicted_Y, average="macro", zero_division=0))
+
+    def micro_f1(self, predicted_Y, true_Y) -> float:
+        return float(f1_score(true_Y, predicted_Y, average="micro", zero_division=0))
+
+    def macro_precision(self, predicted_Y, true_Y) -> float:
+        return float(precision_score(true_Y, predicted_Y, average="macro", zero_division=0))
+
+    def micro_precision(self, predicted_Y, true_Y) -> float:
+        return float(precision_score(true_Y, predicted_Y, average="micro", zero_division=0))
+
+    def macro_recall(self, predicted_Y, true_Y) -> float:
+        return float(recall_score(true_Y, predicted_Y, average="macro", zero_division=0))
+
+    def micro_recall(self, predicted_Y, true_Y) -> float:
+        return float(recall_score(true_Y, predicted_Y, average="micro", zero_division=0))
+
+    def example_precision(self, predicted_Y, true_Y) -> float:
+        # Instance-averaged precision. If both pred and true are empty, count as 1.
+        predicted_Y = np.asarray(predicted_Y)
+        true_Y = np.asarray(true_Y)
+        n_instances = len(predicted_Y)
+        total = 0.0
+        for i in range(n_instances):
+            p_sum = float(np.sum(predicted_Y[i]))
+            if p_sum == 0:
+                total += 1.0 if float(np.sum(true_Y[i])) == 0 else 0.0
+            else:
+                total += float(np.dot(predicted_Y[i], true_Y[i])) / p_sum
+        return total / n_instances
+
+    def example_recall(self, predicted_Y, true_Y) -> float:
+        # Instance-averaged recall. If true is empty, treat as 1 (no positive labels to recover).
+        predicted_Y = np.asarray(predicted_Y)
+        true_Y = np.asarray(true_Y)
+        n_instances = len(predicted_Y)
+        total = 0.0
+        for i in range(n_instances):
+            t_sum = float(np.sum(true_Y[i]))
+            if t_sum == 0:
+                total += 1.0 if float(np.sum(predicted_Y[i])) == 0 else 0.0
+            else:
+                total += float(np.dot(predicted_Y[i], true_Y[i])) / t_sum
+        return total / n_instances
+
+    # ------------------------------------------------------------------
+    # Ranking / score-vector metrics (rerun-v2)
+    # ------------------------------------------------------------------
+    def ranking_loss(self, Y_proba, true_Y) -> float:
+        return float(label_ranking_loss(true_Y, Y_proba))
+
+    def one_error(self, Y_proba, true_Y) -> float:
+        # Fraction of instances whose top-scored label is NOT a positive label.
+        Y_proba = np.asarray(Y_proba)
+        true_Y = np.asarray(true_Y)
+        top = np.argmax(Y_proba, axis=1)
+        n = true_Y.shape[0]
+        miss = sum(1 for i in range(n) if true_Y[i, top[i]] == 0)
+        return float(miss / n)
+
+    def coverage(self, Y_proba, true_Y) -> float:
+        # sklearn returns 1-based avg rank; subtract 1 to match the classic MLC formulation.
+        return float(coverage_error(true_Y, Y_proba) - 1.0)
+
+    def lr_ap(self, Y_proba, true_Y) -> float:
+        return float(label_ranking_average_precision_score(true_Y, Y_proba))
+
+    def auc_macro(self, Y_proba, true_Y) -> float:
+        # roc_auc_score requires at least one positive AND one negative per label for macro.
+        try:
+            return float(roc_auc_score(true_Y, Y_proba, average="macro"))
+        except ValueError:
+            # Filter out degenerate labels (all-0 or all-1 in this fold).
+            true_Y = np.asarray(true_Y)
+            Y_proba = np.asarray(Y_proba)
+            keep = [k for k in range(true_Y.shape[1]) if 0 < true_Y[:, k].sum() < true_Y.shape[0]]
+            if not keep:
+                return float("nan")
+            return float(roc_auc_score(true_Y[:, keep], Y_proba[:, keep], average="macro"))
+
+    def auc_micro(self, Y_proba, true_Y) -> float:
+        try:
+            return float(roc_auc_score(true_Y, Y_proba, average="micro"))
+        except ValueError:
+            return float("nan")
+
+    def auprc_macro(self, Y_proba, true_Y) -> float:
+        # average_precision_score (= area under PR curve). Degenerate labels
+        # (all-0 in the fold) raise; filter them out and average over the rest.
+        try:
+            return float(average_precision_score(true_Y, Y_proba, average="macro"))
+        except ValueError:
+            true_Y = np.asarray(true_Y)
+            Y_proba = np.asarray(Y_proba)
+            keep = [k for k in range(true_Y.shape[1]) if 0 < true_Y[:, k].sum() < true_Y.shape[0]]
+            if not keep:
+                return float("nan")
+            return float(
+                average_precision_score(true_Y[:, keep], Y_proba[:, keep], average="macro")
+            )
+
+    def auprc_micro(self, Y_proba, true_Y) -> float:
+        try:
+            return float(average_precision_score(true_Y, Y_proba, average="micro"))
+        except ValueError:
+            return float("nan")
+
     def subset_exact_match(self, predicted_Y, true_Y):
         n_instances = len(predicted_Y)
         n_labels = len(predicted_Y[0])
@@ -120,10 +237,7 @@ class EvaluationMetric:
 
         for index in range(n_instances):
             matched_positions = np.sum(
-                [
-                    1 if predicted_Y[index][x] == true_Y[index][x] else 0
-                    for x in range(n_labels)
-                ]
+                [1 if predicted_Y[index][x] == true_Y[index][x] else 0 for x in range(n_labels)]
             )
             for pos in range(matched_positions):
                 subset_exact_match[pos] += 1
@@ -301,9 +415,7 @@ class EvaluationMetric:
 
         # Calculate standard deviation of IRperLabel
         if n_labels > 1:
-            IRperLabel_sigma = np.sqrt(
-                np.sum((IRperLabel - MeanIR) ** 2) / (n_labels - 1)
-            )
+            IRperLabel_sigma = np.sqrt(np.sum((IRperLabel - MeanIR) ** 2) / (n_labels - 1))
         else:
             IRperLabel_sigma = 0  # Avoid division by zero if only one label
 
@@ -395,11 +507,7 @@ class EvaluationMetric:
                         correct_predictions += 1
                     total_predictions += 1
 
-        return (
-            float(correct_predictions / total_predictions)
-            if total_predictions > 0
-            else 0.0
-        )
+        return float(correct_predictions / total_predictions) if total_predictions > 0 else 0.0
 
     def subset0_1_pa(self, predicted_Y: np.ndarray, true_Y: np.ndarray) -> float:
         """
@@ -420,20 +528,14 @@ class EvaluationMetric:
         for i in range(n_samples):
             # Get non-abstained predictions
             non_abstained_mask = predicted_Y[i] != -1
-            if np.any(
-                non_abstained_mask
-            ):  # Only count if there are non-abstained predictions
+            if np.any(non_abstained_mask):  # Only count if there are non-abstained predictions
                 if np.array_equal(
                     predicted_Y[i][non_abstained_mask], true_Y[i][non_abstained_mask]
                 ):
                     correct_predictions += 1
                 total_predictions += 1
 
-        return (
-            float(correct_predictions / total_predictions)
-            if total_predictions > 0
-            else 0.0
-        )
+        return float(correct_predictions / total_predictions) if total_predictions > 0 else 0.0
 
     def f1_pa(self, predicted_Y: np.ndarray, true_Y: np.ndarray) -> float:
         """
@@ -454,9 +556,7 @@ class EvaluationMetric:
         for i in range(n_samples):
             # Get non-abstained predictions
             non_abstained_mask = predicted_Y[i] != -1
-            if np.any(
-                non_abstained_mask
-            ):  # Only count if there are non-abstained predictions
+            if np.any(non_abstained_mask):  # Only count if there are non-abstained predictions
                 pred = predicted_Y[i][non_abstained_mask]
                 true = true_Y[i][non_abstained_mask]
 

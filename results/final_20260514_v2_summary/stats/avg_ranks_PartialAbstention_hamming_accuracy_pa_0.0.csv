@@ -1,0 +1,9 @@
+algorithm,avg_rank
+PartialOrder__Subset__2,2.8333333333333335
+PartialOrder__Hamming__2,3.111111111111111
+PreOrder__Hamming__2,3.7777777777777777
+PartialOrder__Hamming__None,3.9444444444444446
+PartialOrder__Subset__None,4.5
+PreOrder__Subset__2,5.5
+PreOrder__Hamming__None,6.111111111111111
+PreOrder__Subset__None,6.222222222222222

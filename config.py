@@ -1,8 +1,17 @@
+"""Run configuration for the BOPOs training pipeline.
+
+Defines the typed config dataclasses (:class:`DatasetConfig`,
+:class:`TrainingConfig`) and the per-run :class:`ConfigManager` factory
+that maps a dataset key from the command line to its ARFF location, the
+target label count, and the fixed list of noisy rates / base learners /
+fold and repeat counts used throughout the paper.
+"""
+
 from dataclasses import dataclass
-from typing import List, Dict
-from pathlib import Path
-from constants import BaseLearnerName
 from enum import Enum
+from pathlib import Path
+
+from constants import BaseLearnerName
 
 
 class AlgorithmType(Enum):
@@ -23,11 +32,11 @@ class DatasetConfig:
 class TrainingConfig:
     data_path: str
     results_dir: str
-    noisy_rates: List[float]
-    base_learners: List[BaseLearnerName]
+    noisy_rates: list[float]
+    base_learners: list[BaseLearnerName]
     total_repeat_times: int
     number_folds: int
-    algorithms: List[AlgorithmType]  # Which algorithms to run
+    algorithms: list[AlgorithmType]  # Which algorithms to run
 
 
 class ConfigManager:
@@ -68,12 +77,18 @@ class ConfigManager:
         Path(results_dir).mkdir(parents=True, exist_ok=True)
 
         # NOISY_RATES = [0.0, 0.1, 0.2, 0.3]
-        NOISY_RATES = [
-            0.0,
-            0.1,
-            0.2,
-            0.3,
-        ]
+        # If --noise_rate is passed on the CLI, restrict to that single level
+        # so the run can be split across slurm jobs by noise.
+        single_noise = getattr(args, "noise_rate", None)
+        if single_noise is not None:
+            NOISY_RATES = [float(single_noise)]
+        else:
+            NOISY_RATES = [
+                0.0,
+                0.1,
+                0.2,
+                0.3,
+            ]
         BASE_LEARNERS = [BaseLearnerName.RF]
         ALGORITHMS = [
             AlgorithmType.BOPOS,
@@ -87,7 +102,7 @@ class ConfigManager:
             results_dir=results_dir,
             noisy_rates=NOISY_RATES,
             base_learners=BASE_LEARNERS,
-            total_repeat_times=2,
+            total_repeat_times=5,
             number_folds=5,
             algorithms=ALGORITHMS,  # Default to just BOPOS
         )

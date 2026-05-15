@@ -1,0 +1,51 @@
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311", "py312"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+known_first_party = [
+    "base_classifiers",
+    "config",
+    "constants",
+    "datasets4experiments",
+    "estimator",
+    "evaluate_extra_baselines",
+    "evaluation_metric",
+    "evaluation_test",
+    "extra_baselines",
+    "inference_models",
+    "main",
+    "searching_algorithms",
+    "training_orchestrator",
+    "utils",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+extend-exclude = [
+    "data",
+    "results",
+    "logs",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "W",   # pycodestyle warnings
+    "I",   # isort
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+]
+ignore = [
+    "E501",  # line too long (delegated to black)
+    "E741",  # ambiguous variable name (l, I, etc. are pervasive in math code)
+    "B008",  # function call in default argument
+    "B905",  # zip() without explicit strict=
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]

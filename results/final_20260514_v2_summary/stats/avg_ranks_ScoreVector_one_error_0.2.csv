@@ -1,0 +1,15 @@
+algorithm,avg_rank
+ecc,1.875
+clr,2.625
+cc,6.875
+br,7.625
+PartialOrder__Hamming__2,7.8125
+PartialOrder__Hamming__None,7.8125
+PartialOrder__Subset__2,7.8125
+PartialOrder__Subset__None,7.8125
+PreOrder__Subset__None,7.8125
+PreOrder__Subset__2,7.8125
+PreOrder__Hamming__None,7.8125
+PreOrder__Hamming__2,7.8125
+lp,9.5
+mlknn,14.0

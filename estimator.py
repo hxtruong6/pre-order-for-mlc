@@ -1,20 +1,32 @@
+"""Uniform estimator interface over scikit-learn and LightGBM backends.
+
+:class:`Estimator` is the single adapter every other module talks to;
+its constructor accepts a :class:`constants.BaseLearnerName` and hides
+the differences between :class:`sklearn.ensemble.RandomForestClassifier`,
+:class:`sklearn.ensemble.ExtraTreesClassifier`,
+:class:`sklearn.ensemble.GradientBoostingClassifier` (XGBoost in our
+nomenclature), and :class:`lightgbm.LGBMClassifier`.
+"""
+
 import os
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.ensemble import ExtraTreesClassifier
-from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.base import BaseEstimator
-from numpy.typing import NDArray
+from logging import INFO, basicConfig
+
 from lightgbm import LGBMClassifier
+from numpy.typing import NDArray
+from sklearn.base import BaseEstimator
+from sklearn.ensemble import (
+    ExtraTreesClassifier,
+    GradientBoostingClassifier,
+    RandomForestClassifier,
+)
 
 from constants import RANDOM_STATE, BaseLearnerName
-from logging import basicConfig, INFO, log
 
-basicConfig(level=INFO) # type: ignore
+basicConfig(level=INFO)  # type: ignore
 
-number_of_cores: int = (
-                os.cpu_count() if os.cpu_count() is not None else 1
-            )  # type: ignore
+number_of_cores: int = os.cpu_count() if os.cpu_count() is not None else 1  # type: ignore
 # log(INFO, f"Number of cores: {number_of_cores}")
+
 
 class Estimator:
     def __init__(self, name: str):
@@ -56,7 +68,7 @@ class Estimator:
             assert isinstance(self.clf, BaseEstimator | LGBMClassifier)
             self.clf.fit(X, Y)  # type: ignore
         except Exception as e:
-            raise ValueError(f"Error training {self.name}: {str(e)}")
+            raise ValueError(f"Error training {self.name}: {e}") from e
 
     def predict_proba(self, X: NDArray) -> NDArray:
         """Predict the probability of each class for each instance."""

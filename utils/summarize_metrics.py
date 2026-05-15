@@ -1,11 +1,23 @@
+"""Aggregate per-fold evaluation CSVs into per-dataset summary tables.
+
+Reads ``evaluation_<DatasetName>_noisy_<rate>_<algo>.csv`` files written
+by :mod:`evaluation_test` and :mod:`evaluate_extra_baselines`, then
+emits one ``<DatasetName>_<PredictionType>_summary.csv`` per dataset
+containing ``mean +/- std`` cells across folds and repeats. These are
+the tables consumed downstream by :mod:`utils.statistical_tests` and
+:mod:`utils.plot_figures`.
+"""
+
+import argparse
 import os
 import re
-import pandas as pd
-from glob import glob
 from collections import defaultdict
+from glob import glob
 
-RESULTS_DIR = "results/20250624"  # Updated to match the new folder
-OUTPUT_DIR = "results/final_summary_0710"
+import pandas as pd
+
+RESULTS_DIR = "results/20260514_v2"
+OUTPUT_DIR = "results/final_20260514_v2_summary"
 NOISE_LEVELS = ["0.0", "0.1", "0.2", "0.3"]
 
 # File patterns for each algorithm type
@@ -14,13 +26,16 @@ FILE_PATTERNS = {
     "br": "evaluation_*_noisy_*_br.csv",
     "cc": "evaluation_*_noisy_*_cc.csv",
     "clr": "evaluation_*_noisy_*_clr.csv",
+    "mlknn": "evaluation_*_noisy_*_mlknn.csv",
+    "ecc": "evaluation_*_noisy_*_ecc.csv",
+    "lp": "evaluation_*_noisy_*_lp.csv",
 }
 
 # Prediction types to include for bopos files (skip PreferenceOrder)
-BOPOS_PREDICTION_TYPES = ["BinaryVector", "PartialAbstention"]
+BOPOS_PREDICTION_TYPES = ["BinaryVector", "PartialAbstention", "ScoreVector"]
 
 # Helper to extract dataset and noise level from filename
-dataset_regex = re.compile(r"evaluation_([A-Za-z0-9_-]+)_noisy_")
+dataset_regex = re.compile(r"evaluation_([A-Za-z0-9_\-]+)_noisy_")
 NOISE_REGEX = re.compile(r"noisy_(\d\.\d)")
 
 
@@ -50,13 +65,15 @@ def extract_noise_level(filename):
 
 
 def format_mean_std(mean, std):
-    """Format mean and std as separate values for three-column output."""
+    """Format mean and std as 'mean±std' with rounding."""
     try:
-        mean_val = round(round(float(mean), 4) * 100, 2)
-        std_val = round(float(std), 4)
-        return mean_val, "±", std_val
+        # mean = float(mean)
+        # std = float(std)
+        mean = round(mean, 4)
+        std = round(std, 4)
+        return f"{mean:.4f}±{std:.4f}"
     except Exception:
-        return None, None, None
+        return ""
 
 
 def collect_metrics(files):
@@ -76,9 +93,7 @@ def collect_metrics(files):
             print(f"Skipping file (invalid dataset/noise): {file}")
             continue
 
-        print(
-            f"Processing: {os.path.basename(file)} (dataset: {dataset}, noise: {noise})"
-        )
+        print(f"Processing: {os.path.basename(file)} (dataset: {dataset}, noise: {noise})")
 
         if file.endswith("_bopos.csv"):
             # Handle bopos files - filter by prediction type
@@ -105,18 +120,22 @@ def collect_metrics(files):
                     std,
                 )
                 dataset_all_metrics[dataset][prediction_type].add(metric)
-                print(
-                    f"    Added: {prediction_type} - {algo} - {metric} - {noise}: {mean}±{std}"
-                )
+                print(f"    Added: {prediction_type} - {algo} - {metric} - {noise}: {mean}±{std}")
 
         else:
-            # Handle br, cc, clr files - all prediction types included
+            # Handle br, cc, clr, mlknn, ecc, lp files - all prediction types included
             if file.endswith("_br.csv"):
                 algo = "br"
             elif file.endswith("_cc.csv"):
                 algo = "cc"
             elif file.endswith("_clr.csv"):
                 algo = "clr"
+            elif file.endswith("_mlknn.csv"):
+                algo = "mlknn"
+            elif file.endswith("_ecc.csv"):
+                algo = "ecc"
+            elif file.endswith("_lp.csv"):
+                algo = "lp"
             else:
                 continue
 
@@ -134,18 +153,14 @@ def collect_metrics(files):
                     std,
                 )
                 dataset_all_metrics[dataset][prediction_type].add(metric)
-                print(
-                    f"    Added: {prediction_type} - {algo} - {metric} - {noise}: {mean}±{std}"
-                )
+                print(f"    Added: {prediction_type} - {algo} - {metric} - {noise}: {mean}±{std}")
 
     # Convert metric sets to sorted lists
     sorted_metrics = {}
     for dataset in dataset_all_metrics:
         sorted_metrics[dataset] = {}
         for pred_type in dataset_all_metrics[dataset]:
-            sorted_metrics[dataset][pred_type] = sorted(
-                dataset_all_metrics[dataset][pred_type]
-            )
+            sorted_metrics[dataset][pred_type] = sorted(dataset_all_metrics[dataset][pred_type])
 
     print(f"\nCollected metrics for {len(dataset_metrics)} datasets")
     for dataset, pred_types in dataset_metrics.items():
@@ -155,7 +170,7 @@ def collect_metrics(files):
 
 
 def build_summary_table(metrics, all_metrics):
-    """Build a summary DataFrame with algorithms as rows and metric__noise__type as columns."""
+    """Build a summary DataFrame with algorithms as rows and metric__noise as columns."""
     # Collect all algorithms
     algorithms = sorted(metrics.keys())
     print(f"  Building table with {len(algorithms)} algorithms: {algorithms}")
@@ -163,15 +178,8 @@ def build_summary_table(metrics, all_metrics):
     columns = []
     for metric in all_metrics:
         for noise in NOISE_LEVELS:
-            # Create three columns for each metric and noise level
-            columns.extend(
-                [
-                    f"{metric}__{noise}__mean",
-                    # f"{metric}__{noise}__operator",
-                    # f"{metric}__{noise}__std",
-                ]
-            )
-    print(f"  Creating {len(columns)} metric columns (3 per metric per noise level)")
+            columns.append(f"{metric}__{noise}")
+    print(f"  Creating {len(columns)} metric columns")
 
     data = []
     for algo in algorithms:
@@ -180,12 +188,9 @@ def build_summary_table(metrics, all_metrics):
             for noise in NOISE_LEVELS:
                 val = metrics[algo][metric].get(noise, (None, None))
                 if val[0] is not None and val[1] is not None:
-                    mean_val, operator, std_val = format_mean_std(val[0], val[1])
-                    # row.extend([mean_val, operator, std_val])
-                    row.extend([mean_val])
+                    row.append(format_mean_std(val[0], val[1]))
                 else:
-                    # row.extend(["", "", ""])
-                    row.extend([""])
+                    row.append("")
         data.append([algo] + row)
 
     df = pd.DataFrame(data, columns=["Algorithm"] + columns)
@@ -195,22 +200,30 @@ def build_summary_table(metrics, all_metrics):
 
 def main():
     """Main function to generate per-dataset and per-prediction-type summary metrics tables."""
-    print("=== Starting Metrics Summary Generation ===")
-    print(f"Results directory: {RESULTS_DIR}")
-    print(f"BOPOS prediction types to include: {BOPOS_PREDICTION_TYPES}")
-    print(f"Output directory: {OUTPUT_DIR}")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--results_dir", default=RESULTS_DIR)
+    parser.add_argument("--output_dir", default=OUTPUT_DIR)
+    args = parser.parse_args()
 
-    if not os.path.exists(OUTPUT_DIR):
-        os.makedirs(OUTPUT_DIR)
+    results_dir = args.results_dir
+    output_dir = args.output_dir
+
+    print("=== Starting Metrics Summary Generation ===")
+    print(f"Results directory: {results_dir}")
+    print(f"BOPOS prediction types to include: {BOPOS_PREDICTION_TYPES}")
+    print(f"Output directory: {output_dir}")
+
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
 
     # Find all relevant files
-    files = find_files(RESULTS_DIR)
+    files = find_files(results_dir)
 
     # Collect metrics grouped by dataset and prediction type
     dataset_metrics, dataset_all_metrics = collect_metrics(files)
 
     # Generate summary tables for each dataset and prediction type
-    print(f"\n=== Generating Summary Tables ===")
+    print("\n=== Generating Summary Tables ===")
     for dataset, pred_types in dataset_metrics.items():
         print(f"\nProcessing dataset: {dataset}")
 
@@ -221,19 +234,15 @@ def main():
             summary_df = build_summary_table(metrics, all_metrics)
 
             # Create output filenames with prediction type
-            output_csv = os.path.join(
-                OUTPUT_DIR, f"{dataset}_{prediction_type}_summary.csv"
-            )
-            output_xlsx = os.path.join(
-                OUTPUT_DIR, f"{dataset}_{prediction_type}_summary.xlsx"
-            )
+            output_csv = os.path.join(output_dir, f"{dataset}_{prediction_type}_summary.csv")
+            output_xlsx = os.path.join(output_dir, f"{dataset}_{prediction_type}_summary.xlsx")
 
             # Save files
             summary_df.to_csv(output_csv, index=False)
             summary_df.to_excel(output_xlsx, index=False)
             print(f"    Saved: {output_csv} and {output_xlsx}")
 
-    print(f"\n=== Summary Generation Complete ===")
+    print("\n=== Summary Generation Complete ===")
 
 
 if __name__ == "__main__":

@@ -1,6 +1,4 @@
-# -init- coding: utf-8 -*-
-"""
-Created on Mon Oct 23 13:46:02 2023
+"""Pre-order based multi-label classification (preorder4MLC).
 
-@author: nguyenli_admin
+Top-level package marker. The pipeline entry point is :mod:`main`.
 """

@@ -1,6 +1,14 @@
+"""Context managers that mute C-level stdout/stderr.
+
+Used to suppress the GLPK ILP solver's chatter inside the per-instance
+search loop in :mod:`searching_algorithms`. Both wrappers operate on the
+raw file descriptors so they catch output that bypasses Python's
+``sys.stdout`` / ``sys.stderr``.
+"""
+
+import contextlib
 import os
 import sys
-import contextlib
 
 
 @contextlib.contextmanager
@@ -21,11 +29,6 @@ def suppress_stderr():
         os.dup2(saved_stderr_fd, stderr_fd)
         os.close(saved_stderr_fd)
         os.close(devnull_fd)
-
-
-import os
-import sys
-import contextlib
 
 
 @contextlib.contextmanager

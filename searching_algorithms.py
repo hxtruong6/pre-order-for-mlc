@@ -1,11 +1,22 @@
-from cvxopt.glpk import ilp
-import numpy as np
-from numpy import array
-from cvxopt import matrix
+"""ILP search for bipartite ordered preference orders (BOPOs).
 
+:class:`Search_BOPreOs` and :class:`Search_BOParOs` solve, per test
+instance, the integer linear program that turns pairwise probabilistic
+predictions into either a pre-order or a partial-order plus its derived
+binary vector and partial-abstention prediction. The two classes expose
+``PRE_ORDER`` / ``PARTIAL_ORDER`` methods, each supporting four
+``(target_metric, height)`` configurations corresponding to the eight
+inference algorithms IA1-IA8 reported in the paper.
+"""
+
+import numpy as np
+from cvxopt import matrix
+from cvxopt.glpk import ilp
+from numpy import array
 
 from constants import TargetMetric
-from utils.suppress import suppress_output, suppress_stderr
+from utils.suppress import suppress_output
+
 
 class Search_BOPreOs:
     """
@@ -46,8 +57,6 @@ class Search_BOPreOs:
         for i in range(self.n_labels - 1):
             for j in range(i + 1, self.n_labels):
                 for l in range(4):
-                    #                    key = "%i_%i_%i" % (i, j, l)
-                    # TODO: check if the indices_vector is correct
                     indices_vector[f"{i}_{j}_{l}"] = indVec
                     indVec += 1
         G, h, A, b, I, B = self._encode_parameters_PRE_ORDER(indices_vector)  # type: ignore
@@ -55,9 +64,7 @@ class Search_BOPreOs:
         predicted_preorders = []
         prediction_with_partial_abstentions = []
         for n in range(self.n_instances):
-            #            print(index, n_instances)
             vector = []
-            #           indexEmpty = []
             if self.target_metric == TargetMetric.Hamming:
                 for i in range(self.n_labels - 1):
                     for j in range(i + 1, self.n_labels):
@@ -70,11 +77,7 @@ class Search_BOPreOs:
                 for i in range(self.n_labels - 1):
                     for j in range(i + 1, self.n_labels):
                         pairInfor = [
-                            -np.log(
-                                self.pairwise_probabilistic_predictions[
-                                    f"{i}_{j}_{n}_{l}"
-                                ]
-                            )
+                            -np.log(self.pairwise_probabilistic_predictions[f"{i}_{j}_{n}_{l}"])
                             for l in range(4)
                         ]
                         vector += pairInfor
@@ -82,9 +85,6 @@ class Search_BOPreOs:
                 raise ValueError(f"Unknown target metric: {self.target_metric}")
             Gtest = np.array(G)
             Atest = np.array(A)
-            #            for indCol in indexEmpty:
-            #                Gtest[:, indCol] = 0
-            #                Atest[:, indCol] = 0
             (
                 hard_prediction,
                 predicted_preorder,
@@ -103,9 +103,7 @@ class Search_BOPreOs:
 
             predicted_Y.append(hard_prediction)
             predicted_preorders.append(predicted_preorder)
-            prediction_with_partial_abstentions.append(
-                prediction_with_partial_abstention
-            )
+            prediction_with_partial_abstentions.append(prediction_with_partial_abstention)
         return (
             predicted_Y,
             predicted_preorders,
@@ -127,7 +125,7 @@ class Search_BOPreOs:
             for j in range(i + 1, self.n_labels):
                 # we can inject the information of partial labels at test time here
                 for l in range(4):
-                    indVec = indices_vector["%i_%i_%i" % (i, j, l)]
+                    indVec = indices_vector[f"{i}_{j}_{l}"]
                     A[rowA, indVec] = 1
                 rowA += 1
         b = np.ones((int(self.n_labels * (self.n_labels - 1) * 0.5), 1))
@@ -329,26 +327,18 @@ class Search_BOPreOs:
         else:
             raise ValueError("The height is not supported")
 
-    def _reasoning_procedure_PRE_ORDER(
-        self, vector, indices_vector, n_labels, G, h, A, b, I, B
-    ):
+    def _reasoning_procedure_PRE_ORDER(self, vector, indices_vector, n_labels, G, h, A, b, I, B):
         c = np.zeros((n_labels * (n_labels - 1) * 2, 1))
 
         for ind in range(len(vector)):
             c[ind, 0] = vector[ind]
 
         with suppress_output():
-            (_, x) = ilp(matrix(c), matrix(G), matrix(h), matrix(A), matrix(b), I, B)
+            _, x = ilp(matrix(c), matrix(G), matrix(h), matrix(A), matrix(b), I, B)
 
         optX = array(x)
-        #        for indX in indexEmpty:
-        #            optX[indX,0] = 0
 
-        #        epist_00 = 0
-        #        aleat_11 = 0
-        scores_d = [
-            0 for x in range(n_labels)
-        ]  # label i-th dominates at least one label
+        scores_d = [0 for x in range(n_labels)]  # label i-th dominates at least one label
         scores_n = [0 for x in range(n_labels)]  # no label dominates label i-th
         for i in range(n_labels):
             for k in range(0, i):
@@ -357,11 +347,6 @@ class Search_BOPreOs:
             for j in range(i + 1, n_labels):
                 scores_d[i] += optX[indices_vector[f"{i}_{j}_{0}"], 0]
                 scores_n[i] += optX[indices_vector[f"{i}_{j}_{1}"], 0]
-        #                epist_00 += optX[indicesVector["%i_%i_%i"%(i,j,2)],0]
-        #                aleat_11 += optX[indicesVector["%i_%i_%i"%(i,j,3)],0]
-        #        hard_prediction = [
-        #            ind for ind in range(n_labels) if scores_d[ind] > 0 or scores_n[ind] == 0
-        #        ]
         hard_prediction = [0 for x in range(n_labels)]
         for ind in range(n_labels):
             if scores_d[ind] > 0 or scores_n[ind] == 0:
@@ -397,13 +382,11 @@ class Search_BOParOs:
     def PARTIAL_ORDER(self):
         indices_vector = {}
         indVec = 0
-        # How to make sure self.n_labels is not None
         assert self.n_labels is not None
 
         for i in range(self.n_labels - 1):
             for j in range(i + 1, self.n_labels):
                 for l in range(3):
-                    #                    key = "%i_%i_%i" % (i, j, l)
                     indices_vector[f"{i}_{j}_{l}"] = indVec
                     indVec += 1
         G, h, A, b, I, B = self._encode_parameters_PARTIAL_ORDER(indices_vector)  # type: ignore
@@ -424,11 +407,7 @@ class Search_BOParOs:
                 for i in range(self.n_labels - 1):
                     for j in range(i + 1, self.n_labels):
                         pairInfor = [
-                            -np.log(
-                                self.pairwise_probabilistic_predictions[
-                                    f"{i}_{j}_{n}_{l}"
-                                ]
-                            )
+                            -np.log(self.pairwise_probabilistic_predictions[f"{i}_{j}_{n}_{l}"])
                             for l in range(3)
                         ]
                         vector += pairInfor
@@ -452,9 +431,7 @@ class Search_BOParOs:
             )
             predicted_Y.append(hard_prediction)
             predicted_partial_orders.append(predicted_partial_order)
-            prediction_with_partial_abstentions.append(
-                prediction_with_partial_abstention
-            )
+            prediction_with_partial_abstentions.append(prediction_with_partial_abstention)
         return (
             predicted_Y,
             predicted_partial_orders,
@@ -650,22 +627,16 @@ class Search_BOParOs:
         else:
             raise ValueError("The height is not supported")
 
-    def _reasoning_procedure_PARTIAL_ORDER(
-        self, vector, indices_vector, G, h, A, b, I, B
-    ):
+    def _reasoning_procedure_PARTIAL_ORDER(self, vector, indices_vector, G, h, A, b, I, B):
         c = np.zeros((self.n_labels * (self.n_labels - 1) * 2, 1))
         for ind in range(len(vector)):
             c[ind, 0] = vector[ind]
         with suppress_output():
-            (_, x) = ilp(matrix(c), matrix(G), matrix(h), matrix(A), matrix(b), I, B)
+            _, x = ilp(matrix(c), matrix(G), matrix(h), matrix(A), matrix(b), I, B)
         optX = array(x)
-        #        for indX in indexEmpty:
-        #            optX[indX,0] = 0
 
         # Let both partial and preorder make the hard predictions in similar ways ...
-        scores_d = [
-            0 for x in range(self.n_labels)
-        ]  # label i-th dominates at least one label
+        scores_d = [0 for x in range(self.n_labels)]  # label i-th dominates at least one label
         scores_n = [0 for x in range(self.n_labels)]  # no label dominates label i-th
         for i in range(self.n_labels):
             for k in range(0, i):
@@ -674,13 +645,6 @@ class Search_BOParOs:
             for j in range(i + 1, self.n_labels):
                 scores_d[i] += optX[indices_vector[f"{i}_{j}_{0}"], 0]
                 scores_n[i] += optX[indices_vector[f"{i}_{j}_{1}"], 0]
-        #                epist_00 += optX[indicesVector["%i_%i_%i"%(i,j,2)],0]
-        #                aleat_11 += optX[indicesVector["%i_%i_%i"%(i,j,3)],0]
-        #    hard_prediction = [
-        #        ind
-        #        for ind in range(self.n_labels)
-        #        if scores_d[ind] > 0 or scores_n[ind] == 0
-        #    ]
         hard_prediction = [0 for x in range(self.n_labels)]
         for ind in range(self.n_labels):
             if scores_d[ind] > 0 or scores_n[ind] == 0:

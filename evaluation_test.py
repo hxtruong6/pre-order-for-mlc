@@ -1,21 +1,25 @@
-import argparse
-import csv
-import json
-from logging import ERROR, INFO, log, basicConfig
-import random
-import numpy as np
-from pathlib import Path
-from dataclasses import dataclass
-from typing import Dict, List, Any, Optional
-from enum import Enum
-from collections import defaultdict
-import pandas as pd
-from config import AlgorithmType, ConfigManager
-from utils.results_manager import ExperimentResults
-from evaluation_metric import EvaluationMetric, EvaluationMetricName
+"""Per-dataset evaluation pipeline.
 
-# basicConfig(level=INFO)
-# basicConfig(level=ERROR)
+Loads pickled training records from a results directory and emits one
+CSV per (dataset, noisy rate, algorithm) combination. Rows are the eight
+inference algorithms (IA1-IA8) crossed with the three prediction types
+(``BinaryVector``, ``PreferenceOrder``, ``PartialAbstention``); columns
+are the metrics registered in :class:`EvaluationConfig.EVALUATION_METRICS`.
+"""
+
+import argparse
+from dataclasses import dataclass
+from enum import Enum
+from logging import ERROR, INFO, log
+from pathlib import Path
+from typing import Any
+
+import numpy as np
+import pandas as pd
+
+from config import AlgorithmType, ConfigManager
+from evaluation_metric import EvaluationMetric, EvaluationMetricName
+from utils.results_manager import ExperimentResults
 
 
 class OrderType(Enum):
@@ -32,6 +36,7 @@ class PredictionType(Enum):
     BINARY_VECTOR = "BinaryVector"
     PREFERENCE_ORDER = "PreferenceOrder"
     PARTIAL_ABSTENTION = "PartialAbstention"
+    SCORE_VECTOR = "ScoreVector"
 
 
 @dataclass
@@ -63,6 +68,15 @@ class EvaluationConfig:
             EvaluationMetricName.HAMMING_ACCURACY,
             EvaluationMetricName.SUBSET0_1,
             EvaluationMetricName.F1,
+            EvaluationMetricName.JACCARD,
+            EvaluationMetricName.MACRO_F1,
+            EvaluationMetricName.MICRO_F1,
+            EvaluationMetricName.MACRO_PRECISION,
+            EvaluationMetricName.MICRO_PRECISION,
+            EvaluationMetricName.MACRO_RECALL,
+            EvaluationMetricName.MICRO_RECALL,
+            EvaluationMetricName.EXAMPLE_PRECISION,
+            EvaluationMetricName.EXAMPLE_RECALL,
             EvaluationMetricName.MFRD,
             EvaluationMetricName.AFRD,
         ],
@@ -85,6 +99,16 @@ class EvaluationConfig:
             EvaluationMetricName.REC,
             EvaluationMetricName.ABS,
         ],
+        PredictionType.SCORE_VECTOR: [
+            EvaluationMetricName.RANKING_LOSS,
+            EvaluationMetricName.ONE_ERROR,
+            EvaluationMetricName.COVERAGE,
+            EvaluationMetricName.LR_AP,
+            EvaluationMetricName.AUC_MACRO,
+            EvaluationMetricName.AUC_MICRO,
+            EvaluationMetricName.AUPRC_MACRO,
+            EvaluationMetricName.AUPRC_MICRO,
+        ],
     }
 
     # Metrics that should be calculated on the entire dataset, not per fold
@@ -99,7 +123,7 @@ class EvaluationFramework:
 
     def __init__(self, results_dir: str):
         self.results_dir = Path(results_dir)
-        self.results: Dict[str, Dict[str, Dict[str, Any]]] = {}
+        self.results: dict[str, dict[str, dict[str, Any]]] = {}
         self.evaluation_metric = EvaluationMetric()
         self.df = None
 
@@ -124,13 +148,14 @@ class EvaluationFramework:
     def evaluate_metric(
         self,
         metric_name: EvaluationMetricName,
-        prediction_type: Optional[PredictionType],
+        prediction_type: PredictionType | None,
         predictions: np.ndarray,
         true_labels: np.ndarray,
-        indices_vector: Optional[np.ndarray],
-        partial_abstention: Optional[np.ndarray],
-        bopos: Optional[np.ndarray],
-        order_type: Optional[OrderType] = None,
+        indices_vector: np.ndarray | None,
+        partial_abstention: np.ndarray | None,
+        bopos: np.ndarray | None,
+        order_type: OrderType | None = None,
+        y_proba: np.ndarray | None = None,
     ) -> float:
         """Calculate specific evaluation metric."""
         try:
@@ -142,9 +167,7 @@ class EvaluationFramework:
                 )
 
             if prediction_type == PredictionType.BINARY_VECTOR:
-                return self._evaluate_binary_vector(
-                    metric_name, predictions, true_labels
-                )
+                return self._evaluate_binary_vector(metric_name, predictions, true_labels)
             elif prediction_type == PredictionType.PREFERENCE_ORDER:
                 return self._evaluate_preference_order(
                     metric_name,
@@ -154,10 +177,14 @@ class EvaluationFramework:
                     bopos,
                     order_type,
                 )
+            elif prediction_type == PredictionType.SCORE_VECTOR:
+                return self._evaluate_score_vector(
+                    metric_name, y_proba, true_labels  # type: ignore[arg-type]
+                )
             else:
                 raise ValueError(f"Unknown prediction type: {prediction_type}")
         except Exception as e:
-            raise Exception(f"Error calculating {metric_name}: {e}")
+            raise RuntimeError(f"Error calculating {metric_name}: {e}") from e
 
     def _evaluate_binary_vector(
         self,
@@ -172,6 +199,24 @@ class EvaluationFramework:
             return self.evaluation_metric.subset0_1(predictions, true_labels)
         elif metric_name == EvaluationMetricName.F1:
             return self.evaluation_metric.f1(predictions, true_labels)
+        elif metric_name == EvaluationMetricName.JACCARD:
+            return self.evaluation_metric.jaccard(predictions, true_labels)
+        elif metric_name == EvaluationMetricName.MACRO_F1:
+            return self.evaluation_metric.macro_f1(predictions, true_labels)
+        elif metric_name == EvaluationMetricName.MICRO_F1:
+            return self.evaluation_metric.micro_f1(predictions, true_labels)
+        elif metric_name == EvaluationMetricName.MACRO_PRECISION:
+            return self.evaluation_metric.macro_precision(predictions, true_labels)
+        elif metric_name == EvaluationMetricName.MICRO_PRECISION:
+            return self.evaluation_metric.micro_precision(predictions, true_labels)
+        elif metric_name == EvaluationMetricName.MACRO_RECALL:
+            return self.evaluation_metric.macro_recall(predictions, true_labels)
+        elif metric_name == EvaluationMetricName.MICRO_RECALL:
+            return self.evaluation_metric.micro_recall(predictions, true_labels)
+        elif metric_name == EvaluationMetricName.EXAMPLE_PRECISION:
+            return self.evaluation_metric.example_precision(predictions, true_labels)
+        elif metric_name == EvaluationMetricName.EXAMPLE_RECALL:
+            return self.evaluation_metric.example_recall(predictions, true_labels)
         elif metric_name == EvaluationMetricName.MFRD:
             return self.evaluation_metric.mfrd(predictions, true_labels)
         elif metric_name == EvaluationMetricName.AFRD:
@@ -185,14 +230,39 @@ class EvaluationFramework:
         else:
             raise ValueError(f"Unknown metric: {metric_name}")
 
+    def _evaluate_score_vector(
+        self,
+        metric_name: EvaluationMetricName,
+        Y_proba: np.ndarray,
+        true_labels: np.ndarray,
+    ) -> float:
+        """Evaluate ranking metrics on per-label score vector Y_proba in [0, 1]."""
+        if metric_name == EvaluationMetricName.RANKING_LOSS:
+            return self.evaluation_metric.ranking_loss(Y_proba, true_labels)
+        elif metric_name == EvaluationMetricName.ONE_ERROR:
+            return self.evaluation_metric.one_error(Y_proba, true_labels)
+        elif metric_name == EvaluationMetricName.COVERAGE:
+            return self.evaluation_metric.coverage(Y_proba, true_labels)
+        elif metric_name == EvaluationMetricName.LR_AP:
+            return self.evaluation_metric.lr_ap(Y_proba, true_labels)
+        elif metric_name == EvaluationMetricName.AUC_MACRO:
+            return self.evaluation_metric.auc_macro(Y_proba, true_labels)
+        elif metric_name == EvaluationMetricName.AUC_MICRO:
+            return self.evaluation_metric.auc_micro(Y_proba, true_labels)
+        elif metric_name == EvaluationMetricName.AUPRC_MACRO:
+            return self.evaluation_metric.auprc_macro(Y_proba, true_labels)
+        elif metric_name == EvaluationMetricName.AUPRC_MICRO:
+            return self.evaluation_metric.auprc_micro(Y_proba, true_labels)
+        raise ValueError(f"Unknown score-vector metric: {metric_name}")
+
     def _evaluate_preference_order(
         self,
         metric_name: EvaluationMetricName,
         predictions: np.ndarray,
         true_labels: np.ndarray,
-        indices_vector: Optional[np.ndarray],
-        bopos: Optional[np.ndarray],
-        order_type: Optional[OrderType],
+        indices_vector: np.ndarray | None,
+        bopos: np.ndarray | None,
+        order_type: OrderType | None,
     ) -> float:
         """Evaluate metrics for preference order predictions"""
         if order_type == OrderType.PRE_ORDER:
@@ -268,7 +338,7 @@ class EvaluationFramework:
         else:
             raise ValueError(f"Unknown metric for partial abstention: {metric_name}")
 
-    def aggregate_results(self, metric_values: List[float]) -> Dict[str, float]:
+    def aggregate_results(self, metric_values: list[float]) -> dict[str, float]:
         """Calculate mean and standard deviation across folds."""
         if not metric_values:
             return {"mean": 0.0, "std": 0.0}
@@ -311,9 +381,9 @@ class EvaluationFramework:
         data_df: pd.DataFrame,
         df1: pd.DataFrame,
         eval_metric: EvaluationMetricName,
-        prediction_type: Optional[PredictionType],
-        order_type: Optional[OrderType] = None,
-    ) -> List[float]:
+        prediction_type: PredictionType | None,
+        order_type: OrderType | None = None,
+    ) -> list[float]:
         """Evaluate a single fold of results."""
         if data_df.empty or df1.empty:
             log(ERROR, "Empty DataFrame provided for evaluation")
@@ -339,22 +409,31 @@ class EvaluationFramework:
                     y_pred = df2["Y_predicted"].values[0]
                     y_test = df2["Y_test"].values[0]
                     indices = (
-                        df2["indices_vector"].values[0]
-                        if "indices_vector" in df2.columns
-                        else None
+                        df2["indices_vector"].values[0] if "indices_vector" in df2.columns else None
                     )
-                    bopos = (
-                        df2["Y_BOPOs"].values[0] if "Y_BOPOs" in df2.columns else None
-                    )
+                    bopos = df2["Y_BOPOs"].values[0] if "Y_BOPOs" in df2.columns else None
                     partial_abstention = (
                         np.array(df2["partial_abstention"].values[0])
                         if "partial_abstention" in df2.columns
                         else None
                     )
+                    # Y_proba is optional (added in rerun-v2). Old pickles do
+                    # not have it; skip the row for score-vector metrics in
+                    # that case.
+                    y_proba = None
+                    if "Y_proba" in df2.columns and df2["Y_proba"].values[0] is not None:
+                        y_proba_raw = df2["Y_proba"].values[0]
+                        if y_proba_raw is not None:
+                            y_proba = np.asarray(y_proba_raw, dtype=float)
 
-                    if not isinstance(y_pred, np.ndarray) or not isinstance(
-                        y_test, np.ndarray
-                    ):
+                    if prediction_type == PredictionType.SCORE_VECTOR:
+                        if y_proba is None:
+                            log(
+                                INFO,
+                                f"Y_proba missing for fold {fold}; skipping score-vector metric",
+                            )
+                            continue
+                    elif not isinstance(y_pred, np.ndarray) or not isinstance(y_test, np.ndarray):
                         log(
                             ERROR,
                             f"Invalid prediction or test data type for fold {fold}",
@@ -371,6 +450,7 @@ class EvaluationFramework:
                             partial_abstention=partial_abstention,
                             bopos=bopos,
                             order_type=order_type,
+                            y_proba=y_proba,
                         )
                     )
                 except (IndexError, KeyError) as e:
@@ -396,7 +476,7 @@ class EvaluationFramework:
                 f"Processing results for {dataset_name} with noise rate {noisy_rate}",
             )
 
-            self.eval_results: List[Dict[str, Any]] = []
+            self.eval_results: list[dict[str, Any]] = []
 
             # for each base learner such as random forest, xgboost, etc.
             for base_learner_name in self.df["base_learner_name"].unique():
@@ -405,9 +485,9 @@ class EvaluationFramework:
 
                 # For other algorithms (BR, CC, CLR)
                 if algorithm_type != AlgorithmType.BOPOS:
-                    self._evaluate_binary_vector_results(
-                        data_df, data_df, None, base_learner_name
-                    )
+                    self._evaluate_binary_vector_results(data_df, data_df, None, base_learner_name)
+                    # Score-vector ranking metrics (no-op for old pickles).
+                    self._evaluate_score_vector_results(data_df, data_df, None, base_learner_name)
                     continue
 
                 # Handle for BOPOs
@@ -497,6 +577,12 @@ class EvaluationFramework:
                     data_df, df1, inference_algorithm, base_learner_name
                 )
 
+                # For Score Vector (ranking metrics, rerun-v2). Skips if no
+                # Y_proba column (backward-compat).
+                self._evaluate_score_vector_results(
+                    data_df, df1, inference_algorithm, base_learner_name
+                )
+
                 # For preference metrics
                 for eval_metric in EvaluationConfig.EVALUATION_METRICS[
                     PredictionType.PREFERENCE_ORDER
@@ -524,7 +610,7 @@ class EvaluationFramework:
         inference_algorithm: InferenceAlgorithm | None,
         prediction_type: PredictionType | None,
         eval_metric: EvaluationMetricName,
-        res: Dict[str, float],
+        res: dict[str, float],
     ):
         """Add evaluation result to the results list."""
         self.eval_results.append(
@@ -534,13 +620,9 @@ class EvaluationFramework:
                 "Algorithm_Metric": (
                     inference_algorithm.metric.value if inference_algorithm else None
                 ),
-                "Algorithm_Height": (
-                    inference_algorithm.height if inference_algorithm else None
-                ),
+                "Algorithm_Height": (inference_algorithm.height if inference_algorithm else None),
                 "Algorithm_Order": (
-                    inference_algorithm.order_type.value
-                    if inference_algorithm
-                    else None
+                    inference_algorithm.order_type.value if inference_algorithm else None
                 ),
                 "Prediction_Type": prediction_type.value if prediction_type else None,
                 "Metric": eval_metric.value,
@@ -557,9 +639,7 @@ class EvaluationFramework:
         base_learner_name: str,
     ):
         """Evaluate results for binary vector predictions."""
-        for eval_metric in EvaluationConfig.EVALUATION_METRICS[
-            PredictionType.BINARY_VECTOR
-        ]:
+        for eval_metric in EvaluationConfig.EVALUATION_METRICS[PredictionType.BINARY_VECTOR]:
             log(INFO, f"Evaluation metric: {eval_metric}")
             result_folds = self._evaluate_fold(
                 data_df,
@@ -584,9 +664,7 @@ class EvaluationFramework:
         base_learner_name: str,
     ):
         """Evaluate results for partial abstention predictions."""
-        for eval_metric in EvaluationConfig.EVALUATION_METRICS[
-            PredictionType.PARTIAL_ABSTENTION
-        ]:
+        for eval_metric in EvaluationConfig.EVALUATION_METRICS[PredictionType.PARTIAL_ABSTENTION]:
             log(INFO, f"Evaluation metric: {eval_metric}")
             result_folds = self._evaluate_fold(
                 data_df, df1, eval_metric, PredictionType.PARTIAL_ABSTENTION
@@ -596,6 +674,40 @@ class EvaluationFramework:
                 base_learner_name,
                 inference_algorithm,
                 PredictionType.PARTIAL_ABSTENTION,
+                eval_metric,
+                res,
+            )
+
+    def _evaluate_score_vector_results(
+        self,
+        data_df: pd.DataFrame,
+        df1: pd.DataFrame,
+        inference_algorithm: InferenceAlgorithm | None,
+        base_learner_name: str,
+    ):
+        """Evaluate score-vector ranking metrics on per-label proba Y_proba.
+
+        Skips gracefully if the pickle does not contain a `Y_proba` column
+        (backward compatibility with the v1 run).
+        """
+        if "Y_proba" not in df1.columns:
+            log(
+                INFO,
+                "Y_proba column missing; skipping score-vector metrics for " f"{base_learner_name}",
+            )
+            return
+        for eval_metric in EvaluationConfig.EVALUATION_METRICS[PredictionType.SCORE_VECTOR]:
+            log(INFO, f"Evaluation metric: {eval_metric}")
+            result_folds = self._evaluate_fold(
+                data_df, df1, eval_metric, PredictionType.SCORE_VECTOR
+            )
+            if not result_folds:
+                continue
+            res = self.aggregate_results(result_folds)
+            self._add_evaluation_result(
+                base_learner_name,
+                inference_algorithm,
+                PredictionType.SCORE_VECTOR,
                 eval_metric,
                 res,
             )
@@ -621,7 +733,7 @@ class EvaluationFramework:
             log(INFO, f"Results saved to {output_path}.csv and {output_path}.xlsx")
 
         except Exception as e:
-            raise Exception(f"Failed to save results: {str(e)}")
+            raise RuntimeError(f"Failed to save results: {e}") from e
 
     def evaluate_dataset_dataset_level(self, dataset_name: str, noisy_rate: float):
         """Evaluate dataset-level metrics (MEAN_IR and CV_IR) on the entire dataset."""
@@ -635,7 +747,7 @@ class EvaluationFramework:
                 f"Processing dataset-level metrics for {dataset_name} with noise rate {noisy_rate}",
             )
 
-            self.eval_results: List[Dict[str, Any]] = []
+            self.eval_results: list[dict[str, Any]] = []
 
             for base_learner_name in self.df["base_learner_name"].unique():
                 log(INFO, f"Processing results for {base_learner_name}")

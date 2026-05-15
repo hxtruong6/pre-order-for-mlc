@@ -1,18 +1,20 @@
-# -BaseClassifiers- coding: utf-8 -*-
-"""
-Created on Mon Oct 23 14:02:21 2023
+"""Pairwise- and calibrated-classifier factories.
 
-@author: nguyenli_admin
+:class:`BaseClassifiers` builds the per-pair training datasets that
+:class:`inference_models.PredictBOPOs` consumes: pairwise classifiers for
+PRE_ORDER and PARTIAL_ORDER variants, and one calibrated classifier per
+label for CLR. Estimator construction is delegated to
+:class:`estimator.Estimator`, with fitting parallelised via joblib.
 """
 
-from joblib import Parallel, delayed
-import lightgbm
-import numpy as np
-from sklearn.base import BaseEstimator
-from estimator import Estimator, train_classifier
 from logging import INFO, log
-from typing import Dict, List, Tuple, Optional
+
+import numpy as np
+from joblib import Parallel, delayed
 from numpy.typing import NDArray
+from sklearn.base import BaseEstimator
+
+from estimator import Estimator, train_classifier
 
 
 class BaseClassifiers:
@@ -33,9 +35,7 @@ class BaseClassifiers:
     def get_classifier(self) -> BaseEstimator:
         return Estimator(self.name).get_classifier()  # type: ignore
 
-    def pairwise_calibrated_classifier(
-        self, X: NDArray[np.float64], Y: NDArray[np.int32]
-    ):
+    def pairwise_calibrated_classifier(self, X: NDArray[np.float64], Y: NDArray[np.int32]):
         """Train pairwise calibrated classifiers.
 
         Args:
@@ -56,25 +56,15 @@ class BaseClassifiers:
         # calibrated_classifiers is in fact is a (inverse) BR classifier
         calibrated_classifiers = []
         clr_dataset_classifier = {}
-        # With each label
         for k in range(n_labels):
-            # print(f"Pairwise calibrated classifier for label: {k}")
-            MCC_y = Y[:, k]
-            # ex: k = 0 ->  Y[:,k] = [1, 0, 1, 0] --> MCC_y = [0, 1, 0, 1]
-            # If the label is 1, then the MCC_y is 0
-            MCC_y = np.logical_not(MCC_y).astype(int)
-            # np.logical_not = reverse the boolean values.
-            # The is score to support for class 0.
-
+            # MCC = score for class 0; invert the label column so the trained
+            # classifier produces P(y_k = 0) directly (CLR convention).
+            # Example: Y[:, k] = [1, 0, 1, 0] -> MCC_y = [0, 1, 0, 1].
+            MCC_y = np.logical_not(Y[:, k]).astype(int)
             clr_dataset_classifier[str(k)] = {  # type: ignore
                 "X": X.copy(),
                 "Y": MCC_y.copy(),
             }
-
-            # Learning for each label k
-            # classifier = Estimator(self.name)
-            # classifier.fit(X, MCC_y)
-            # calibrated_classifiers.append(classifier)
 
         log(
             INFO,
@@ -115,10 +105,6 @@ class BaseClassifiers:
                     "Y": MCC_y,
                 }
 
-                # classifier = Estimator(self.name)
-                # classifier.fit(MCC_X, MCC_y)  # type: ignore
-                # pairwise_classifiers[key] = classifier
-
         log(
             INFO,
             f"\t - Training for {len(dataset_classifier.keys())} pairs with {self.name}",
@@ -135,9 +121,7 @@ class BaseClassifiers:
 
         log(INFO, f"\t - Trained {len(dataset_classifier.keys())} classifiers")
 
-        pairwise_classifiers = dict(
-            zip(dataset_classifier.keys(), classifiers)
-        )  # type: ignore
+        pairwise_classifiers = dict(zip(dataset_classifier.keys(), classifiers))  # type: ignore
 
         for i in range(n_labels - 1):
             for j in range(i + 1, n_labels):
@@ -146,11 +130,7 @@ class BaseClassifiers:
                 single_label_pair[key] = (
                     1
                     if len(np.unique(MCC_y)) == 1 and np.unique(MCC_y)[0] == 1
-                    else (
-                        0
-                        if len(np.unique(MCC_y)) == 1 and np.unique(MCC_y)[0] == 0
-                        else None
-                    )
+                    else (0 if len(np.unique(MCC_y)) == 1 and np.unique(MCC_y)[0] == 0 else None)
                 )
 
         return pairwise_classifiers, calibrated_classifiers, single_label_pair
@@ -177,10 +157,6 @@ class BaseClassifiers:
                     "X": X.copy(),
                     "Y": MCC_y.copy(),
                 }
-                # classifier = Estimator(self.name)
-                # classifier.fit(X, MCC_y)  # type: ignore
-                # pairwise_classifiers[key] = classifier
-
         log(
             INFO,
             f"\t - Training for {len(dataset_classifier.keys())} pairs with {self.name}",
@@ -196,9 +172,7 @@ class BaseClassifiers:
         )
         log(INFO, f"\t - Trained {len(dataset_classifier.keys())} classifiers")
 
-        pairwise_classifiers = dict(
-            zip(dataset_classifier.keys(), classifiers)
-        )  # type: ignore
+        pairwise_classifiers = dict(zip(dataset_classifier.keys(), classifiers))  # type: ignore
 
         return pairwise_classifiers  # type: ignore
 
@@ -228,13 +202,6 @@ class BaseClassifiers:
                     "X": X.copy(),
                     "Y": MCC_y.copy(),
                 }
-                # Init classifier
-                # classifier = Estimator(self.name)
-                # classifier.fit(X, MCC_y)  # type: ignore
-                # # Store the classifier for each pair of labels
-                # self.pairwise_classifiers[key] = classifier
-
-        # OPTIMIZE:
         log(
             INFO,
             f"\t - Training {len(dataset_classifier.keys())} pairs with {self.name}",
@@ -250,20 +217,8 @@ class BaseClassifiers:
         )
         log(INFO, f"\t - Trained {len(dataset_classifier.keys())} classifiers")
 
-        pairwise_classifiers = dict(
-            zip(dataset_classifier.keys(), classifiers)
-        )  # type: ignore
+        pairwise_classifiers = dict(zip(dataset_classifier.keys(), classifiers))  # type: ignore
 
         # This is a dictionary of pairwise classifiers. [key] is a string of the form "i_j"
         # where i and j are the indices of the labels in the label matrix Y
         return pairwise_classifiers  # type: ignore
-
-    def binary_relevance_classifer(self, X, Y) -> list[BaseEstimator]:
-        # This is to learn a Binary relevance (BR)
-        classifiers = []
-        _, n_labels = Y.shape
-        for k in range(n_labels):
-            classifier = Estimator(self.name)
-            classifier.fit(X, Y[:, k])
-            classifiers.append(classifier)
-        return classifiers

@@ -1,9 +1,19 @@
+"""Dataset loading, splitting, and noise injection.
+
+:class:`Datasets4Experiments` reads multi-label ARFF files, separates X
+from Y based on whether labels are at the beginning or end of the file
+(controlled by :data:`TARGET_IN_END_FILE_DATASETS`), and yields k-fold
+splits with optional symmetric label-flip noise (Bernoulli with rate
+``noisy_rate``) for the training fold of each split.
+"""
+
+from logging import INFO, log
+
 import numpy as np
 import pandas as pd
 from scipy.io import arff
-from sklearn.model_selection import KFold
 from scipy.stats import bernoulli
-from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import KFold
 
 TARGET_IN_END_FILE_DATASETS = [
     "emotions.arff",
@@ -36,24 +46,16 @@ class Datasets4Experiments:
     def load_datasets(self):
         for file_name, n_labels in zip(self.data_files, self.n_labels_set):
             full_path = f"{self.data_path}{file_name}"
-            print(f"Loading dataset from {full_path}")
-            data, meta = arff.loadarff(full_path)
+            log(INFO, f"Loading dataset from {full_path}")
+            data, _meta = arff.loadarff(full_path)
             df = pd.DataFrame(data)
 
-            is_target_in_end = False
-            for target_in_end_file in TARGET_IN_END_FILE_DATASETS:
-                if target_in_end_file.lower() == file_name.lower():
-                    is_target_in_end = True
-                    break
-
-            # print(f"is_target_in_end: {is_target_in_end}")
+            is_target_in_end = any(
+                f.lower() == file_name.lower() for f in TARGET_IN_END_FILE_DATASETS
+            )
 
             X, Y = self.preprocess_data(df, n_labels, is_target_in_end)
             df_name = file_name.split(".")[0]
-
-            # print(f"X shape: {X.shape} | {X}")
-            # print(f"Y shape: {Y.shape} | {Y}")
-
             self.datasets.append((X, Y, df_name))
 
     def preprocess_data(self, df, n_labels, is_target_in_end=False):
@@ -64,10 +66,8 @@ class Datasets4Experiments:
             X = df.iloc[:, n_labels:].to_numpy()
             Y = df.iloc[:, :n_labels].to_numpy().astype(int)
 
-        # TODO: Add preprocessing steps here
-        # scaler = StandardScaler()
-        # X = scaler.fit_transform(X)
-
+        # Map sklearn-style -1 (negative) labels to 0 so downstream pairwise
+        # encoders see a clean {0,1} matrix.
         Y = np.where(Y < 0, 0, Y)
 
         return X, Y
