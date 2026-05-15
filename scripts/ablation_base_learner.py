@@ -67,9 +67,6 @@ def _worker(args: argparse.Namespace) -> None:
 
     em = EvaluationMetric()
     n_labels = Y.shape[1]
-    rng = np.random.RandomState(args.seed)
-    perm = rng.permutation(len(X))
-    folds_idx = np.array_split(perm, args.folds)
 
     metric_keys = ["f1", "hamming_accuracy", "subset0_1", "afrd", "mfrd"]
     per_classifier: dict[str, dict[str, list[float]]] = {}
@@ -82,29 +79,36 @@ def _worker(args: argparse.Namespace) -> None:
         row["afrd"].append(em.afrd(pred_bv, Y_test))
         row["mfrd"].append(em.mfrd(pred_bv, Y_test))
 
-    for fold_i in range(args.folds):
-        test_idx = folds_idx[fold_i]
-        train_idx = np.concatenate([folds_idx[j] for j in range(args.folds) if j != fold_i])
-        X_train, X_test = X[train_idx], X[test_idx]
-        Y_train, Y_test = Y[train_idx], Y[test_idx]
+    for rep in range(args.repeats):
+        rep_seed = args.seed + rep
+        rng = np.random.RandomState(rep_seed)
+        perm = rng.permutation(len(X))
+        folds_idx = np.array_split(perm, args.folds)
+        print(f"-- repeat {rep + 1}/{args.repeats}  (seed={rep_seed}) --", flush=True)
 
-        for po, po_tag in [
-            (PreferenceOrder.PRE_ORDER, "PR-H"),
-            (PreferenceOrder.PARTIAL_ORDER, "PA-H"),
-        ]:
-            m = PredictBOPOs(args.base_learner, preference_order=po)
-            m.fit(X_train, Y_train)
-            proba = m.predict_proba(X_test, n_labels)
-            pred_bv, _pred_order, _, _ = m.predict_preference_orders(
-                proba, n_labels, len(X_test), TargetMetric.Hamming, height=None
-            )
-            pred_bv = np.asarray(pred_bv, dtype=int)
-            _record(po_tag, pred_bv, Y_test)
+        for fold_i in range(args.folds):
+            test_idx = folds_idx[fold_i]
+            train_idx = np.concatenate([folds_idx[j] for j in range(args.folds) if j != fold_i])
+            X_train, X_test = X[train_idx], X[test_idx]
+            Y_train, Y_test = Y[train_idx], Y[test_idx]
 
-        m_br = PredictBOPOs(args.base_learner, preference_order=PreferenceOrder.PRE_ORDER)
-        m_br.fit_BR(X_train, Y_train)
-        br_y, _, _ = m_br.predict_BR(X_test, n_labels)
-        _record("BR", np.asarray(br_y, dtype=int), Y_test)
+            for po, po_tag in [
+                (PreferenceOrder.PRE_ORDER, "PR-H"),
+                (PreferenceOrder.PARTIAL_ORDER, "PA-H"),
+            ]:
+                m = PredictBOPOs(args.base_learner, preference_order=po)
+                m.fit(X_train, Y_train)
+                proba = m.predict_proba(X_test, n_labels)
+                pred_bv, _pred_order, _, _ = m.predict_preference_orders(
+                    proba, n_labels, len(X_test), TargetMetric.Hamming, height=None
+                )
+                pred_bv = np.asarray(pred_bv, dtype=int)
+                _record(po_tag, pred_bv, Y_test)
+
+            m_br = PredictBOPOs(args.base_learner, preference_order=PreferenceOrder.PRE_ORDER)
+            m_br.fit_BR(X_train, Y_train)
+            br_y, _, _ = m_br.predict_BR(X_test, n_labels)
+            _record("BR", np.asarray(br_y, dtype=int), Y_test)
 
     out = {"per_classifier": per_classifier}
     Path(args.worker_out).write_text(json.dumps(out))
@@ -124,6 +128,7 @@ def _spawn(cfg_name: str, base_learner: str, calibrate: bool, args: argparse.Nam
         "--folds", str(args.folds),
         "--noise", str(args.noise),
         "--seed", str(args.seed),
+        "--repeats", str(args.repeats),
         "--base_learner", base_learner,
         "--worker_out", str(worker_out),
     ]
@@ -146,6 +151,12 @@ def main() -> None:
     p.add_argument("--folds", type=int, default=3)
     p.add_argument("--noise", type=float, default=0.0)
     p.add_argument("--seed", type=int, default=6)
+    p.add_argument(
+        "--repeats",
+        type=int,
+        default=1,
+        help="Outer repeats with seed = seed, seed+1, ... — report mean±std across repeats×folds.",
+    )
     p.add_argument("--out_dir", default="results/ablation_base_learner")
     p.add_argument(
         "--configs",
@@ -195,7 +206,7 @@ def main() -> None:
                 })
 
     df = pd.DataFrame(rows)
-    csv_path = out_dir / f"{args.dataset}_noise{args.noise}_folds{args.folds}.csv"
+    csv_path = out_dir / f"{args.dataset}_noise{args.noise}_folds{args.folds}_reps{args.repeats}.csv"
     df.to_csv(csv_path, index=False)
     print(f"\nWrote {csv_path}")
 

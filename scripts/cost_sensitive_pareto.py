@@ -61,6 +61,12 @@ def main() -> None:
     p.add_argument("--folds", type=int, default=5)
     p.add_argument("--noise", type=float, default=0.0)
     p.add_argument("--seed", type=int, default=6)
+    p.add_argument(
+        "--repeats",
+        type=int,
+        default=1,
+        help="Outer repeats with seed = seed, seed+1, ... — report mean±std across repeats×folds.",
+    )
     p.add_argument("--start", type=float, default=0.5)
     p.add_argument("--stop", type=float, default=5.0)
     p.add_argument("--n", type=int, default=9)
@@ -81,45 +87,51 @@ def main() -> None:
     cost_pairs = pareto_sweep_costs(args.start, args.stop, args.n)
     print(f"Dataset {args.dataset}: X{X.shape} Y{Y.shape}  sweeping {len(cost_pairs)} cost ratios")
 
-    rng = np.random.RandomState(args.seed)
-    perm = rng.permutation(len(X))
-    folds_idx = np.array_split(perm, args.folds)
-
     rows = []
-    for fold_i in range(args.folds):
-        test_idx = folds_idx[fold_i]
-        train_idx = np.concatenate([folds_idx[j] for j in range(args.folds) if j != fold_i])
-        X_tr, X_te = X[train_idx], X[test_idx]
-        Y_tr, Y_te = Y[train_idx], Y[test_idx]
+    for rep in range(args.repeats):
+        rep_seed = args.seed + rep
+        rng = np.random.RandomState(rep_seed)
+        perm = rng.permutation(len(X))
+        folds_idx = np.array_split(perm, args.folds)
+        print(f"\n-- repeat {rep + 1}/{args.repeats}  (seed={rep_seed}) --")
 
-        print(f"  fold {fold_i + 1}/{args.folds}: fitting BR on {X_tr.shape[0]} × {Y_tr.shape[1]}...")
-        proba = _fit_br_proba(X_tr, Y_tr, X_te)
+        for fold_i in range(args.folds):
+            test_idx = folds_idx[fold_i]
+            train_idx = np.concatenate([folds_idx[j] for j in range(args.folds) if j != fold_i])
+            X_tr, X_te = X[train_idx], X[test_idx]
+            Y_tr, Y_te = Y[train_idx], Y[test_idx]
 
-        for cost_fp, cost_fn in cost_pairs:
-            thr = cost_sensitive_threshold(cost_fp, cost_fn)
-            pred = predict_cost_sensitive(proba, cost_fp, cost_fn)
-            rows.append({
-                "fold": fold_i,
-                "cost_fp": cost_fp,
-                "cost_fn": cost_fn,
-                "threshold": thr,
-                "f1": em.f1(pred, Y_te),
-                "hamming_accuracy": em.hamming_accuracy(pred, Y_te),
-                "subset0_1": em.subset0_1(pred, Y_te),
-                "cs_hamming_accuracy": em.cs_hamming_accuracy(pred, Y_te, cost_fp, cost_fn),
-            })
+            print(f"  fold {fold_i + 1}/{args.folds}: fitting BR on {X_tr.shape[0]} × {Y_tr.shape[1]}...")
+            proba = _fit_br_proba(X_tr, Y_tr, X_te)
+
+            for cost_fp, cost_fn in cost_pairs:
+                thr = cost_sensitive_threshold(cost_fp, cost_fn)
+                pred = predict_cost_sensitive(proba, cost_fp, cost_fn)
+                rows.append({
+                    "repeat": rep,
+                    "fold": fold_i,
+                    "cost_fp": cost_fp,
+                    "cost_fn": cost_fn,
+                    "threshold": thr,
+                    "f1": em.f1(pred, Y_te),
+                    "hamming_accuracy": em.hamming_accuracy(pred, Y_te),
+                    "subset0_1": em.subset0_1(pred, Y_te),
+                    "cs_hamming_accuracy": em.cs_hamming_accuracy(pred, Y_te, cost_fp, cost_fn),
+                })
 
     df = pd.DataFrame(rows)
     out_dir = ROOT / args.out_dir
     out_dir.mkdir(parents=True, exist_ok=True)
-    csv_path = out_dir / f"{args.dataset}_noise{args.noise}_folds{args.folds}.csv"
+    csv_path = out_dir / f"{args.dataset}_noise{args.noise}_folds{args.folds}_reps{args.repeats}.csv"
     df.to_csv(csv_path, index=False)
     print(f"\nWrote {csv_path}")
 
     agg = df.groupby(["cost_fp", "cost_fn"]).agg(
         threshold=("threshold", "first"),
         f1_mean=("f1", "mean"),
+        f1_std=("f1", "std"),
         hamming_mean=("hamming_accuracy", "mean"),
+        hamming_std=("hamming_accuracy", "std"),
         subset_mean=("subset0_1", "mean"),
         cs_hamming_mean=("cs_hamming_accuracy", "mean"),
     ).reset_index()
