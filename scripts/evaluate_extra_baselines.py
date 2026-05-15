@@ -16,8 +16,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from config import ConfigManager
-from evaluation_metric import EvaluationMetric, EvaluationMetricName
+from preorder4mlc.config import ConfigManager
+from preorder4mlc.evaluation_metric import EvaluationMetric, EvaluationMetricName
 
 NOISY_RATES = [0.0, 0.1, 0.2, 0.3]
 

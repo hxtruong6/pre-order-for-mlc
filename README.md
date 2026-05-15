@@ -53,55 +53,60 @@ probabilities used for the ranking metrics (`ranking_loss`, `one_error`,
 
 ```
 .
-├── main.py                     # Entry point
-├── training_orchestrator.py    # Training loop over learners × folds × algorithms
-├── inference_models.py         # PredictBOPOs (BOPOs + CLR/BR/CC baselines)
-├── searching_algorithms.py     # ILP search for pre- and partial-orders
-├── base_classifiers.py         # Pairwise / calibrated classifier factory
-├── estimator.py                # Uniform interface over RF/ETC/XGBoost/LightGBM
-├── datasets4experiments.py     # ARFF loading, k-fold splits, label-noise
-├── evaluation_metric.py        # Example-, label-, ranking-, abstention-metrics
-├── evaluation_test.py          # Evaluate BOPOs/CLR/BR/CC pickles
-├── extra_baselines.py          # Train MLkNN/ECC/LP baselines
-├── evaluate_extra_baselines.py # Evaluate MLkNN/ECC/LP pickles
-├── config.py, constants.py     # Run configuration + global seed
-├── utils/
-│   ├── results_manager.py      # Pickle I/O
-│   ├── summarize_metrics.py    # Per-dataset summary tables
-│   ├── statistical_tests.py    # Friedman + Nemenyi + CD diagrams
-│   ├── plot_figures.py         # Paper figure suite
-│   └── suppress.py             # Mute GLPK stdout/stderr
-├── data/                       # 9 ARFF datasets (see REPRODUCE.md §2)
-├── results/20260514_v2/        # Per-fold evaluation CSVs
-├── results/final_20260514_v2_summary/  # Aggregated tables + figures + stats
-├── run.sh                      # End-to-end driver
-├── REPRODUCE.md                # Step-by-step reproduction recipe
-├── CITATION.cff                # How to cite this work
-└── pyproject.toml              # black / isort / ruff configuration
+├── preorder4mlc/                       # Library package
+│   ├── config.py, constants.py         # Run configuration + global seed
+│   ├── datasets4experiments.py         # ARFF loading, k-fold splits, label-noise
+│   ├── estimator.py                    # Uniform interface over RF / ETC / XGBoost / LightGBM
+│   ├── base_classifiers.py             # Pairwise / calibrated classifier factory
+│   ├── inference_models.py             # PredictBOPOs (BOPOs + CLR / BR / CC baselines)
+│   ├── searching_algorithms.py         # ILP search for pre- and partial-orders
+│   ├── training_orchestrator.py        # Training loop over learners × folds × algorithms
+│   ├── evaluation_metric.py            # Example-, label-, ranking-, abstention-metrics
+│   └── utils/
+│       ├── results_manager.py          # Pickle I/O
+│       ├── summarize_metrics.py        # Per-dataset summary tables
+│       ├── statistical_tests.py        # Friedman + Nemenyi + CD diagrams
+│       ├── plot_figures.py             # Paper figure suite
+│       └── suppress.py                 # Mute GLPK stdout/stderr
+├── scripts/                            # CLI entry points
+│   ├── train.py                        # Train BOPOs + CLR / BR / CC
+│   ├── evaluate.py                     # Evaluate BOPOs / CLR / BR / CC pickles
+│   ├── train_extra_baselines.py        # Train MLkNN / ECC / LP
+│   ├── evaluate_extra_baselines.py     # Evaluate MLkNN / ECC / LP pickles
+│   └── smoke_predict_bopos.py          # Behavior-preservation smoke test
+├── data/                               # 9 ARFF datasets (see REPRODUCE.md §2)
+├── results/                            # Per-fold CSVs + aggregated tables (gitignored except CSV/XLSX)
+├── docs/                               # Long-form notes
+├── run.sh                              # End-to-end reproduction driver
+├── REPRODUCE.md                        # Step-by-step reproduction recipe
+├── CITATION.cff                        # How to cite this work
+├── pyproject.toml                      # Package metadata + lint config
+└── requirements.txt                    # Pinned runtime dependencies
 ```
 
 ## Quick start
 
 ```bash
-# 1. Install
+# 1. Install (editable so scripts/ can import the package)
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
+pip install -e .
 
 # 2. Run one dataset end-to-end
-python main.py --dataset emotions --results_dir results/run-dev
-python evaluation_test.py --dataset emotions --results_dir results/run-dev
+python scripts/train.py    --dataset emotions --results_dir results/run-dev
+python scripts/evaluate.py --dataset emotions --results_dir results/run-dev
 
 # 3. Reproduce every result in the paper
-bash run.sh
-python utils/summarize_metrics.py \
-    --results_dir results/20260514_v2 \
-    --output_dir results/final_20260514_v2_summary
-python utils/statistical_tests.py \
-    --results_dir results/final_20260514_v2_summary \
-    --output_dir results/final_20260514_v2_summary/stats
-python utils/plot_figures.py \
-    --results_dir results/final_20260514_v2_summary \
-    --raw_results_dir results/20260514_v2
+RESULTS_DIR=results/run-$(date +%Y%m%d) bash run.sh
+python -m preorder4mlc.utils.summarize_metrics \
+    --results_dir   "${RESULTS_DIR}" \
+    --output_dir    "${RESULTS_DIR}_summary"
+python -m preorder4mlc.utils.statistical_tests \
+    --results_dir   "${RESULTS_DIR}_summary" \
+    --output_dir    "${RESULTS_DIR}_summary/stats"
+python -m preorder4mlc.utils.plot_figures \
+    --results_dir   "${RESULTS_DIR}_summary" \
+    --raw_results_dir "${RESULTS_DIR}"
 ```
 
 See [REPRODUCE.md](REPRODUCE.md) for the full recipe, expected wall
@@ -115,7 +120,7 @@ run end-to-end after `pip install`:
 `chd_49`, `emotions`, `scene`, `yeast`, `water_quality`,
 `viruspseaac`, `humanpseaac`, `gpositivepseaac`, `plantpseaac`.
 
-CLI keys match `config.py::ConfigManager.DATASET_CONFIGS`.
+CLI keys match `preorder4mlc.config::ConfigManager.DATASET_CONFIGS`.
 
 ## Partial-abstention metrics
 

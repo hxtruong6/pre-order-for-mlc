@@ -20,10 +20,10 @@ import numpy as np
 from joblib import Parallel, delayed
 from sklearn.multioutput import ClassifierChain, MultiOutputClassifier
 
-from base_classifiers import BaseClassifiers
-from constants import RANDOM_STATE, BaseLearnerName, TargetMetric
-from estimator import Estimator
-from searching_algorithms import Search_BOParOs, Search_BOPreOs
+from preorder4mlc.base_classifiers import BaseClassifiers
+from preorder4mlc.constants import RANDOM_STATE, BaseLearnerName, TargetMetric
+from preorder4mlc.estimator import Estimator
+from preorder4mlc.searching_algorithms import Search_BOParOs, Search_BOPreOs
 
 
 class PreferenceOrder(Enum):

@@ -10,8 +10,8 @@ import argparse
 import time
 from logging import INFO, basicConfig, log
 
-from config import ConfigManager
-from training_orchestrator import TrainingOrchestrator
+from preorder4mlc.config import ConfigManager
+from preorder4mlc.training_orchestrator import TrainingOrchestrator
 
 basicConfig(level=INFO)
 

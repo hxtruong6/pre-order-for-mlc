@@ -17,9 +17,9 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from config import AlgorithmType, ConfigManager
-from evaluation_metric import EvaluationMetric, EvaluationMetricName
-from utils.results_manager import ExperimentResults
+from preorder4mlc.config import AlgorithmType, ConfigManager
+from preorder4mlc.evaluation_metric import EvaluationMetric, EvaluationMetricName
+from preorder4mlc.utils.results_manager import ExperimentResults
 
 
 class OrderType(Enum):

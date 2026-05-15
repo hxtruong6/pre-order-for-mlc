@@ -8,17 +8,15 @@ and after the refactor and diff the pickles.
 import argparse
 import hashlib
 import pickle
-import sys
 from pathlib import Path
 
 import numpy as np
 
-ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT))
+from preorder4mlc.constants import BaseLearnerName, TargetMetric
+from preorder4mlc.datasets4experiments import Datasets4Experiments
+from preorder4mlc.inference_models import PredictBOPOs, PreferenceOrder
 
-from constants import BaseLearnerName, TargetMetric  # noqa: E402
-from datasets4experiments import Datasets4Experiments  # noqa: E402
-from inference_models import PredictBOPOs, PreferenceOrder  # noqa: E402
+ROOT = Path(__file__).resolve().parent.parent
 
 
 def _hash(obj) -> str:

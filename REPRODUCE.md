@@ -17,6 +17,7 @@ sudo apt-get install libglpk-dev
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+pip install -e .
 ```
 
 ## 2. Data
@@ -39,10 +40,10 @@ The 9 multi-label ARFF datasets used by the paper are tracked under
 ## 3. Determinism
 
 All splits, folds, and label-noise draws are seeded by
-`constants.RANDOM_STATE = 6`. The per-fold parallel training step uses
-`joblib.Parallel(n_jobs=-1)`; sklearn ensemble estimators are seeded
-through `RANDOM_STATE` as well so identical splits produce identical
-predictions.
+`preorder4mlc.constants.RANDOM_STATE = 6`. The per-fold parallel
+training step uses `joblib.Parallel(n_jobs=-1)`; sklearn ensemble
+estimators are seeded through `RANDOM_STATE` as well so identical
+splits produce identical predictions.
 
 ## 4. Reproducing all results
 
@@ -54,13 +55,15 @@ RESULTS_DIR=results/20260514_v2 bash run.sh
 
 For each dataset this runs, in order:
 
-1. `python main.py --dataset <key> --results_dir <dir>` — train pairwise
-   classifiers, BOPOs (pre- and partial-order), and CLR/BR/CC baselines.
-2. `python evaluation_test.py --dataset <key> --results_dir <dir>` —
-   write per-fold evaluation CSVs for the BOPOs/CLR/BR/CC pickles.
-3. `python extra_baselines.py --dataset <key> --algorithm <mlknn|ecc|lp>
-   --results_dir <dir>` — train the three extra baselines.
-4. `python evaluate_extra_baselines.py --dataset <key>
+1. `python scripts/train.py --dataset <key> --results_dir <dir>` —
+   train pairwise classifiers, BOPOs (pre- and partial-order), and
+   CLR / BR / CC baselines.
+2. `python scripts/evaluate.py --dataset <key> --results_dir <dir>` —
+   write per-fold evaluation CSVs for the BOPOs / CLR / BR / CC pickles.
+3. `python scripts/train_extra_baselines.py --dataset <key>
+   --algorithm <mlknn|ecc|lp> --results_dir <dir>` — train the three
+   extra baselines.
+4. `python scripts/evaluate_extra_baselines.py --dataset <key>
    --algorithm <mlknn|ecc|lp> --results_dir <dir>` — write per-fold
    evaluation CSVs for the extra baselines.
 
@@ -69,9 +72,9 @@ Per-dataset stdout/stderr lands in `logs/20260514_v2/<dataset>.log`.
 ## 5. Summarising into the paper tables
 
 ```bash
-python utils/summarize_metrics.py \
+python -m preorder4mlc.utils.summarize_metrics \
     --results_dir results/20260514_v2 \
-    --output_dir results/final_20260514_v2_summary
+    --output_dir  results/final_20260514_v2_summary
 ```
 
 Writes one `<Dataset>_<PredictionType>_summary.csv` per dataset to
@@ -81,12 +84,12 @@ one of `BinaryVector`, `PartialAbstention`, or `ScoreVector`.
 ## 6. Statistical tests and figures
 
 ```bash
-python utils/statistical_tests.py \
+python -m preorder4mlc.utils.statistical_tests \
     --results_dir results/final_20260514_v2_summary \
-    --output_dir results/final_20260514_v2_summary/stats
+    --output_dir  results/final_20260514_v2_summary/stats
 
-python utils/plot_figures.py \
-    --results_dir results/final_20260514_v2_summary \
+python -m preorder4mlc.utils.plot_figures \
+    --results_dir     results/final_20260514_v2_summary \
     --raw_results_dir results/20260514_v2
 ```
 

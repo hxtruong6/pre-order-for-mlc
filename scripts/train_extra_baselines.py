@@ -66,9 +66,9 @@ _mlknn_mod.MLkNN._compute_cond = _patched_compute_cond
 from skmultilearn.adapt import MLkNN  # noqa: E402
 from skmultilearn.problem_transform import ClassifierChain, LabelPowerset  # noqa: E402
 
-from config import ConfigManager  # noqa: E402
-from constants import RANDOM_STATE  # noqa: E402
-from datasets4experiments import Datasets4Experiments  # noqa: E402
+from preorder4mlc.config import ConfigManager  # noqa: E402
+from preorder4mlc.constants import RANDOM_STATE  # noqa: E402
+from preorder4mlc.datasets4experiments import Datasets4Experiments  # noqa: E402
 
 NOISY_RATES = [0.0, 0.1, 0.2, 0.3]
 N_REPEAT = 5

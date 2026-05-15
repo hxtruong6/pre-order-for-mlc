@@ -13,11 +13,11 @@ from logging import ERROR, INFO, log
 
 from joblib import Parallel, delayed
 
-from config import AlgorithmType, DatasetConfig, TrainingConfig
-from constants import RANDOM_STATE, BaseLearnerName, TargetMetric
-from datasets4experiments import Datasets4Experiments
-from inference_models import PredictBOPOs, PreferenceOrder
-from utils.results_manager import ExperimentResults
+from preorder4mlc.config import AlgorithmType, DatasetConfig, TrainingConfig
+from preorder4mlc.constants import RANDOM_STATE, BaseLearnerName, TargetMetric
+from preorder4mlc.datasets4experiments import Datasets4Experiments
+from preorder4mlc.inference_models import PredictBOPOs, PreferenceOrder
+from preorder4mlc.utils.results_manager import ExperimentResults
 
 
 class TrainingOrchestrator:

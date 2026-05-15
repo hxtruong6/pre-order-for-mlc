@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
-from constants import BaseLearnerName
+from preorder4mlc.constants import BaseLearnerName
 
 
 class AlgorithmType(Enum):

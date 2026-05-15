@@ -17,7 +17,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from config import AlgorithmType
+from preorder4mlc.config import AlgorithmType
 
 
 class ResultProcessor:

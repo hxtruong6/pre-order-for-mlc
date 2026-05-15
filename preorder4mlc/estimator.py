@@ -20,7 +20,7 @@ from sklearn.ensemble import (
     RandomForestClassifier,
 )
 
-from constants import RANDOM_STATE, BaseLearnerName
+from preorder4mlc.constants import RANDOM_STATE, BaseLearnerName
 
 basicConfig(level=INFO)  # type: ignore
 

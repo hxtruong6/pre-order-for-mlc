@@ -1,3 +1,18 @@
+[build-system]
+requires = ["setuptools>=65"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "preorder4mlc"
+version = "1.0.0"
+description = "Pre-order based multi-label classification via pairwise classifiers and ILP search."
+requires-python = ">=3.10"
+readme = "README.md"
+license = { file = "LICENSE" }
+
+[tool.setuptools.packages.find]
+include = ["preorder4mlc*"]
+
 [tool.black]
 line-length = 100
 target-version = ["py310", "py311", "py312"]
@@ -5,22 +20,7 @@ target-version = ["py310", "py311", "py312"]
 [tool.isort]
 profile = "black"
 line_length = 100
-known_first_party = [
-    "base_classifiers",
-    "config",
-    "constants",
-    "datasets4experiments",
-    "estimator",
-    "evaluate_extra_baselines",
-    "evaluation_metric",
-    "evaluation_test",
-    "extra_baselines",
-    "inference_models",
-    "main",
-    "searching_algorithms",
-    "training_orchestrator",
-    "utils",
-]
+known_first_party = ["preorder4mlc"]
 
 [tool.ruff]
 line-length = 100

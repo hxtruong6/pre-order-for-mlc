@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # End-to-end reproduction driver for the preorder4MLC paper.
 #
-# For every dataset key registered in config.py::ConfigManager.DATASET_CONFIGS,
+# For every dataset key registered in preorder4mlc.config::ConfigManager.DATASET_CONFIGS,
 # this script:
-#   1. Trains the BOPOs pipeline and the CLR / BR / CC baselines (main.py).
-#   2. Trains the MLkNN / ECC / LP baselines (extra_baselines.py).
-#   3. Evaluates the BOPOs pickles into per-fold CSVs (evaluation_test.py).
-#   4. Evaluates the extra-baseline pickles (evaluate_extra_baselines.py).
+#   1. Trains the BOPOs pipeline and the CLR / BR / CC baselines (scripts/train.py).
+#   2. Trains the MLkNN / ECC / LP baselines (scripts/train_extra_baselines.py).
+#   3. Evaluates the BOPOs pickles into per-fold CSVs (scripts/evaluate.py).
+#   4. Evaluates the extra-baseline pickles (scripts/evaluate_extra_baselines.py).
 #
 # Outputs land in ${RESULTS_DIR}; per-dataset stdout/stderr go to
-# ${LOG_DIR}/<dataset>.log. Run utils/summarize_metrics.py afterwards to
-# aggregate the CSVs into the per-dataset summary tables consumed by the
+# ${LOG_DIR}/<dataset>.log. Run preorder4mlc/utils/summarize_metrics.py afterwards
+# to aggregate the CSVs into the per-dataset summary tables consumed by the
 # statistical tests and figure scripts.
 
 set -euo pipefail
@@ -43,15 +43,15 @@ run_dataset() {
         echo "[$(date -Is)] Running ${dataset}"
         echo "===================="
 
-        python main.py --dataset "${dataset}" --results_dir "${RESULTS_DIR}"
-        python evaluation_test.py --dataset "${dataset}" --results_dir "${RESULTS_DIR}"
+        python scripts/train.py --dataset "${dataset}" --results_dir "${RESULTS_DIR}"
+        python scripts/evaluate.py --dataset "${dataset}" --results_dir "${RESULTS_DIR}"
 
         for algo in "${EXTRA_BASELINES[@]}"; do
-            python extra_baselines.py \
+            python scripts/train_extra_baselines.py \
                 --dataset "${dataset}" \
                 --algorithm "${algo}" \
                 --results_dir "${RESULTS_DIR}"
-            python evaluate_extra_baselines.py \
+            python scripts/evaluate_extra_baselines.py \
                 --dataset "${dataset}" \
                 --algorithm "${algo}" \
                 --results_dir "${RESULTS_DIR}"

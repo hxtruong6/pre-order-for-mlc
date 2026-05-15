@@ -14,8 +14,8 @@ from cvxopt import matrix
 from cvxopt.glpk import ilp
 from numpy import array
 
-from constants import TargetMetric
-from utils.suppress import suppress_output
+from preorder4mlc.constants import TargetMetric
+from preorder4mlc.utils.suppress import suppress_output
 
 
 class Search_BOPreOs:

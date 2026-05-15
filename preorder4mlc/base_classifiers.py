@@ -14,7 +14,7 @@ from joblib import Parallel, delayed
 from numpy.typing import NDArray
 from sklearn.base import BaseEstimator
 
-from estimator import Estimator, train_classifier
+from preorder4mlc.estimator import Estimator, train_classifier
 
 
 class BaseClassifiers:
