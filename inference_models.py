@@ -47,28 +47,20 @@ class PredictBOPOs:
         base_classifier_name: str,
         preference_order: PreferenceOrder = PreferenceOrder.PRE_ORDER,
     ):
-        # BaseClassifiers is a class that contains the base learner (estimator)
-        # to train the model with input X and predicted labels Y
         self.base_classifier: BaseClassifiers = BaseClassifiers(base_classifier_name)
-
         self.preference_order = preference_order
 
-        self.models = {}
-
+        # Populated by fit() (keys "i_j") and by fit_CLR() (keys "i_j" plus
+        # the per-label calibrated_classifier list).
         self.pairwise_classifier: dict[str, Estimator] = {}
-
         self.calibrated_classifier: list[Estimator] = []
+        self.single_label_pair: dict[str, int | None] = {}
 
-        self.single_label_pair: dict[str, int | None] = {  # key = label i_j
-            # 1_2: 1
-            # 1_3: 0
-            # 1_4: None
-        }
-
-        # Add new attributes for BR and CC
-        self.br_classifiers: dict[str, Estimator] = {}  # Binary Relevance classifiers
-        self.cc_classifiers: dict[str, Estimator] = {}  # Classifier Chain classifiers
-        self.cc_order: list[int] = []  # Order of labels for Classifier Chain
+        # BR / CC baselines. Set in fit_BR() / fit_CC(), read in predict_BR() /
+        # predict_CC(). Order is preserved on cc_classifier.order_.
+        self.br_classifier: MultiOutputClassifier | None = None
+        self.cc_classifier: ClassifierChain | None = None
+        self.cc_order: list[int] = []
 
         # Auxiliary BR head used to derive per-label marginal probabilities for
         # BOPOs (both PRE_ORDER and PARTIAL_ORDER). Set in fit().
@@ -103,298 +95,67 @@ class PredictBOPOs:
             height=height,
         )
 
-        # Using after training the model.
-        if target_metric == TargetMetric.Hamming:
-            if self.preference_order == PreferenceOrder.PRE_ORDER:
-                (
-                    predict_BOPOS,
-                    predict_binary_vectors,
-                    indices_vector,
-                    prediction_with_partial_abstention,
-                ) = search_BOPrerOs.PRE_ORDER()
-            elif self.preference_order == PreferenceOrder.PARTIAL_ORDER:
-                (
-                    predict_BOPOS,
-                    predict_binary_vectors,
-                    indices_vector,
-                    prediction_with_partial_abstention,
-                ) = search_BOParOs.PARTIAL_ORDER()
-            else:
-                raise ValueError(f"[Hamming] Unknown preference order: {self.preference_order}")
-
-        elif target_metric == TargetMetric.Subset:
-            if self.preference_order == PreferenceOrder.PRE_ORDER:
-                (
-                    predict_BOPOS,
-                    predict_binary_vectors,
-                    indices_vector,
-                    prediction_with_partial_abstention,
-                ) = search_BOPrerOs.PRE_ORDER()
-            elif self.preference_order == PreferenceOrder.PARTIAL_ORDER:
-                (
-                    predict_BOPOS,
-                    predict_binary_vectors,
-                    indices_vector,
-                    prediction_with_partial_abstention,
-                ) = search_BOParOs.PARTIAL_ORDER()
-
-            else:
-                raise ValueError(f"[Subset] Unknown preference order: {self.preference_order}")
+        # target_metric is already baked into search_BOPrerOs / search_BOParOs
+        # via their constructors above; the only remaining choice is which
+        # variant to dispatch to.
+        if self.preference_order == PreferenceOrder.PRE_ORDER:
+            (
+                predict_BOPOS,
+                predict_binary_vectors,
+                indices_vector,
+                prediction_with_partial_abstention,
+            ) = search_BOPrerOs.PRE_ORDER()
+        elif self.preference_order == PreferenceOrder.PARTIAL_ORDER:
+            (
+                predict_BOPOS,
+                predict_binary_vectors,
+                indices_vector,
+                prediction_with_partial_abstention,
+            ) = search_BOParOs.PARTIAL_ORDER()
+        else:
+            raise ValueError(f"Unknown preference order: {self.preference_order}")
 
         return (
             predict_BOPOS,
             predict_binary_vectors,
-            indices_vector,  # type: ignore
+            indices_vector,
             prediction_with_partial_abstention,
-        )  # type: ignore
+        )
 
     def predict_proba(self, X, n_labels):
         n_test_instances, _ = X.shape
-        if self.preference_order == PreferenceOrder.PRE_ORDER:
+        n_classes = 4 if self.preference_order == PreferenceOrder.PRE_ORDER else 3
 
-            def _get_pairwise_predict_proba():
-                predict_results = Parallel(n_jobs=-1)(
-                    delayed(self.pairwise_classifier[f"{i}_{j}"].predict_proba)(X)
-                    for i in range(n_labels - 1)
-                    for j in range(i + 1, n_labels)
+        pairwise_predict_proba = self._parallel_pairwise_predict_proba(X, n_labels)
+
+        pairwise_probabilistic_predictions: dict[str, float] = {}
+        for i in range(n_labels - 1):
+            for j in range(i + 1, n_labels):
+                key_classifier = f"{i}_{j}"
+                aligned = _align_to_n_classes(
+                    classifier=self.pairwise_classifier[key_classifier],
+                    raw_proba=pairwise_predict_proba[key_classifier],
+                    n_test_instances=n_test_instances,
+                    n_classes=n_classes,
                 )
-
-                return dict(zip(self.pairwise_classifier.keys(), predict_results))
-
-            pairwise_probabilistic_predictions = {}
-            pairwise_predict_proba = _get_pairwise_predict_proba()
-            for i in range(n_labels - 1):
-                for j in range(i + 1, n_labels):
-                    pairwise_probabilistic_predictions_ij = np.zeros((n_test_instances, 4))
-                    key_classifier = f"{i}_{j}"
-
-                    original_pairwise_probabilistic_predictions_ij = pairwise_predict_proba[
-                        key_classifier
-                    ]
-                    # The pairwise classifier may have seen fewer than 4 (PRE_ORDER)
-                    # or 3 (PARTIAL_ORDER) classes in training; align the columns
-                    # below by inserting zeros for any missing class.
-                    presented_classes = list(self.pairwise_classifier[key_classifier].classes_())
-                    for l in range(4):
-                        if l in presented_classes:
-                            pairwise_probabilistic_predictions_ij[:, l] = (
-                                original_pairwise_probabilistic_predictions_ij[
-                                    :, presented_classes.index(l)
-                                ]
-                            )
-                    for n in range(n_test_instances):
-
-                        # add a small regularization term if the probabilistic prediction is deterministic instead of probabilistic
-                        current_pairwise_probabilistic_predictions_ij = (
-                            pairwise_probabilistic_predictions_ij[n]
-                        )
-                        if max(current_pairwise_probabilistic_predictions_ij) == 1:
-                            current_pairwise_probabilistic_predictions_ij = [
-                                x - 10**-10 if x == 1 else (10**-10) / 3
-                                for x in current_pairwise_probabilistic_predictions_ij
-                            ]
-                        if min(current_pairwise_probabilistic_predictions_ij) == 0:
-                            zero_indices = [
-                                ind
-                                for ind in range(4)
-                                if current_pairwise_probabilistic_predictions_ij[ind] == 0
-                            ]
-                            current_pairwise_probabilistic_predictions_ij = [
-                                (
-                                    (10**-10) / len(zero_indices)
-                                    if x == 0
-                                    else x - (10**-10) / (4 - len(zero_indices))
-                                )
-                                for x in current_pairwise_probabilistic_predictions_ij
-                            ]
-                        for l in range(4):
-                            pairwise_probabilistic_predictions[f"{i}_{j}_{n}_{l}"] = (
-                                current_pairwise_probabilistic_predictions_ij[l]
-                            )
-        elif self.preference_order == PreferenceOrder.PARTIAL_ORDER:
-
-            def _get_pairwise_predict_proba():
-                predict_results = Parallel(n_jobs=-1)(
-                    delayed(self.pairwise_classifier[f"{i}_{j}"].predict_proba)(X)
-                    for i in range(n_labels - 1)
-                    for j in range(i + 1, n_labels)
-                )
-
-                return dict(zip(self.pairwise_classifier.keys(), predict_results))
-
-            pairwise_probabilistic_predictions = {}
-            pairwise_predict_proba = _get_pairwise_predict_proba()
-            for i in range(n_labels - 1):
-                for j in range(i + 1, n_labels):
-                    pairwise_probabilistic_predictions_ij = np.zeros((n_test_instances, 3))
-                    key_classifier = f"{i}_{j}"
-                    original_pairwise_probabilistic_predictions_ij = pairwise_predict_proba[
-                        key_classifier
-                    ]
-                    presented_classes = list(self.pairwise_classifier[key_classifier].classes_())
-                    for l in range(3):
-                        if l in presented_classes:
-                            pairwise_probabilistic_predictions_ij[:, l] = (
-                                original_pairwise_probabilistic_predictions_ij[
-                                    :, presented_classes.index(l)
-                                ]
-                            )
-                    for n in range(n_test_instances):
-
-                        # add a small regularization term if the probabilistic prediction is deterministic instead of probabilistic
-                        current_pairwise_probabilistic_predictions_ij = (
-                            pairwise_probabilistic_predictions_ij[n]
-                        )
-                        if max(current_pairwise_probabilistic_predictions_ij) == 1:
-                            current_pairwise_probabilistic_predictions_ij = [
-                                x - 10**-10 if x == 1 else (10**-10) / 2
-                                for x in current_pairwise_probabilistic_predictions_ij
-                            ]
-                        if min(current_pairwise_probabilistic_predictions_ij) == 0:
-                            zero_indices = [
-                                ind
-                                for ind in range(3)
-                                if current_pairwise_probabilistic_predictions_ij[ind] == 0
-                            ]
-                            current_pairwise_probabilistic_predictions_ij = [
-                                (
-                                    (10**-10) / len(zero_indices)
-                                    if x == 0
-                                    else x - (10**-10) / (3 - len(zero_indices))
-                                )
-                                for x in current_pairwise_probabilistic_predictions_ij
-                            ]
-                        for l in range(3):
-                            pairwise_probabilistic_predictions[f"{i}_{j}_{n}_{l}"] = (
-                                current_pairwise_probabilistic_predictions_ij[l]
-                            )
+                for n in range(n_test_instances):
+                    row = _regularize_proba_row(aligned[n], n_classes)
+                    for l in range(n_classes):
+                        pairwise_probabilistic_predictions[f"{i}_{j}_{n}_{l}"] = row[l]
         return pairwise_probabilistic_predictions
 
-    def predict_proba_BR(self, X, n_labels):
-        n_test_instances, _ = X.shape
-        if self.preference_order == PreferenceOrder.PRE_ORDER:
-            pairwise_probabilistic_predictions = {}
-            for i in range(n_labels - 1):
-                key_classifier_i = f"{i}"
-                original_probabilistic_predictions_i = self.pairwise_classifier[
-                    key_classifier_i
-                ].predict_proba(X)
-                presented_classes = list(self.pairwise_classifier[key_classifier_i].classes_())
-                probabilistic_predictions_i = np.zeros((n_test_instances, 2))
-                for c in range(2):
-                    if c in presented_classes:
-                        probabilistic_predictions_i[:, c] = original_probabilistic_predictions_i[
-                            :, presented_classes.index(c)
-                        ]
-                for j in range(i + 1, n_labels):
-                    key_classifier_j = f"{j}"
-                    original_probabilistic_predictions_j = self.pairwise_classifier[
-                        key_classifier_j
-                    ].predict_proba(X)
-                    presented_classes = list(self.pairwise_classifier[key_classifier_j].classes_())
-                    probabilistic_predictions_j = np.zeros((n_test_instances, 2))
-                    for c in range(2):
-                        if c in presented_classes:
-                            probabilistic_predictions_j[:, c] = (
-                                original_probabilistic_predictions_j[:, presented_classes.index(c)]
-                            )
-                    for n in range(n_test_instances):
+    def _parallel_pairwise_predict_proba(self, X, n_labels):
+        """Run predict_proba on each "i_j" pairwise classifier in parallel.
 
-                        current_pairwise_probabilistic_predictions_ij = [
-                            probabilistic_predictions_i[n, 1] * probabilistic_predictions_j[n, 0],
-                            probabilistic_predictions_i[n, 0] * probabilistic_predictions_j[n, 1],
-                            probabilistic_predictions_i[n, 0] * probabilistic_predictions_j[n, 0],
-                            probabilistic_predictions_i[n, 1] * probabilistic_predictions_j[n, 1],
-                        ]
-
-                        # add a small regularization term if the probabilistic prediction is deterministic instead of probabilistic
-
-                        if max(current_pairwise_probabilistic_predictions_ij) == 1:
-                            current_pairwise_probabilistic_predictions_ij = [
-                                x - 10**-10 if x == 1 else (10**-10) / 3
-                                for x in current_pairwise_probabilistic_predictions_ij
-                            ]
-                        if min(current_pairwise_probabilistic_predictions_ij) == 0:
-                            zero_indices = [
-                                ind
-                                for ind in range(4)
-                                if current_pairwise_probabilistic_predictions_ij[ind] == 0
-                            ]
-                            current_pairwise_probabilistic_predictions_ij = [
-                                (
-                                    (10**-10) / len(zero_indices)
-                                    if x == 0
-                                    else x - (10**-10) / (4 - len(zero_indices))
-                                )
-                                for x in current_pairwise_probabilistic_predictions_ij
-                            ]
-                        for l in range(4):
-                            #                            key_pairwise_probabilistic_predictions = "%i_%i_%i_%i" % (i, j, n,l)
-                            pairwise_probabilistic_predictions[f"{i}_{j}_{n}_{l}"] = (
-                                current_pairwise_probabilistic_predictions_ij[l]
-                            )
-        elif self.preference_order == PreferenceOrder.PARTIAL_ORDER:
-            pairwise_probabilistic_predictions = {}
-            for i in range(n_labels - 1):
-                key_classifier_i = f"{i}"
-                original_probabilistic_predictions_i = self.pairwise_classifier[
-                    key_classifier_i
-                ].predict_proba(X)
-                presented_classes = list(self.pairwise_classifier[key_classifier_i].classes_())
-                probabilistic_predictions_i = np.zeros((n_test_instances, 2))
-                for c in range(2):
-                    if c in presented_classes:
-                        probabilistic_predictions_i[:, c] = original_probabilistic_predictions_i[
-                            :, presented_classes.index(c)
-                        ]
-                for j in range(i + 1, n_labels):
-                    key_classifier_j = f"{j}"
-                    original_probabilistic_predictions_j = self.pairwise_classifier[
-                        key_classifier_j
-                    ].predict_proba(X)
-                    presented_classes = list(self.pairwise_classifier[key_classifier_j].classes_())
-                    probabilistic_predictions_j = np.zeros((n_test_instances, 2))
-                    for c in range(2):
-                        if c in presented_classes:
-                            probabilistic_predictions_j[:, c] = (
-                                original_probabilistic_predictions_j[:, presented_classes.index(c)]
-                            )
-                    for n in range(n_test_instances):
-
-                        current_pairwise_probabilistic_predictions_ij = [
-                            probabilistic_predictions_i[n, 1] * probabilistic_predictions_j[n, 0],
-                            probabilistic_predictions_i[n, 0] * probabilistic_predictions_j[n, 1],
-                            probabilistic_predictions_i[n, 0] * probabilistic_predictions_j[n, 0]
-                            + probabilistic_predictions_i[n, 1] * probabilistic_predictions_j[n, 1],
-                        ]
-
-                        # add a small regularization term if the probabilistic prediction is deterministic instead of probabilistic
-
-                        if max(current_pairwise_probabilistic_predictions_ij) == 1:
-                            current_pairwise_probabilistic_predictions_ij = [
-                                x - 10**-10 if x == 1 else (10**-10) / 2
-                                for x in current_pairwise_probabilistic_predictions_ij
-                            ]
-                        if min(current_pairwise_probabilistic_predictions_ij) == 0:
-                            zero_indices = [
-                                ind
-                                for ind in range(3)
-                                if current_pairwise_probabilistic_predictions_ij[ind] == 0
-                            ]
-                            current_pairwise_probabilistic_predictions_ij = [
-                                (
-                                    (10**-10) / len(zero_indices)
-                                    if x == 0
-                                    else x - (10**-10) / (3 - len(zero_indices))
-                                )
-                                for x in current_pairwise_probabilistic_predictions_ij
-                            ]
-                        for l in range(3):
-                            #                            key_pairwise_probabilistic_predictions = "%i_%i_%i_%i" % (i, j, n,l)
-                            pairwise_probabilistic_predictions[f"{i}_{j}_{n}_{l}"] = (
-                                current_pairwise_probabilistic_predictions_ij[l]
-                            )
-        return pairwise_probabilistic_predictions
+        Returns a dict keyed by the pairwise key in the same order as
+        self.pairwise_classifier (matches the (i, j) iteration order).
+        """
+        predict_results = Parallel(n_jobs=-1)(
+            delayed(self.pairwise_classifier[f"{i}_{j}"].predict_proba)(X)
+            for i in range(n_labels - 1)
+            for j in range(i + 1, n_labels)
+        )
+        return dict(zip(self.pairwise_classifier.keys(), predict_results))
 
     def predict_CLR(self, X, n_labels):
         n_instances, _ = X.shape
@@ -600,6 +361,52 @@ class PredictBOPOs:
         proba_list = self.br_head_for_proba.predict_proba(X)
         Y_proba = _stack_positive_class_proba(self.br_head_for_proba.estimators_, proba_list)
         return Y_proba
+
+
+def _align_to_n_classes(classifier, raw_proba, n_test_instances, n_classes):
+    """Project a pairwise classifier's predict_proba output into the fixed
+    n_classes-column layout expected by the BOPOs encoders.
+
+    A pairwise classifier may have seen fewer than n_classes labels in
+    training (n_classes is 4 for PRE_ORDER, 3 for PARTIAL_ORDER). Missing
+    classes are filled with zeros.
+    """
+    aligned = np.zeros((n_test_instances, n_classes))
+    presented_classes = list(classifier.classes_())
+    for l in range(n_classes):
+        if l in presented_classes:
+            aligned[:, l] = raw_proba[:, presented_classes.index(l)]
+    return aligned
+
+
+def _regularize_proba_row(probs, n_classes):
+    """Nudge a single probability row away from the degenerate {0, 1} corners.
+
+    Required because the downstream ILP expects strictly positive scores; a
+    deterministic classifier output (max == 1 or min == 0) is shifted by
+    ``1e-10`` redistributed across the remaining slots. Mirrors the
+    pre-refactor logic in ``predict_proba`` exactly:
+
+    1. If any entry equals 1, subtract 1e-10 from it and add 1e-10/(n-1)
+       to each non-1 entry.
+    2. Then, if any entry is still 0, give it 1e-10/k (k = number of
+       zeros) and pay for it by subtracting 1e-10/(n-k) from each non-zero
+       entry. The two passes can chain: step 2 inspects the row mutated
+       by step 1.
+    """
+    if max(probs) == 1:
+        probs = [x - 10**-10 if x == 1 else (10**-10) / (n_classes - 1) for x in probs]
+    if min(probs) == 0:
+        zero_indices = [ind for ind in range(n_classes) if probs[ind] == 0]
+        probs = [
+            (
+                (10**-10) / len(zero_indices)
+                if x == 0
+                else x - (10**-10) / (n_classes - len(zero_indices))
+            )
+            for x in probs
+        ]
+    return probs
 
 
 def _stack_positive_class_proba(estimators, proba_list) -> np.ndarray:
