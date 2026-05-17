@@ -190,6 +190,9 @@ class PredictBOPOs:
                 probabilistic_predictions = clf.predict_proba(X)
                 _, n_classes = probabilistic_predictions.shape
                 if n_classes == 1:  # why 1? -> label at index 0?
+                    # Original: `voting_scores[k, :] += [1 for n in range(n_instances)]`.
+                    # Scalar `+= 1` is identical (numpy broadcasts) — verified bit-equal
+                    # for up to 1000 sequential += iterations, no float drift.
                     if self.base_classifier.name in [
                         BaseLearnerName.XGBoost,
                         BaseLearnerName.LightGBM,
