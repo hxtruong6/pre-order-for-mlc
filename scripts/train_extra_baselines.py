@@ -41,7 +41,14 @@ def _make_base_learner(name: str, random_state=None):
     PA/PR + calibration against a stronger ECC/LP base.
     """
     if name == "rf":
-        return RandomForestClassifier(random_state=random_state)
+        # n_estimators=100 (sklearn default since 0.22, made explicit) and
+        # n_jobs=-1 match the original ECC call on main exactly so the default
+        # --base_learner rf reproduces the paper baseline numbers. LP on main
+        # used a bare RandomForestClassifier(); n_jobs=-1 only speeds that
+        # path up — RF determinism depends solely on random_state.
+        return RandomForestClassifier(
+            n_estimators=100, random_state=random_state, n_jobs=-1
+        )
     if name == "lgbm":
         return LGBMClassifier(
             n_estimators=100,
