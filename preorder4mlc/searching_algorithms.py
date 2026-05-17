@@ -63,26 +63,19 @@ class Search_BOPreOs:
         predicted_Y = []
         predicted_preorders = []
         prediction_with_partial_abstentions = []
+        # Precompute upper-triangular pair indices once. np.triu_indices(K, k=1)
+        # yields (i, j) pairs in row-major order matching the prior
+        # `for i in range(K-1): for j in range(i+1, K)` loop. Flattening
+        # `pred[ii, jj, n, :]` then walks (i, j, l) in the same sequence as
+        # the old append-per-l loop, so `vector` ordering — and hence the
+        # downstream `indices_vector` mapping — is unchanged.
+        ii, jj = np.triu_indices(self.n_labels, k=1)
         for n in range(self.n_instances):
-            vector = []
-            # pairwise_probabilistic_predictions is a 4D ndarray (K, K, n_test, n_classes).
-            # Old dict-lookup `dict[f"{i}_{j}_{n}_{l}"]` becomes array[i, j, n, l].
+            pair_slice = self.pairwise_probabilistic_predictions[ii, jj, n, :]
             if self.target_metric == TargetMetric.Hamming:
-                for i in range(self.n_labels - 1):
-                    for j in range(i + 1, self.n_labels):
-                        pairInfor = [
-                            -self.pairwise_probabilistic_predictions[i, j, n, l]
-                            for l in range(4)
-                        ]
-                        vector += pairInfor
+                vector = (-pair_slice).flatten()
             elif self.target_metric == TargetMetric.Subset:
-                for i in range(self.n_labels - 1):
-                    for j in range(i + 1, self.n_labels):
-                        pairInfor = [
-                            -np.log(self.pairwise_probabilistic_predictions[i, j, n, l])
-                            for l in range(4)
-                        ]
-                        vector += pairInfor
+                vector = (-np.log(pair_slice)).flatten()
             else:
                 raise ValueError(f"Unknown target metric: {self.target_metric}")
             # G and A depend only on n_labels (built once outside loop) and the
@@ -397,25 +390,14 @@ class Search_BOParOs:
         predicted_Y = []
         predicted_partial_orders = []
         prediction_with_partial_abstentions = []
+        # See PRE_ORDER above for the triu_indices vectorisation rationale.
+        ii, jj = np.triu_indices(self.n_labels, k=1)
         for n in range(self.n_instances):
-            vector = []
-            # Ndarray access; see PRE_ORDER above for the same pattern.
+            pair_slice = self.pairwise_probabilistic_predictions[ii, jj, n, :]
             if self.target_metric == TargetMetric.Hamming:
-                for i in range(self.n_labels - 1):
-                    for j in range(i + 1, self.n_labels):
-                        pairInfor = [
-                            -self.pairwise_probabilistic_predictions[i, j, n, l]
-                            for l in range(3)
-                        ]
-                        vector += pairInfor
+                vector = (-pair_slice).flatten()
             elif self.target_metric == TargetMetric.Subset:
-                for i in range(self.n_labels - 1):
-                    for j in range(i + 1, self.n_labels):
-                        pairInfor = [
-                            -np.log(self.pairwise_probabilistic_predictions[i, j, n, l])
-                            for l in range(3)
-                        ]
-                        vector += pairInfor
+                vector = (-np.log(pair_slice)).flatten()
             else:
                 raise ValueError(f"Unknown target metric: {self.target_metric}")
             # G and A are loop invariants — see PRE_ORDER above for the same fix.
