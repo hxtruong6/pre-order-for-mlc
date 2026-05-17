@@ -196,15 +196,15 @@ class PredictBOPOs:
                     ]:
                         # Check this label existing in the training set
                         if self.single_label_pair[f"{k_1}_{k_2}"] == 0:
-                            voting_scores[k_1, :] += [1 for n in range(n_instances)]
+                            voting_scores[k_1, :] += 1
                         else:  # None will be handle in below with n_classes > 1
-                            voting_scores[k_2, :] += [1 for n in range(n_instances)]
+                            voting_scores[k_2, :] += 1
                     else:
                         predicted_class = clf.predict(X[:2])  # :2 means first 2 instances
                         if predicted_class[0] == 0:
-                            voting_scores[k_1, :] += [1 for n in range(n_instances)]
+                            voting_scores[k_1, :] += 1
                         else:
-                            voting_scores[k_2, :] += [1 for n in range(n_instances)]
+                            voting_scores[k_2, :] += 1
                 else:  # for classes > 1
                     voting_scores[k_1, :] += probabilistic_predictions[:, 0]
                     voting_scores[k_2, :] += probabilistic_predictions[:, 1]
