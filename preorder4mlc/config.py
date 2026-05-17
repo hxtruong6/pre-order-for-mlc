@@ -85,7 +85,7 @@ class ConfigManager:
             ]
         # Default is RF (paper-equivalent). LightGBM is opt-in: pass
         # --base_learner LightGBM on the CLI or call ConfigManager directly
-        # with a different list. See scripts/ablation_base_learner.py for
+        # with a different list. See scripts/ablations/ablation_base_learner.py for
         # the A/B/C/D comparison we use to decide whether to adopt LightGBM.
         BASE_LEARNERS = [BaseLearnerName.RF]
         ALGORITHMS = [

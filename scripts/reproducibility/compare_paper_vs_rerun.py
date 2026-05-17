@@ -7,7 +7,7 @@ import csv
 import re
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parent.parent.parent
 SUMMARY_DIR = ROOT / "results" / "final_20260514_v2_summary"
 OUT_DIR = ROOT / "results" / "comparison_paper_vs_rerun"
 
@@ -109,7 +109,7 @@ def main():
         # Run extractor
         import subprocess
         subprocess.run(
-            ["python", str(ROOT / "scripts" / "extract_paper_tables.py"),
+            ["python", str(ROOT / "scripts" / "reproducibility" / "extract_paper_tables.py"),
              str(start), str(end), str(csv_path)],
             check=True,
         )

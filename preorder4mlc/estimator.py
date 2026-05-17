@@ -32,7 +32,7 @@ number_of_cores: int = os.cpu_count() if os.cpu_count() is not None else 1  # ty
 # Opt-in: default OFF so existing pipelines / paper-equivalent runs are
 # unchanged. Enable per-run via env (PREORDER_CALIBRATE=1) or constructor
 # (Estimator(name, calibrate=True)). The A/B/C/D ablation in
-# scripts/ablation_base_learner.py decides whether to flip the default.
+# scripts/ablations/ablation_base_learner.py decides whether to flip the default.
 CALIBRATE_PROBAS = os.environ.get("PREORDER_CALIBRATE", "0") not in ("0", "false", "False")
 CALIBRATION_METHOD = os.environ.get("PREORDER_CALIBRATION_METHOD", "isotonic")
 CALIBRATION_CV = int(os.environ.get("PREORDER_CALIBRATION_CV", "3"))

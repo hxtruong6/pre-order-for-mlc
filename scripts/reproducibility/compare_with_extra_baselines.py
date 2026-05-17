@@ -8,7 +8,7 @@ import csv
 import re
 from pathlib import Path
 
-ROOT = Path("/Users/xuantruong/Documents/WORK/RESEARCH/preorders4MLC")
+ROOT = Path(__file__).resolve().parent.parent.parent
 SUMMARY_DIR = ROOT / "results" / "final_20260514_v2_summary"
 
 DATASETS = ["GpositivePseAAC", "VirusPseAAC", "emotions", "CHD_49",

@@ -25,7 +25,7 @@ from preorder4mlc.datasets4experiments import Datasets4Experiments
 from preorder4mlc.evaluation_metric import EvaluationMetric
 from preorder4mlc.inference_models import PredictBOPOs, PreferenceOrder
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parent.parent.parent
 
 
 def _rss_mb() -> float:
