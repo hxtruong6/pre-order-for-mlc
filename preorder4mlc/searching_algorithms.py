@@ -83,8 +83,10 @@ class Search_BOPreOs:
                         vector += pairInfor
             else:
                 raise ValueError(f"Unknown target metric: {self.target_metric}")
-            Gtest = np.array(G)
-            Atest = np.array(A)
+            # G and A depend only on n_labels (built once outside loop) and the
+            # downstream _reasoning_procedure passes them to cvxopt.matrix() which
+            # allocates a fresh cvxopt object — so the np.array(G/A) copies here
+            # were dead. For K=101 mediamill this avoided n_test × 161 GB allocs.
             (
                 hard_prediction,
                 predicted_preorder,
@@ -93,9 +95,9 @@ class Search_BOPreOs:
                 vector,
                 indices_vector,
                 self.n_labels,
-                Gtest,
+                G,
                 h,
-                Atest,
+                A,
                 b,
                 I,
                 B,
@@ -413,8 +415,7 @@ class Search_BOParOs:
                         vector += pairInfor
             else:
                 raise ValueError(f"Unknown target metric: {self.target_metric}")
-            Gtest = np.array(G)
-            Atest = np.array(A)
+            # G and A are loop invariants — see PRE_ORDER above for the same fix.
             (
                 hard_prediction,
                 predicted_partial_order,
@@ -422,9 +423,9 @@ class Search_BOParOs:
             ) = self._reasoning_procedure_PARTIAL_ORDER(
                 vector,
                 indices_vector,
-                Gtest,
+                G,
                 h,
-                Atest,
+                A,
                 b,
                 I,
                 B,
