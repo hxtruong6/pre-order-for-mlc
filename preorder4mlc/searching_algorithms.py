@@ -9,13 +9,24 @@ binary vector and partial-abstention prediction. The two classes expose
 inference algorithms IA1-IA8 reported in the paper.
 """
 
+import os
+
 import numpy as np
 from cvxopt import matrix
 from cvxopt.glpk import ilp
+from joblib import Parallel, delayed
 from numpy import array
 
 from preorder4mlc.constants import TargetMetric
 from preorder4mlc.utils.suppress import suppress_output
+
+# Parallelism for per-instance ILP solves. Loky backend (process-based) is
+# safe because cvxopt/GLPK keeps solver state per process. Default n_jobs=1
+# preserves the previous sequential behavior; set PREORDER_SEARCH_N_JOBS=-1
+# (or any joblib-compatible value) to parallelize across test instances.
+# Parallel pays a per-task pickle/IPC cost (~ms) so it's only a win when
+# n_instances and the per-solve cost are both non-trivial.
+_SEARCH_N_JOBS = int(os.environ.get("PREORDER_SEARCH_N_JOBS", "1"))
 
 
 class Search_BOPreOs:
@@ -70,42 +81,42 @@ class Search_BOPreOs:
         # the old append-per-l loop, so `vector` ordering — and hence the
         # downstream `indices_vector` mapping — is unchanged.
         ii, jj = np.triu_indices(self.n_labels, k=1)
-        for n in range(self.n_instances):
-            pair_slice = self.pairwise_probabilistic_predictions[ii, jj, n, :]
-            if self.target_metric == TargetMetric.Hamming:
-                vector = (-pair_slice).flatten()
-            elif self.target_metric == TargetMetric.Subset:
-                vector = (-np.log(pair_slice)).flatten()
-            else:
-                raise ValueError(f"Unknown target metric: {self.target_metric}")
-            # G and A depend only on n_labels (built once outside loop) and the
-            # downstream _reasoning_procedure passes them to cvxopt.matrix() which
-            # allocates a fresh cvxopt object — so the np.array(G/A) copies here
-            # were dead. For K=101 mediamill this avoided n_test × 161 GB allocs.
-            (
-                hard_prediction,
-                predicted_preorder,
-                prediction_with_partial_abstention,
-            ) = self._reasoning_procedure_PRE_ORDER(
-                vector,
-                indices_vector,
-                self.n_labels,
-                G,
-                h,
-                A,
-                b,
-                I,
-                B,
+        # Per-instance ILP solves are independent — wrap in joblib.Parallel.
+        # With _SEARCH_N_JOBS=1 (default) this is a thin wrapper that runs
+        # in-process, equivalent to the prior for-loop. With higher n_jobs,
+        # loky forks worker processes; cvxopt/GLPK is process-safe.
+        results = Parallel(n_jobs=_SEARCH_N_JOBS)(
+            delayed(self._solve_one_PRE_ORDER)(
+                n, ii, jj, indices_vector, G, h, A, b, I, B
             )
-
-            predicted_Y.append(hard_prediction)
-            predicted_preorders.append(predicted_preorder)
-            prediction_with_partial_abstentions.append(prediction_with_partial_abstention)
+            for n in range(self.n_instances)
+        )
+        predicted_Y = [r[0] for r in results]
+        predicted_preorders = [r[1] for r in results]
+        prediction_with_partial_abstentions = [r[2] for r in results]
         return (
             predicted_Y,
             predicted_preorders,
             indices_vector,
             prediction_with_partial_abstentions,
+        )
+
+    def _solve_one_PRE_ORDER(self, n, ii, jj, indices_vector, G, h, A, b, I, B):
+        """Compute the cost vector for instance n and run the ILP reasoning.
+
+        Extracted to a method so joblib.Parallel can dispatch it per-instance.
+        G/h/A/b/I/B are loop-invariant inputs (built once outside the loop in
+        PRE_ORDER); indices_vector / ii / jj are precomputed mappings.
+        """
+        pair_slice = self.pairwise_probabilistic_predictions[ii, jj, n, :]
+        if self.target_metric == TargetMetric.Hamming:
+            vector = (-pair_slice).flatten()
+        elif self.target_metric == TargetMetric.Subset:
+            vector = (-np.log(pair_slice)).flatten()
+        else:
+            raise ValueError(f"Unknown target metric: {self.target_metric}")
+        return self._reasoning_procedure_PRE_ORDER(
+            vector, indices_vector, self.n_labels, G, h, A, b, I, B
         )
 
     def _encode_parameters_PRE_ORDER(self, indices_vector):
@@ -392,37 +403,37 @@ class Search_BOParOs:
         prediction_with_partial_abstentions = []
         # See PRE_ORDER above for the triu_indices vectorisation rationale.
         ii, jj = np.triu_indices(self.n_labels, k=1)
-        for n in range(self.n_instances):
-            pair_slice = self.pairwise_probabilistic_predictions[ii, jj, n, :]
-            if self.target_metric == TargetMetric.Hamming:
-                vector = (-pair_slice).flatten()
-            elif self.target_metric == TargetMetric.Subset:
-                vector = (-np.log(pair_slice)).flatten()
-            else:
-                raise ValueError(f"Unknown target metric: {self.target_metric}")
-            # G and A are loop invariants — see PRE_ORDER above for the same fix.
-            (
-                hard_prediction,
-                predicted_partial_order,
-                prediction_with_partial_abstention,
-            ) = self._reasoning_procedure_PARTIAL_ORDER(
-                vector,
-                indices_vector,
-                G,
-                h,
-                A,
-                b,
-                I,
-                B,
+        # Per-instance ILP solves wrapped in joblib.Parallel — see PRE_ORDER above.
+        results = Parallel(n_jobs=_SEARCH_N_JOBS)(
+            delayed(self._solve_one_PARTIAL_ORDER)(
+                n, ii, jj, indices_vector, G, h, A, b, I, B
             )
-            predicted_Y.append(hard_prediction)
-            predicted_partial_orders.append(predicted_partial_order)
-            prediction_with_partial_abstentions.append(prediction_with_partial_abstention)
+            for n in range(self.n_instances)
+        )
+        predicted_Y = [r[0] for r in results]
+        predicted_partial_orders = [r[1] for r in results]
+        prediction_with_partial_abstentions = [r[2] for r in results]
         return (
             predicted_Y,
             predicted_partial_orders,
             indices_vector,
             prediction_with_partial_abstentions,
+        )
+
+    def _solve_one_PARTIAL_ORDER(self, n, ii, jj, indices_vector, G, h, A, b, I, B):
+        """Per-instance helper for PARTIAL_ORDER joblib dispatch.
+
+        See _solve_one_PRE_ORDER for the same pattern in the sibling class.
+        """
+        pair_slice = self.pairwise_probabilistic_predictions[ii, jj, n, :]
+        if self.target_metric == TargetMetric.Hamming:
+            vector = (-pair_slice).flatten()
+        elif self.target_metric == TargetMetric.Subset:
+            vector = (-np.log(pair_slice)).flatten()
+        else:
+            raise ValueError(f"Unknown target metric: {self.target_metric}")
+        return self._reasoning_procedure_PARTIAL_ORDER(
+            vector, indices_vector, G, h, A, b, I, B
         )
 
     def _encode_parameters_PARTIAL_ORDER(self, indices_vector):
