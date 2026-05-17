@@ -62,8 +62,8 @@ class BaseClassifiers:
             # Example: Y[:, k] = [1, 0, 1, 0] -> MCC_y = [0, 1, 0, 1].
             MCC_y = np.logical_not(Y[:, k]).astype(int)
             clr_dataset_classifier[str(k)] = {  # type: ignore
-                "X": X.copy(),
-                "Y": MCC_y.copy(),
+                "X": X,
+                "Y": MCC_y,
             }
 
         log(
@@ -153,9 +153,12 @@ class BaseClassifiers:
                         MCC_y.append(0)
                     elif Y[n, i] == 0 and Y[n, j] == 1:
                         MCC_y.append(1)
+                # X is read-only input for sklearn/LightGBM fit; share the
+                # reference across pairs instead of copying. For K=101 (mediamill)
+                # that's 5050 copies of a 42 MB array (~212 GB) avoided.
                 dataset_classifier[key] = {  # type: ignore
-                    "X": X.copy(),
-                    "Y": MCC_y.copy(),
+                    "X": X,
+                    "Y": MCC_y,
                 }
         log(
             INFO,
@@ -198,9 +201,11 @@ class BaseClassifiers:
                     elif Y[n, i] == 0 and Y[n, j] == 1:
                         MCC_y.append(1)
 
+                # X is read-only input for sklearn/LightGBM fit; share the
+                # reference across pairs instead of copying.
                 dataset_classifier[key] = {  # type: ignore
-                    "X": X.copy(),
-                    "Y": MCC_y.copy(),
+                    "X": X,
+                    "Y": MCC_y,
                 }
         log(
             INFO,
