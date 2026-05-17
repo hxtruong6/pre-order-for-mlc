@@ -10,12 +10,12 @@ Goal: improve PA/PR algorithm beyond baselines (ECC, LP, ML-kNN) — focus on te
 
 ## Three workstreams
 
-### #2 Cost-sensitive Hamming (existing theory → code)
-**Why**: Paper appendix §G already derives cost-sensitive Hamming; baselines like ECC dominate on plain Hamming by predicting majority-0. With per-label cost ratio FP/FN, PA/PR can close the Hamming gap without giving up F1/AFRD/MFRD.
-
-**Files**:
-- `preorder4mlc/evaluation_metric.py` — add `cost_sensitive_hamming_accuracy(pred, true, cost_fp, cost_fn)`
-- `preorder4mlc/inference_models.py` / `searching_algorithms.py` — cost-aware order→binary extraction
+### #2 Cost-sensitive Hamming — DROPPED
+**Decision (2026-05-17)**: dropped. Cost-sensitive Hamming decomposes per-label, so
+the Bayes-optimal predictor is just thresholding marginals at τ = c_FP/(c_FP+c_FN).
+PA/PR has no theoretical advantage over BR on this metric — label dependency
+(PA/PR's strength) is only useful for joint-loss metrics like F1 and Subset 0/1.
+Code added under commit 703ec8f was reverted.
 
 ### #3 LightGBM base learner + calibration
 **Why**: Current pairwise probability estimator Pij uses sklearn RF with default settings. LightGBM with isotonic calibration gives better-calibrated Pij → tighter orders → better predictions on all metrics.

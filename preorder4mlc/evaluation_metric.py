@@ -40,10 +40,6 @@ class EvaluationMetricName(Enum):
     CV_IR = "cv_ir"  # coefficient of variation of imbalance ratio (for whole dataset)
     MFRD = "mfrd"  # Maximum False Rate Difference
     AFRD = "afrd"  # Average False Rate Difference
-    # Cost-sensitive Hamming (paper Appendix G).
-    # Penalises FP and FN asymmetrically; reduces to plain Hamming when c_FP = c_FN.
-    CS_HAMMING_LOSS = "cs_hamming_loss"  # cost-weighted misclassifications / (K * c_max)
-    CS_HAMMING_ACCURACY = "cs_hamming_accuracy"  # 1 - CS_HAMMING_LOSS
     # Label-based aggregations (added for major revision)
     MACRO_F1 = "macro_f1"
     MICRO_F1 = "micro_f1"
@@ -90,40 +86,6 @@ class EvaluationMetric:
 
     def hamming_accuracy(self, predicted_Y, true_Y) -> float:
         return 1 - hamming_loss(predicted_Y, true_Y)  # type: ignore
-
-    def cs_hamming_loss(
-        self,
-        predicted_Y: np.ndarray,
-        true_Y: np.ndarray,
-        cost_fp: float = 1.0,
-        cost_fn: float = 1.0,
-    ) -> float:
-        """Cost-sensitive Hamming loss (paper Appendix G).
-
-        Per-instance per-label loss is c_FP * 1{ŷ=1, y=0} + c_FN * 1{ŷ=0, y=1}.
-        We average over instances and labels, then normalise by max(c_FP, c_FN)
-        so the metric is bounded in [0, 1] and reduces to plain Hamming loss
-        when c_FP = c_FN.
-        """
-        predicted_Y = np.asarray(predicted_Y)
-        true_Y = np.asarray(true_Y)
-        fp = ((predicted_Y == 1) & (true_Y == 0)).astype(float)
-        fn = ((predicted_Y == 0) & (true_Y == 1)).astype(float)
-        weighted = cost_fp * fp + cost_fn * fn
-        denom = max(cost_fp, cost_fn)
-        if denom == 0:
-            return 0.0
-        return float(weighted.mean() / denom)
-
-    def cs_hamming_accuracy(
-        self,
-        predicted_Y: np.ndarray,
-        true_Y: np.ndarray,
-        cost_fp: float = 1.0,
-        cost_fn: float = 1.0,
-    ) -> float:
-        """1 - cost-sensitive Hamming loss (see :meth:`cs_hamming_loss`)."""
-        return 1.0 - self.cs_hamming_loss(predicted_Y, true_Y, cost_fp, cost_fn)
 
     def f1(self, predicted_Y: np.ndarray, true_Y: np.ndarray) -> float:
         f1 = 0
