@@ -70,7 +70,7 @@ class BaseClassifiers:
             INFO,
             f"\t - Training for {len(clr_dataset_classifier.keys())} calibrated_classifiers with {self.name}",
         )
-        # run parraellly fit for each pair of labels
+        # run fit in parallel for each pair of labels
         classifiers = Parallel(n_jobs=-1)(
             delayed(train_classifier)(
                 clr_dataset_classifier[str(k)]["X"],
@@ -164,7 +164,7 @@ class BaseClassifiers:
             INFO,
             f"\t - Training for {len(dataset_classifier.keys())} pairs with {self.name}",
         )
-        # run parraellly fit for each pair of labels
+        # run fit in parallel for each pair of labels
         classifiers = Parallel(n_jobs=-1)(
             delayed(train_classifier)(
                 dataset_classifier[key]["X"],
@@ -211,7 +211,7 @@ class BaseClassifiers:
             INFO,
             f"\t - Training {len(dataset_classifier.keys())} pairs with {self.name}",
         )
-        # run parraellly fit for each pair of labels
+        # run fit in parallel for each pair of labels
         classifiers = Parallel(n_jobs=-1)(
             delayed(train_classifier)(
                 dataset_classifier[key]["X"],

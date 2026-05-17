@@ -7,7 +7,7 @@ import csv
 import re
 from pathlib import Path
 
-ROOT = Path("/Users/xuantruong/Documents/WORK/RESEARCH/preorders4MLC")
+ROOT = Path(__file__).resolve().parent.parent
 SUMMARY_DIR = ROOT / "results" / "final_20260514_v2_summary"
 OUT_DIR = ROOT / "results" / "comparison_paper_vs_rerun"
 
