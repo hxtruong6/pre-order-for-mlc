@@ -61,8 +61,11 @@ class Estimator:
         elif self.name == BaseLearnerName.LightGBM.value:
             return LGBMClassifier(
                 random_state=RANDOM_STATE,
-                n_jobs=int(number_of_cores - 1),
-                # n_jobs=16,
+                # n_jobs=1 because LGBM is always called inside a
+                # joblib.Parallel(n_jobs=-1) loop in base_classifiers.py and the
+                # ECC/LP path. Using n_jobs=cores caused thread oversubscription
+                # (~5x slower on yeast); see scripts/ablations/NOTES.md.
+                n_jobs=1,
                 verbose=-1,
                 num_leaves=20,  # Moderate complexity
                 max_depth=6,
