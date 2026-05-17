@@ -24,8 +24,37 @@ import scipy.sparse as sparse
 # Monkey-patch MLkNN._compute_cond for the modern sklearn API used in env.
 import skmultilearn.adapt.mlknn as _mlknn_mod
 from lightgbm import LGBMClassifier
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import NearestNeighbors
 from skmultilearn.utils import get_matrix_in_format
+
+
+def _make_base_learner(name: str, random_state=None):
+    """Return a fresh base-learner instance for ECC / LP wrappers.
+
+    Choices:
+        - 'rf'   : RandomForestClassifier with paper-equivalent defaults.
+        - 'lgbm' : LGBMClassifier tuned for small/imbalanced multi-label tasks.
+
+    'rf' is the default so this script reproduces the original paper
+    baseline numbers byte-for-byte; pass --base_learner lgbm to compare
+    PA/PR + calibration against a stronger ECC/LP base.
+    """
+    if name == "rf":
+        return RandomForestClassifier(random_state=random_state)
+    if name == "lgbm":
+        return LGBMClassifier(
+            n_estimators=100,
+            random_state=random_state,
+            n_jobs=-1,
+            verbose=-1,
+            num_leaves=20,
+            max_depth=6,
+            learning_rate=0.1,
+            min_child_samples=5,
+            is_unbalance=True,
+        )
+    raise ValueError(f"Unknown base_learner: {name!r} (choose 'rf' or 'lgbm')")
 
 
 def _patched_compute_cond(self, X, y):
@@ -73,7 +102,6 @@ from preorder4mlc.datasets4experiments import Datasets4Experiments  # noqa: E402
 NOISY_RATES = [0.0, 0.1, 0.2, 0.3]
 N_REPEAT = 5
 N_FOLDS = 5
-BASE_LEARNER = "RF"
 
 
 def _to_dense_int(M) -> np.ndarray:
@@ -88,6 +116,7 @@ def _ecc_predict(
     X_test: np.ndarray,
     n_ensembles: int = 10,
     rng_seed: int = RANDOM_STATE,
+    base_learner: str = "rf",
 ) -> tuple[np.ndarray, np.ndarray]:
     """Ensemble of Classifier Chains with random orders + bagging-style sampling.
 
@@ -112,17 +141,7 @@ def _ecc_predict(
         Y_bs = Y_train[idx][:, perm]
 
         chain = ClassifierChain(
-            classifier=LGBMClassifier(
-                n_estimators=100,
-                random_state=rng_seed + k,
-                n_jobs=-1,
-                verbose=-1,
-                num_leaves=20,
-                max_depth=6,
-                learning_rate=0.1,
-                min_child_samples=5,
-                is_unbalance=True,
-            ),
+            classifier=_make_base_learner(base_learner, random_state=rng_seed + k),
             require_dense=[True, True],
         )
         chain.fit(X_bs, Y_bs)
@@ -202,6 +221,7 @@ def train_one(
     X_train: np.ndarray,
     Y_train: np.ndarray,
     X_test: np.ndarray,
+    base_learner: str = "rf",
 ) -> tuple[np.ndarray, np.ndarray]:
     """Train one baseline and return (Y_pred, Y_proba).
 
@@ -232,17 +252,7 @@ def train_one(
 
     if algo == "lp":
         clf = LabelPowerset(
-            classifier=LGBMClassifier(
-                n_estimators=100,
-                random_state=RANDOM_STATE,
-                n_jobs=-1,
-                verbose=-1,
-                num_leaves=20,
-                max_depth=6,
-                learning_rate=0.1,
-                min_child_samples=5,
-                is_unbalance=True,
-            ),
+            classifier=_make_base_learner(base_learner, random_state=RANDOM_STATE),
             require_dense=[True, True],
         )
         clf.fit(X_train, Y_train)
@@ -261,12 +271,12 @@ def train_one(
         return Y_pred, Y_proba
 
     if algo == "ecc":
-        return _ecc_predict(X_train, Y_train, X_test, n_ensembles=10)
+        return _ecc_predict(X_train, Y_train, X_test, n_ensembles=10, base_learner=base_learner)
 
     raise ValueError(f"Unknown algorithm: {algo}")
 
 
-def run(dataset_key: str, results_dir: str, algo: str) -> None:
+def run(dataset_key: str, results_dir: str, algo: str, base_learner: str = "rf") -> None:
     basicConfig(level=INFO)
 
     dataset_cfg = ConfigManager.get_dataset_config(dataset_key)
@@ -293,7 +303,7 @@ def run(dataset_key: str, results_dir: str, algo: str) -> None:
                 )
             ):
                 t0 = time.time()
-                Y_pred, Y_proba = train_one(algo, X_train, Y_train, X_test)
+                Y_pred, Y_proba = train_one(algo, X_train, Y_train, X_test, base_learner=base_learner)
                 log(
                     INFO,
                     f"fold={fold+1} time={(time.time()-t0):.2f}s "
@@ -314,7 +324,7 @@ def run(dataset_key: str, results_dir: str, algo: str) -> None:
                     "repeat_time": repeat_time,
                     "fold": fold,
                     "dataset_name": dataset_cfg.name,
-                    "base_learner_name": BASE_LEARNER,
+                    "base_learner_name": base_learner.upper(),
                     "noisy_rate": noisy_rate,
                 }
                 results.append(record)
@@ -332,8 +342,16 @@ def main():
     p.add_argument("--dataset", required=True)
     p.add_argument("--results_dir", required=True)
     p.add_argument("--algorithm", required=True, choices=["mlknn", "ecc", "lp"])
+    p.add_argument(
+        "--base_learner",
+        choices=["rf", "lgbm"],
+        default="rf",
+        help="Base learner for ECC / LP wrappers. Default 'rf' reproduces "
+        "the original paper baseline; use 'lgbm' for a fair comparison "
+        "against PA/PR with PREORDER_CALIBRATE=1.",
+    )
     args = p.parse_args()
-    run(args.dataset, args.results_dir, args.algorithm)
+    run(args.dataset, args.results_dir, args.algorithm, base_learner=args.base_learner)
 
 
 if __name__ == "__main__":
