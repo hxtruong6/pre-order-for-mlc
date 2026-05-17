@@ -65,11 +65,13 @@ class Search_BOPreOs:
         prediction_with_partial_abstentions = []
         for n in range(self.n_instances):
             vector = []
+            # pairwise_probabilistic_predictions is a 4D ndarray (K, K, n_test, n_classes).
+            # Old dict-lookup `dict[f"{i}_{j}_{n}_{l}"]` becomes array[i, j, n, l].
             if self.target_metric == TargetMetric.Hamming:
                 for i in range(self.n_labels - 1):
                     for j in range(i + 1, self.n_labels):
                         pairInfor = [
-                            -self.pairwise_probabilistic_predictions[f"{i}_{j}_{n}_{l}"]
+                            -self.pairwise_probabilistic_predictions[i, j, n, l]
                             for l in range(4)
                         ]
                         vector += pairInfor
@@ -77,7 +79,7 @@ class Search_BOPreOs:
                 for i in range(self.n_labels - 1):
                     for j in range(i + 1, self.n_labels):
                         pairInfor = [
-                            -np.log(self.pairwise_probabilistic_predictions[f"{i}_{j}_{n}_{l}"])
+                            -np.log(self.pairwise_probabilistic_predictions[i, j, n, l])
                             for l in range(4)
                         ]
                         vector += pairInfor
@@ -397,11 +399,12 @@ class Search_BOParOs:
         prediction_with_partial_abstentions = []
         for n in range(self.n_instances):
             vector = []
+            # Ndarray access; see PRE_ORDER above for the same pattern.
             if self.target_metric == TargetMetric.Hamming:
                 for i in range(self.n_labels - 1):
                     for j in range(i + 1, self.n_labels):
                         pairInfor = [
-                            -self.pairwise_probabilistic_predictions[f"{i}_{j}_{n}_{l}"]
+                            -self.pairwise_probabilistic_predictions[i, j, n, l]
                             for l in range(3)
                         ]
                         vector += pairInfor
@@ -409,7 +412,7 @@ class Search_BOParOs:
                 for i in range(self.n_labels - 1):
                     for j in range(i + 1, self.n_labels):
                         pairInfor = [
-                            -np.log(self.pairwise_probabilistic_predictions[f"{i}_{j}_{n}_{l}"])
+                            -np.log(self.pairwise_probabilistic_predictions[i, j, n, l])
                             for l in range(3)
                         ]
                         vector += pairInfor

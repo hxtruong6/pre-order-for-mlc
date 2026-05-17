@@ -128,7 +128,15 @@ class PredictBOPOs:
 
         pairwise_predict_proba = self._parallel_pairwise_predict_proba(X, n_labels)
 
-        pairwise_probabilistic_predictions: dict[str, float] = {}
+        # Storage: 4D ndarray shape (K, K, n_test, n_classes). Only entries
+        # with i < j are populated; upper-triangular cells stay zero. Replaces
+        # the prior string-keyed dict ({f"{i}_{j}_{n}_{l}": float}), which
+        # spent ~150B per entry of Python overhead. For K=101 / n_test=8782
+        # this drops storage from ~26 GB to ~2.9 GB and saves the f-string
+        # construction cost on every read in searching_algorithms.py.
+        pairwise_probabilistic_predictions = np.zeros(
+            (n_labels, n_labels, n_test_instances, n_classes), dtype=float
+        )
         for i in range(n_labels - 1):
             for j in range(i + 1, n_labels):
                 key_classifier = f"{i}_{j}"
@@ -139,9 +147,12 @@ class PredictBOPOs:
                     n_classes=n_classes,
                 )
                 for n in range(n_test_instances):
-                    row = _regularize_proba_row(aligned[n], n_classes)
-                    for l in range(n_classes):
-                        pairwise_probabilistic_predictions[f"{i}_{j}_{n}_{l}"] = row[l]
+                    # _regularize_proba_row returns a length-n_classes list; the
+                    # per-row call is preserved to keep floating-point order of
+                    # operations identical to the pre-refactor code.
+                    pairwise_probabilistic_predictions[i, j, n, :] = (
+                        _regularize_proba_row(aligned[n], n_classes)
+                    )
         return pairwise_probabilistic_predictions
 
     def _parallel_pairwise_predict_proba(self, X, n_labels):
