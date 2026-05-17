@@ -50,6 +50,12 @@ class ConfigManager:
         "humanpseaac": DatasetConfig("HumanPseAAC", "HumanPseAAC.arff", 14),
         "gpositivepseaac": DatasetConfig("GpositivePseAAC", "GpositivePseAAC.arff", 4),
         "plantpseaac": DatasetConfig("PlantPseAAC", "PlantPseAAC.arff", 12),
+        # Medium-K datasets (K=19-53). Fit on commodity RAM; bridge the
+        # K-scaling story between paper datasets (K<=14) and large-K
+        # (K=101+). Source: cometa.ujaen.es (see data/README_LARGE_K.md).
+        "birds": DatasetConfig("birds", "birds.arff", 19),
+        "medical": DatasetConfig("medical", "medical.arff", 45),
+        "enron": DatasetConfig("enron", "enron.arff", 53),
         # Large-K datasets (added for the algorithm-improvement study).
         # ARFF files are NOT in the repo — download from COMETA / MULAN and
         # place under ./data/. See data/README_LARGE_K.md.

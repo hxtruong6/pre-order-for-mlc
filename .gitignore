@@ -29,7 +29,10 @@ CLAUDE.md
 # code-review-graph index
 .code-review-graph/
 
-# Large-K ARFFs (downloaded from COMETA — see data/README_LARGE_K.md)
+# Medium- and large-K ARFFs (downloaded from COMETA — see data/README_LARGE_K.md)
+data/birds.arff
+data/medical.arff
+data/enron.arff
 data/CAL500.arff
 data/mediamill.arff
 data/bibtex.arff

@@ -32,6 +32,9 @@ TARGET_IN_END_FILE_DATASETS = [
     "PlantGO.arff",
     "GpositivePseAAC.arff",
     "PlantPseAAC.arff",
+    # Medium-K additions (COMETA convention: labels at end of attribute list).
+    "enron.arff",
+    "medical.arff",
     # Large-K additions (COMETA convention: labels at end of attribute list).
     "CAL500.arff",
     "mediamill.arff",
