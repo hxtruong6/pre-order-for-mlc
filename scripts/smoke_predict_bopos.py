@@ -23,6 +23,29 @@ def _hash(obj) -> str:
     return hashlib.sha256(pickle.dumps(obj)).hexdigest()
 
 
+def _canonicalize_proba(proba):
+    """Return predict_proba output as a canonical (K, K, n_test, n_classes) ndarray.
+
+    PredictBOPOs.predict_proba returned dict[str, float] keyed by
+    f"{i}_{j}_{n}_{l}" before b15dbae, and ndarray after. The hashed
+    smoke pickle must be stable across that refactor so the recorded
+    baseline hash isn't invalidated by container-only changes.
+    """
+    if isinstance(proba, np.ndarray):
+        return proba
+    # legacy dict[str, float] path
+    keys = list(proba.keys())
+    parts = [tuple(map(int, k.split("_"))) for k in keys]
+    K = max(max(p[0], p[1]) for p in parts) + 1
+    N = max(p[2] for p in parts) + 1
+    C = max(p[3] for p in parts) + 1
+    arr = np.zeros((K, K, N, C), dtype=float)
+    for k, v in proba.items():
+        i, j, n, l = map(int, k.split("_"))
+        arr[i, j, n, l] = v
+    return arr
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--out_dir", required=True)
@@ -58,7 +81,7 @@ def main() -> None:
         m = PredictBOPOs(args.base_learner, preference_order=po)
         m.fit(X_train, Y_train)
         proba = m.predict_proba(X_test, n_labels)
-        outputs[f"predict_proba_{po.name}"] = proba
+        outputs[f"predict_proba_{po.name}"] = _canonicalize_proba(proba)
 
         for metric in [TargetMetric.Hamming, TargetMetric.Subset]:
             for h in [None, 2]:
