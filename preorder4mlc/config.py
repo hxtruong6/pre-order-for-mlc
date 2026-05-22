@@ -37,6 +37,11 @@ class TrainingConfig:
     total_repeat_times: int
     number_folds: int
     algorithms: list[AlgorithmType]  # Which algorithms to run
+    # When set, orchestrator skips repeats/folds whose index does not match.
+    # Result pickle filename is suffixed with _r<repeat>_f<fold> to keep
+    # split partials distinct; merge_split_results.py recombines them.
+    repeat_idx_filter: int | None = None
+    fold_idx_filter: int | None = None
 
 
 class ConfigManager:
@@ -56,6 +61,16 @@ class ConfigManager:
         "birds": DatasetConfig("birds", "birds.arff", 19),
         "medical": DatasetConfig("medical", "medical.arff", 45),
         "enron": DatasetConfig("enron", "enron.arff", 53),
+        # NIH ChestX-ray14: 8 of the 14 pathology labels retained (matches
+        # Wang et al. baseline); features are 512/1024-d pretrained CNN
+        # backbones extracted by the sibling inference_probabilistic_mlc repo.
+        # Symlinks under data/ point at the canonical .npy artifacts.
+        "chestxray_densenet": DatasetConfig(
+            "chestxray_densenet", "chestxray_densenet_features.npy", 8
+        ),
+        "chestxray_resnet": DatasetConfig(
+            "chestxray_resnet", "chestxray_resnet_features.npy", 8
+        ),
         # Large-K datasets (added for the algorithm-improvement study).
         # ARFF files are NOT in the repo — download from COMETA / MULAN and
         # place under ./data/. See data/README_LARGE_K.md.
@@ -94,12 +109,18 @@ class ConfigManager:
         # with a different list. See scripts/ablations/ablation_base_learner.py for
         # the A/B/C/D comparison we use to decide whether to adopt LightGBM.
         BASE_LEARNERS = [BaseLearnerName.RF]
+        bl_override = getattr(args, "base_learner", None)
+        if bl_override:
+            BASE_LEARNERS = [BaseLearnerName(bl_override)]
         ALGORITHMS = [
             AlgorithmType.BOPOS,
             AlgorithmType.CLR,
             AlgorithmType.BR,
             AlgorithmType.CC,
         ]
+        algo_override = getattr(args, "algorithm", None)
+        if algo_override:
+            ALGORITHMS = [AlgorithmType(algo_override)]
 
         return TrainingConfig(
             data_path="./data/",
@@ -109,4 +130,6 @@ class ConfigManager:
             total_repeat_times=5,
             number_folds=5,
             algorithms=ALGORITHMS,
+            repeat_idx_filter=getattr(args, "repeat_idx", None),
+            fold_idx_filter=getattr(args, "fold_idx", None),
         )

@@ -7,10 +7,12 @@ base learners, repeats, folds) is resolved through
 """
 
 import argparse
+import os
 import time
 from logging import INFO, basicConfig, log
 
-from preorder4mlc.config import ConfigManager
+from preorder4mlc.config import AlgorithmType, ConfigManager
+from preorder4mlc.constants import BaseLearnerName
 from preorder4mlc.training_orchestrator import TrainingOrchestrator
 
 basicConfig(level=INFO)
@@ -30,12 +32,50 @@ def parse_args() -> argparse.Namespace:
             "(single-noise run for slurm splitting)."
         ),
     )
+    parser.add_argument(
+        "--base_learner",
+        type=str,
+        default=None,
+        choices=[b.value for b in BaseLearnerName],
+        help="If set, override config.BASE_LEARNERS with this single learner.",
+    )
+    parser.add_argument(
+        "--solver",
+        type=str,
+        default=None,
+        choices=["glpk", "highs"],
+        help="MILP solver backend for the BOPOs ILP. Default: glpk.",
+    )
+    parser.add_argument(
+        "--algorithm",
+        type=str,
+        default=None,
+        choices=[a.value for a in AlgorithmType],
+        help=(
+            "If set, override config.ALGORITHMS with this single algorithm "
+            "(single-algorithm run for slurm splitting)."
+        ),
+    )
+    parser.add_argument(
+        "--repeat_idx",
+        type=int,
+        default=None,
+        help="If set, run only this repeat index (0-based, single-repeat split).",
+    )
+    parser.add_argument(
+        "--fold_idx",
+        type=int,
+        default=None,
+        help="If set, run only this fold index (0-based, single-fold split).",
+    )
     return parser.parse_args()
 
 
 def main() -> None:
     """Run the training pipeline for one dataset."""
     args = parse_args()
+    if args.solver:
+        os.environ["PREORDER_SOLVER"] = args.solver
     log(INFO, f"Arguments: {args}")
 
     config_manager = ConfigManager()

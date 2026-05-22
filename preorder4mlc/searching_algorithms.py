@@ -12,12 +12,11 @@ inference algorithms IA1-IA8 reported in the paper.
 import os
 
 import numpy as np
-from cvxopt import matrix
-from cvxopt.glpk import ilp
 from joblib import Parallel, delayed
 from numpy import array
 
 from preorder4mlc.constants import TargetMetric
+from preorder4mlc.solvers import solve_milp
 from preorder4mlc.utils.suppress import suppress_output
 
 # Parallelism for per-instance ILP solves. Loky backend (process-based) is
@@ -342,7 +341,7 @@ class Search_BOPreOs:
             c[ind, 0] = vector[ind]
 
         with suppress_output():
-            _, x = ilp(matrix(c), matrix(G), matrix(h), matrix(A), matrix(b), I, B)
+            _, x = solve_milp(c, G, h, A, b, I, B)
 
         optX = array(x)
 
@@ -629,7 +628,7 @@ class Search_BOParOs:
         for ind in range(len(vector)):
             c[ind, 0] = vector[ind]
         with suppress_output():
-            _, x = ilp(matrix(c), matrix(G), matrix(h), matrix(A), matrix(b), I, B)
+            _, x = solve_milp(c, G, h, A, b, I, B)
         optX = array(x)
 
         # Let both partial and preorder make the hard predictions in similar ways ...

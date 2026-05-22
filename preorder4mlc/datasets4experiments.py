@@ -73,6 +73,21 @@ class Datasets4Experiments:
         for file_name, n_labels in zip(self.data_files, self.n_labels_set):
             full_path = f"{self.data_path}{file_name}"
             log(INFO, f"Loading dataset from {full_path}")
+            # NPY path: dataset_name ends with "_features.npy"; sibling labels
+            # file lives at the same path with "_features" replaced by "_labels".
+            if file_name.endswith("_features.npy"):
+                X = np.load(full_path).astype(np.float32)
+                labels_path = full_path.replace("_features.npy", "_labels.npy")
+                Y = np.load(labels_path).astype(int)
+                if Y.shape[1] != n_labels:
+                    raise ValueError(
+                        f"{file_name}: labels file has {Y.shape[1]} columns, "
+                        f"expected n_labels_set={n_labels}"
+                    )
+                Y = np.where(Y < 0, 0, Y)
+                df_name = file_name.removesuffix("_features.npy")
+                self.datasets.append((X, Y, df_name))
+                continue
             try:
                 data, _meta = arff.loadarff(full_path)
                 df = pd.DataFrame(data)

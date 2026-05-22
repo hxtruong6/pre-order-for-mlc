@@ -110,18 +110,26 @@ class BaseClassifiers:
             f"\t - Training for {len(dataset_classifier.keys())} pairs with {self.name}",
         )
 
+        # Skip empty pairs (both labels always equal in train, e.g. rare
+        # labels in a small CV fold). Their classifiers would error on RF.fit;
+        # downstream predict_CLR guards against missing keys.
+        trainable_keys = [k for k in dataset_classifier.keys() if len(dataset_classifier[k]["Y"]) > 0]
+        skipped = len(dataset_classifier) - len(trainable_keys)
+        if skipped:
+            log(INFO, f"\t - Skipping {skipped} empty pairs (degenerate fold)")
+
         classifiers = Parallel(n_jobs=-1)(
             delayed(train_classifier)(
                 dataset_classifier[key]["X"],
                 dataset_classifier[key]["Y"],
                 self.name,
             )  # type: ignore
-            for key in dataset_classifier.keys()
+            for key in trainable_keys
         )
 
-        log(INFO, f"\t - Trained {len(dataset_classifier.keys())} classifiers")
+        log(INFO, f"\t - Trained {len(trainable_keys)} classifiers")
 
-        pairwise_classifiers = dict(zip(dataset_classifier.keys(), classifiers))  # type: ignore
+        pairwise_classifiers = dict(zip(trainable_keys, classifiers))  # type: ignore
 
         for i in range(n_labels - 1):
             for j in range(i + 1, n_labels):
