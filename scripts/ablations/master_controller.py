@@ -48,20 +48,10 @@ PREORDER_CAP = 36     # max preorder tasks in queue (40 def-QOS cap, 4 buffer fo
 SLURM_USER = os.environ["USER"]
 
 DATASETS = {
-    "medical": {
-        "results_dir": "results/full_medical_split",
-        "mem": "160G",
+    "enron": {
+        "results_dir": "results/full_enron_split",
+        "mem": "256G",
         "time": "2-00:00:00",
-    },
-    "chestxray_densenet": {
-        "results_dir": "results/full_chestxray_densenet_split",
-        "mem": "48G",
-        "time": "1-00:00:00",
-    },
-    "chestxray_resnet": {
-        "results_dir": "results/full_chestxray_resnet_split",
-        "mem": "48G",
-        "time": "1-00:00:00",
     },
 }
 NOISES = ["0.0", "0.1", "0.2", "0.3"]
