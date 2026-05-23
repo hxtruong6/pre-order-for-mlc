@@ -24,7 +24,7 @@ import re
 import sys
 
 
-_SUFFIXES = ["", "_clr", "_br", "_cc"]
+_SUFFIXES = ["", "_clr", "_br", "_cc", "_mlknn", "_ecc", "_lp"]
 
 
 def _merge_one(results_dir: str, dataset_name: str, noisy_rate: float, suffix: str) -> int:

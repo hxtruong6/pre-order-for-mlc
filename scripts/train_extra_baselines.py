@@ -290,9 +290,19 @@ def run(
     results_dir: str,
     algo: str,
     base_learner: str = "rf",
-    noise_rate: float | None = None,
+    noisy_rate: float | None = None,
+    repeat: int | None = None,
+    fold: int | None = None,
     is_unbalance: bool = True,
 ) -> None:
+    """Run extra baseline.
+
+    Default (no noisy_rate/repeat/fold): full sweep, one pickle per noise level.
+    Per-noise mode (noisy_rate only): one pickle for that noise level only.
+    Split mode (noisy_rate AND repeat AND fold): run a single (R,F) cell and
+    write ``dataset_<name>_noisy_<r>_<algo>[_lgbm]_r<R>_f<F>.pkl`` so the
+    existing merge_split_results.py can consolidate them.
+    """
     basicConfig(level=INFO)
 
     dataset_cfg = ConfigManager.get_dataset_config(dataset_key)
@@ -304,14 +314,31 @@ def run(
     )
     exp.load_datasets()
 
-    rates = [noise_rate] if noise_rate is not None else NOISY_RATES
+    bl_suffix = f"_{base_learner}" if base_learner != "rf" else ""
+    split_mode = noisy_rate is not None and repeat is not None and fold is not None
+    if split_mode:
+        out = Path(results_dir) / (
+            f"dataset_{dataset_cfg.name.lower()}_noisy_{noisy_rate}_{algo}{bl_suffix}"
+            f"_r{repeat}_f{fold}.pkl"
+        )
+        if out.exists():
+            log(INFO, f"[skip] {out} already exists")
+            return
+        rates = [noisy_rate]
+    elif noisy_rate is not None:
+        rates = [noisy_rate]
+    else:
+        rates = NOISY_RATES
+
     for noisy_rate in rates:
         log(INFO, f"=== {dataset_cfg.name} | {algo} | noisy_rate={noisy_rate} ===")
         results = []
 
         for repeat_time in range(N_REPEAT):
+            if split_mode and repeat_time != repeat:
+                continue
             log(INFO, f"Repeat {repeat_time+1}/{N_REPEAT}")
-            for fold, (X_train, Y_train, X_test, Y_test) in enumerate(
+            for fold_idx, (X_train, Y_train, X_test, Y_test) in enumerate(
                 exp.kfold_split_with_noise(
                     dataset_index=0,
                     n_splits=N_FOLDS,
@@ -319,11 +346,13 @@ def run(
                     random_state=RANDOM_STATE,
                 )
             ):
+                if split_mode and fold_idx != fold:
+                    continue
                 t0 = time.time()
                 Y_pred, Y_proba = train_one(algo, X_train, Y_train, X_test, base_learner=base_learner, is_unbalance=is_unbalance)
                 log(
                     INFO,
-                    f"fold={fold+1} time={(time.time()-t0):.2f}s "
+                    f"fold={fold_idx+1} time={(time.time()-t0):.2f}s "
                     f"Y_test={Y_test.shape} Y_pred={Y_pred.shape} "
                     f"Y_proba={Y_proba.shape}",
                 )
@@ -339,17 +368,22 @@ def run(
                     "preference_order": None,
                     "height": None,
                     "repeat_time": repeat_time,
-                    "fold": fold,
+                    "fold": fold_idx,
                     "dataset_name": dataset_cfg.name,
                     "base_learner_name": base_learner.upper(),
                     "noisy_rate": noisy_rate,
                 }
                 results.append(record)
 
-        bl_suffix = f"_{base_learner}" if base_learner != "rf" else ""
-        out = (
-            Path(results_dir) / f"dataset_{dataset_cfg.name.lower()}_noisy_{noisy_rate}_{algo}{bl_suffix}.pkl"
-        )
+        if split_mode:
+            out = Path(results_dir) / (
+                f"dataset_{dataset_cfg.name.lower()}_noisy_{noisy_rate}_{algo}{bl_suffix}"
+                f"_r{repeat}_f{fold}.pkl"
+            )
+        else:
+            out = (
+                Path(results_dir) / f"dataset_{dataset_cfg.name.lower()}_noisy_{noisy_rate}_{algo}{bl_suffix}.pkl"
+            )
         with open(out, "wb") as f:
             pickle.dump(results, f)
         log(INFO, f"Saved {out} ({len(results)} records)")
@@ -369,11 +403,11 @@ def main():
         "against PA/PR with PREORDER_CALIBRATE=1.",
     )
     p.add_argument(
-        "--noise_rate",
-        type=float,
-        default=None,
-        help="If set, run only this single noise level instead of all four.",
+        "--noisy_rate", "--noise_rate", dest="noisy_rate", type=float, default=None,
+        help="Run only this noise level (split mode requires --repeat and --fold too).",
     )
+    p.add_argument("--repeat", type=int, default=None, help="Split mode: 0-indexed repeat.")
+    p.add_argument("--fold", type=int, default=None, help="Split mode: 0-indexed fold.")
     p.add_argument(
         "--no_is_unbalance",
         action="store_true",
@@ -382,9 +416,12 @@ def main():
         "labels (noise_rate=0.0) cause extreme class weights and slow training.",
     )
     args = p.parse_args()
-    run(args.dataset, args.results_dir, args.algorithm,
-        base_learner=args.base_learner, noise_rate=args.noise_rate,
-        is_unbalance=not args.no_is_unbalance)
+    run(
+        args.dataset, args.results_dir, args.algorithm,
+        base_learner=args.base_learner,
+        noisy_rate=args.noisy_rate, repeat=args.repeat, fold=args.fold,
+        is_unbalance=not args.no_is_unbalance,
+    )
 
 
 if __name__ == "__main__":
