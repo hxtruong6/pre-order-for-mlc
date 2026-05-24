@@ -111,7 +111,7 @@ class Search_BOPreOs:
         if self.target_metric == TargetMetric.Hamming:
             vector = (-pair_slice).flatten()
         elif self.target_metric == TargetMetric.Subset:
-            vector = (-np.log(pair_slice)).flatten()
+            vector = (-np.log(np.clip(pair_slice, 1e-12, 1.0))).flatten()
         else:
             raise ValueError(f"Unknown target metric: {self.target_metric}")
         return self._reasoning_procedure_PRE_ORDER(
@@ -428,7 +428,7 @@ class Search_BOParOs:
         if self.target_metric == TargetMetric.Hamming:
             vector = (-pair_slice).flatten()
         elif self.target_metric == TargetMetric.Subset:
-            vector = (-np.log(pair_slice)).flatten()
+            vector = (-np.log(np.clip(pair_slice, 1e-12, 1.0))).flatten()
         else:
             raise ValueError(f"Unknown target metric: {self.target_metric}")
         return self._reasoning_procedure_PARTIAL_ORDER(

@@ -110,10 +110,15 @@ class BaseClassifiers:
             f"\t - Training for {len(dataset_classifier.keys())} pairs with {self.name}",
         )
 
-        # Skip empty pairs (both labels always equal in train, e.g. rare
-        # labels in a small CV fold). Their classifiers would error on RF.fit;
-        # downstream predict_CLR guards against missing keys.
-        trainable_keys = [k for k in dataset_classifier.keys() if len(dataset_classifier[k]["Y"]) > 0]
+        # Skip degenerate pairs (empty, single-sample, or single-class). LGBM
+        # rejects single-sample fits and any single-class fit; RF tolerates
+        # single-sample but not single-class. downstream predict_CLR guards
+        # against missing keys.
+        trainable_keys = [
+            k for k in dataset_classifier.keys()
+            if len(dataset_classifier[k]["Y"]) >= 2
+            and len(set(dataset_classifier[k]["Y"])) >= 2
+        ]
         skipped = len(dataset_classifier) - len(trainable_keys)
         if skipped:
             log(INFO, f"\t - Skipping {skipped} empty pairs (degenerate fold)")
