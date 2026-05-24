@@ -38,12 +38,18 @@ if [ -n "${NOISE_RATE:-}" ]; then
     NOISE_RATE_ARG="--noise_rate ${NOISE_RATE}"
     echo "=== noise_rate=${NOISE_RATE} ==="
 fi
+NO_IS_UNBALANCE_ARG=""
+if [ "${NO_IS_UNBALANCE:-0}" = "1" ]; then
+    NO_IS_UNBALANCE_ARG="--no_is_unbalance"
+    echo "=== no_is_unbalance=1 ==="
+fi
 time ${TASKSET_PREFIX} python scripts/train_extra_baselines.py \
     --dataset "${DATASET}" \
     --results_dir "${RESULTS_DIR}" \
     --algorithm "${ALGO}" \
     --base_learner "${BASE_LEARNER}" \
-    ${NOISE_RATE_ARG}
+    ${NOISE_RATE_ARG} \
+    ${NO_IS_UNBALANCE_ARG}
 
 echo "=== done ==="
 ls -la "${RESULTS_DIR}" | grep -i "${ALGO}" || true

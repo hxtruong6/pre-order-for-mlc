@@ -29,7 +29,7 @@ from sklearn.neighbors import NearestNeighbors
 from skmultilearn.utils import get_matrix_in_format
 
 
-def _make_base_learner(name: str, random_state=None):
+def _make_base_learner(name: str, random_state=None, is_unbalance: bool = True):
     """Return a fresh base-learner instance for ECC / LP wrappers.
 
     Choices:
@@ -59,7 +59,7 @@ def _make_base_learner(name: str, random_state=None):
             max_depth=6,
             learning_rate=0.1,
             min_child_samples=5,
-            is_unbalance=True,
+            is_unbalance=is_unbalance,
         )
     raise ValueError(f"Unknown base_learner: {name!r} (choose 'rf' or 'lgbm')")
 
@@ -124,6 +124,7 @@ def _ecc_predict(
     n_ensembles: int = 10,
     rng_seed: int = RANDOM_STATE,
     base_learner: str = "rf",
+    is_unbalance: bool = True,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Ensemble of Classifier Chains with random orders + bagging-style sampling.
 
@@ -148,7 +149,7 @@ def _ecc_predict(
         Y_bs = Y_train[idx][:, perm]
 
         chain = ClassifierChain(
-            classifier=_make_base_learner(base_learner, random_state=rng_seed + k),
+            classifier=_make_base_learner(base_learner, random_state=rng_seed + k, is_unbalance=is_unbalance),
             require_dense=[True, True],
         )
         chain.fit(X_bs, Y_bs)
@@ -229,6 +230,7 @@ def train_one(
     Y_train: np.ndarray,
     X_test: np.ndarray,
     base_learner: str = "rf",
+    is_unbalance: bool = True,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Train one baseline and return (Y_pred, Y_proba).
 
@@ -259,7 +261,7 @@ def train_one(
 
     if algo == "lp":
         clf = LabelPowerset(
-            classifier=_make_base_learner(base_learner, random_state=RANDOM_STATE),
+            classifier=_make_base_learner(base_learner, random_state=RANDOM_STATE, is_unbalance=is_unbalance),
             require_dense=[True, True],
         )
         clf.fit(X_train, Y_train)
@@ -278,7 +280,7 @@ def train_one(
         return Y_pred, Y_proba
 
     if algo == "ecc":
-        return _ecc_predict(X_train, Y_train, X_test, n_ensembles=10, base_learner=base_learner)
+        return _ecc_predict(X_train, Y_train, X_test, n_ensembles=10, base_learner=base_learner, is_unbalance=is_unbalance)
 
     raise ValueError(f"Unknown algorithm: {algo}")
 
@@ -289,6 +291,7 @@ def run(
     algo: str,
     base_learner: str = "rf",
     noise_rate: float | None = None,
+    is_unbalance: bool = True,
 ) -> None:
     basicConfig(level=INFO)
 
@@ -317,7 +320,7 @@ def run(
                 )
             ):
                 t0 = time.time()
-                Y_pred, Y_proba = train_one(algo, X_train, Y_train, X_test, base_learner=base_learner)
+                Y_pred, Y_proba = train_one(algo, X_train, Y_train, X_test, base_learner=base_learner, is_unbalance=is_unbalance)
                 log(
                     INFO,
                     f"fold={fold+1} time={(time.time()-t0):.2f}s "
@@ -371,9 +374,17 @@ def main():
         default=None,
         help="If set, run only this single noise level instead of all four.",
     )
+    p.add_argument(
+        "--no_is_unbalance",
+        action="store_true",
+        default=False,
+        help="Disable is_unbalance=True in LGBMClassifier. Useful when clean "
+        "labels (noise_rate=0.0) cause extreme class weights and slow training.",
+    )
     args = p.parse_args()
     run(args.dataset, args.results_dir, args.algorithm,
-        base_learner=args.base_learner, noise_rate=args.noise_rate)
+        base_learner=args.base_learner, noise_rate=args.noise_rate,
+        is_unbalance=not args.no_is_unbalance)
 
 
 if __name__ == "__main__":
