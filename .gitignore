@@ -8,6 +8,7 @@ results/**
 !results/**/evaluation_*.xlsx
 !results/**/*_summary.csv
 !results/**/*_summary.xlsx
+!results/all_summary/combined_*
 !results/final_20260514_v2_summary/figures/**/*
 !results/final_20260514_v2_summary/stats/**/*
 
