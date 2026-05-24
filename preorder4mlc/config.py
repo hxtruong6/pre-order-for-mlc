@@ -19,6 +19,10 @@ class AlgorithmType(Enum):
     CLR = "clr"
     BR = "br"
     CC = "cc"
+    MLKNN = "mlknn"
+    ECC = "ecc"
+    MLKNN_LGBM = "mlknn_lgbm"
+    ECC_LGBM = "ecc_lgbm"
 
 
 @dataclass

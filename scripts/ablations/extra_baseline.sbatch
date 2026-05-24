@@ -33,11 +33,17 @@ if [ "${EFFECTIVE_CPUS}" -gt "${CAP}" ]; then
     TASKSET_PREFIX="taskset -c ${CPU_LIST}"
 fi
 echo "=== cgroup_cpus=${EFFECTIVE_CPUS} cap=${CAP} prefix='${TASKSET_PREFIX}' ==="
+NOISE_RATE_ARG=""
+if [ -n "${NOISE_RATE:-}" ]; then
+    NOISE_RATE_ARG="--noise_rate ${NOISE_RATE}"
+    echo "=== noise_rate=${NOISE_RATE} ==="
+fi
 time ${TASKSET_PREFIX} python scripts/train_extra_baselines.py \
     --dataset "${DATASET}" \
     --results_dir "${RESULTS_DIR}" \
     --algorithm "${ALGO}" \
-    --base_learner "${BASE_LEARNER}"
+    --base_learner "${BASE_LEARNER}" \
+    ${NOISE_RATE_ARG}
 
 echo "=== done ==="
 ls -la "${RESULTS_DIR}" | grep -i "${ALGO}" || true

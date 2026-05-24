@@ -101,11 +101,20 @@ def _solve_highs(c, G, h, A, b, I, B):
     if A_arr.size:
         constraints.append(LinearConstraint(A_arr, b_arr, b_arr))
 
+    _time_limit = os.environ.get("HIGHS_TIME_LIMIT")
+    _mip_gap = os.environ.get("HIGHS_MIP_REL_GAP")
+    _options = {}
+    if _time_limit is not None:
+        _options["time_limit"] = float(_time_limit)
+    if _mip_gap is not None:
+        _options["mip_rel_gap"] = float(_mip_gap)
+
     res = milp(
         c=c_arr,
         constraints=constraints,
         integrality=integrality,
         bounds=Bounds(lb=lb, ub=ub),
+        options=_options if _options else None,
     )
     if res.x is None:
         raise RuntimeError(f"HiGHS failed: status={res.status} message={res.message}")

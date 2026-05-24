@@ -44,7 +44,7 @@ LOG_PATH = ROOT / "slurm_logs" / "master_controller.log"
 REPORT_PATH = ROOT / "slurm_logs" / "master_controller_report.txt"
 
 POLL_SECS = int(os.environ.get("POLL_SECS", "600"))   # 10 min default
-PREORDER_CAP = 36     # max preorder tasks in queue (40 def-QOS cap, 4 buffer for extras + retry)
+PREORDER_CAP = 28     # max preorder tasks in queue (40 def-QOS cap, 8 for extra baselines, 4 buffer)
 SLURM_USER = os.environ["USER"]
 
 DATASETS = {
@@ -320,6 +320,8 @@ def iteration(state: dict) -> bool:
 
             # Merge: when all 100 partials exist for this cell and not merged yet → submit
             cell_done_count = sum(len(v["done"]) for v in cell["algos"].values())
+            if not cell["merged"]:
+                everything_done = False  # stay alive until merge confirmed on disk
             if cell_done_count == len(ALGOS) * TASKS_PER_CELL_ALGO and not cell["merged"]:
                 # Avoid re-submitting if a merge job is already in flight for this cell.
                 merge_key = f"merge_{dataset}_{noise}"
@@ -330,7 +332,6 @@ def iteration(state: dict) -> bool:
                             state.setdefault("merges", {})[merge_key] = mjid
                             log(f"  submitted MERGE {dataset} n={noise} → {mjid}")
                             free_slots -= 1
-                            everything_done = False
 
     save_state(state)
     return everything_done

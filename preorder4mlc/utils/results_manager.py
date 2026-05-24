@@ -144,6 +144,14 @@ class ExperimentResults:
             suffix = "_br"
         elif algorithm_type == AlgorithmType.CC:
             suffix = "_cc"
+        elif algorithm_type == AlgorithmType.MLKNN:
+            suffix = "_mlknn"
+        elif algorithm_type == AlgorithmType.ECC:
+            suffix = "_ecc"
+        elif algorithm_type == AlgorithmType.MLKNN_LGBM:
+            suffix = "_mlknn_lgbm"
+        elif algorithm_type == AlgorithmType.ECC_LGBM:
+            suffix = "_ecc_lgbm"
 
         filename = f"{path}/dataset_{dataset_name}_noisy_{noisy_rate}{suffix}.pkl"
 

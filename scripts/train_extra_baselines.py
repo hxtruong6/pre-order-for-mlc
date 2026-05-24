@@ -283,7 +283,13 @@ def train_one(
     raise ValueError(f"Unknown algorithm: {algo}")
 
 
-def run(dataset_key: str, results_dir: str, algo: str, base_learner: str = "rf") -> None:
+def run(
+    dataset_key: str,
+    results_dir: str,
+    algo: str,
+    base_learner: str = "rf",
+    noise_rate: float | None = None,
+) -> None:
     basicConfig(level=INFO)
 
     dataset_cfg = ConfigManager.get_dataset_config(dataset_key)
@@ -295,7 +301,8 @@ def run(dataset_key: str, results_dir: str, algo: str, base_learner: str = "rf")
     )
     exp.load_datasets()
 
-    for noisy_rate in NOISY_RATES:
+    rates = [noise_rate] if noise_rate is not None else NOISY_RATES
+    for noisy_rate in rates:
         log(INFO, f"=== {dataset_cfg.name} | {algo} | noisy_rate={noisy_rate} ===")
         results = []
 
@@ -336,8 +343,9 @@ def run(dataset_key: str, results_dir: str, algo: str, base_learner: str = "rf")
                 }
                 results.append(record)
 
+        bl_suffix = f"_{base_learner}" if base_learner != "rf" else ""
         out = (
-            Path(results_dir) / f"dataset_{dataset_cfg.name.lower()}_noisy_{noisy_rate}_{algo}.pkl"
+            Path(results_dir) / f"dataset_{dataset_cfg.name.lower()}_noisy_{noisy_rate}_{algo}{bl_suffix}.pkl"
         )
         with open(out, "wb") as f:
             pickle.dump(results, f)
@@ -357,8 +365,15 @@ def main():
         "the original paper baseline; use 'lgbm' for a fair comparison "
         "against PA/PR with PREORDER_CALIBRATE=1.",
     )
+    p.add_argument(
+        "--noise_rate",
+        type=float,
+        default=None,
+        help="If set, run only this single noise level instead of all four.",
+    )
     args = p.parse_args()
-    run(args.dataset, args.results_dir, args.algorithm, base_learner=args.base_learner)
+    run(args.dataset, args.results_dir, args.algorithm,
+        base_learner=args.base_learner, noise_rate=args.noise_rate)
 
 
 if __name__ == "__main__":

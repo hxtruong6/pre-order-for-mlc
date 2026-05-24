@@ -836,6 +836,10 @@ def main():
         AlgorithmType.BR,
         AlgorithmType.CC,
         AlgorithmType.CLR,
+        AlgorithmType.MLKNN,
+        AlgorithmType.ECC,
+        AlgorithmType.MLKNN_LGBM,
+        AlgorithmType.ECC_LGBM,
     ]
 
     # Process each noise rate
@@ -851,11 +855,14 @@ def main():
 
             for algorithm_type in algorithm_types:
                 log(INFO, f"\n-----Start for algorithm: {algorithm_type.value}:")
-                evaluator.load_results(dataset_name, noisy_rate, algorithm_type)
-                evaluator.evaluate_dataset(dataset_name, noisy_rate, algorithm_type)
-                evaluator.save_results(
-                    f"{results_dir}/evaluation_{dataset_name}_noisy_{noisy_rate}_{algorithm_type.value}"
-                )
+                try:
+                    evaluator.load_results(dataset_name, noisy_rate, algorithm_type)
+                    evaluator.evaluate_dataset(dataset_name, noisy_rate, algorithm_type)
+                    evaluator.save_results(
+                        f"{results_dir}/evaluation_{dataset_name}_noisy_{noisy_rate}_{algorithm_type.value}"
+                    )
+                except FileNotFoundError:
+                    log(INFO, f"Skipping {algorithm_type.value} (pkl not found)")
 
             log(INFO, f"Evaluation completed successfully for {dataset_name}")
 
