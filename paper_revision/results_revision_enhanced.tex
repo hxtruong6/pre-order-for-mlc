@@ -1,0 +1,635 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage{booktabs}
+\usepackage[hidelinks]{hyperref}
+
+\graphicspath{{figures_enhanced/}}
+\newcommand{\mpanel}[1]{\includegraphics[width=0.31\linewidth]{#1}}
+
+\title{Results --- revised submission --- enhanced style}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Datasets}
+
+\begin{table}[!htbp]
+\centering
+\begin{tabular}{l|l|r|r|r|r|r}
+\hline
+\# & Name & $N$ & $P$ & $K$ & MeanIR & CVIR \\
+\hline
+1 & GpositivePseAAC & 519 & 440 & 4 & 3.86 & 1.15 \\
+2 & Emotions & 593 & 72 & 6 & 1.48 & 0.16 \\
+3 & Scene & 2407 & 294 & 6 & 1.25 & 0.11 \\
+4 & PlantPseAAC & 978 & 440 & 12 & 6.69 & 0.68 \\
+5 & HumanPseAAC & 3106 & 440 & 14 & 15.29 & 1.05 \\
+6 & Yeast & 2417 & 103 & 14 & 7.20 & 1.82 \\
+7 & birds & 645 & 260 & 19 & 5.41 & 0.80 \\
+8 & medical & 978 & 1449 & 45 & 222.37 & 0.72 \\
+9 & enron & 1702 & 1001 & 53 & 10.45 & 0.80 \\
+\hline
+\end{tabular}
+\caption{Datasets used in the revised experiments. $N$, $P$, $K$ are the number of instances, features, labels. MeanIR and CVIR report per-label imbalance (higher = more imbalanced).}
+\label{tab:datasets_revised}
+\end{table}
+
+\section*{Pending follow-ups (to fill before final submission)}
+\begin{itemize}
+  \item \textbf{ECC baseline on \texttt{birds} (RF + LGBM).} The
+        \texttt{birds} folders contain only PA/PR/BR/CC/CLR --- ECC has not
+        been run. Method slot~12 currently shows as a gap on every
+        \texttt{birds} panel. Re-run with
+        \texttt{scripts/train\_extra\_baselines.py --dataset birds
+        --algorithm ecc} for both \texttt{--base\_learner rf} and
+        \texttt{--base\_learner lgbm}.
+  \item \textbf{LGBM run on \texttt{enron} and the original-paper datasets.}
+        \texttt{enron} and the six original-paper datasets currently have
+        only RF results, so the LGBM aggregate panels are computed over the
+        two datasets (\texttt{medical}, \texttt{birds}) that have LGBM runs.
+  \item \textbf{Extended PartialAbstention metrics.} The evaluator has been
+        extended with 11 new PA metrics
+        (\texttt{jaccard\_pa}, \texttt{\{example,macro,micro\}\_\{precision,recall,f1\}\_pa},
+        \texttt{mfrd\_pa}, \texttt{afrd\_pa}). Existing runs were summarised
+        with the previous metric set; the new columns will populate
+        automatically on the next end-to-end training+evaluation pass.
+\end{itemize}
+
+
+\section{Method encoding}\label{sec:method_encoding}
+For every panel that follows, the x-axis encodes the classifier as one of
+12 methods, grouped into three blocks:
+
+\paragraph{Block A --- Order-based predictors (ours, indices 1--8).}
+Each name has the form \texttt{<order>-<target>-<height>}:
+\emph{order} $\in$ \{PA = partial order, PR = pre-order\};
+\emph{target} $\in$ \{H = Hamming, S = Subset~0/1\};
+\emph{height} $\in$ \{2, $\infty$ (omitted in the label)\}.
+\begin{itemize}
+  \item 1\,=\,\textbf{PA-H-2}: partial order, Hamming target, height $\le 2$.
+  \item 2\,=\,\textbf{PA-H}: partial order, Hamming target, unrestricted height.
+  \item 3\,=\,\textbf{PA-S-2}: partial order, Subset 0/1 target, height $\le 2$.
+  \item 4\,=\,\textbf{PA-S}: partial order, Subset 0/1, unrestricted.
+  \item 5\,=\,\textbf{PR-H-2}: pre-order, Hamming, height $\le 2$.
+  \item 6\,=\,\textbf{PR-H}: pre-order, Hamming, unrestricted.
+  \item 7\,=\,\textbf{PR-S-2}: pre-order, Subset 0/1, height $\le 2$.
+  \item 8\,=\,\textbf{PR-S}: pre-order, Subset 0/1, unrestricted.
+\end{itemize}
+
+\paragraph{Block B --- Standard MLC baselines from the original paper
+(indices 9--11).}
+\begin{itemize}
+  \item 9\,=\,\textbf{BR} (Binary Relevance): $K$ independent binary
+        classifiers, one per label.
+  \item 10\,=\,\textbf{CC} (Classifier Chain): sequential chain that uses
+        previous labels as features.
+  \item 11\,=\,\textbf{CLR} (Calibrated Label Ranking): pairwise label
+        ranking with a calibration label that separates relevant from
+        irrelevant.
+\end{itemize}
+
+\paragraph{Block C --- Extended baseline added for the revision
+(index 12).}
+\begin{itemize}
+  \item 12\,=\,\textbf{ECC} (Ensemble of Classifier Chains): averages over
+        multiple CCs with random chain orders.
+\end{itemize}
+
+\paragraph{Reading the panels.} Each panel plots one dotted line with
+markers per noise level. \textbf{Noise is encoded by colour intensity}
+(ColorBrewer Reds): light peach $=$ clean ($\alpha=0.0$), saturated dark
+red $=$ noisy ($\alpha=0.3$):
+\textcolor[HTML]{fcae91}{$\blacksquare$}\,$\alpha=0.0$,
+\textcolor[HTML]{fb6a4a}{$\blacksquare$}\,$\alpha=0.1$,
+\textcolor[HTML]{de2d26}{$\blacksquare$}\,$\alpha=0.2$,
+\textcolor[HTML]{a50f15}{$\blacksquare$}\,$\alpha=0.3$.
+Below the numeric x-axis (1--12), a second tier prints the short method
+name so the reader can identify each classifier without referring back to
+this section. \emph{PartialAbstention} and \emph{ScoreVector} panels show
+only indices 1--8. A vertical dashed line at $x=8.5$ separates the
+order-based block (1--8) from the standard MLC baselines (9--12). The
+y-axis is zoomed to the actual data range to keep close-clustered curves
+visually separable. Missing methods show as gaps in the line (with a
+small grey ``x'' on the axis when the method has no data at all for that
+panel).
+
+\section{Main results: RF base learner, aggregated}
+
+\subsubsection*{RF $\bullet$ Aggregate $\bullet$ BinaryVector --- Standard MLC predictions}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.6}
+\begin{tabular}{ccc}
+\mpanel{rf/aggregate/bv/afrd.pdf} & \mpanel{rf/aggregate/bv/example_precision.pdf} & \mpanel{rf/aggregate/bv/example_recall.pdf} \\
+\mpanel{rf/aggregate/bv/f1.pdf} & \mpanel{rf/aggregate/bv/hamming_accuracy.pdf} & \mpanel{rf/aggregate/bv/jaccard.pdf} \\
+\mpanel{rf/aggregate/bv/macro_f1.pdf} & \mpanel{rf/aggregate/bv/macro_precision.pdf} & \mpanel{rf/aggregate/bv/macro_recall.pdf} \\
+\mpanel{rf/aggregate/bv/mfrd.pdf} & \mpanel{rf/aggregate/bv/micro_f1.pdf} & \mpanel{rf/aggregate/bv/micro_precision.pdf} \\
+\mpanel{rf/aggregate/bv/micro_recall.pdf} & \mpanel{rf/aggregate/bv/subset0_1.pdf} &  \\
+\end{tabular}
+\caption{Standard MLC predictions (BinaryVector), RF base learner, averaged across datasets. Method indices and line colors follow the encoding paragraph above.}
+\label{tab:rf_agg_bv}
+\end{table}
+
+\subsubsection*{RF $\bullet$ Aggregate $\bullet$ PartialAbstention --- Partial abstention}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.6}
+\begin{tabular}{ccc}
+\mpanel{rf/aggregate/pa/aabs.pdf} & \mpanel{rf/aggregate/pa/abs.pdf} & \mpanel{rf/aggregate/pa/arec.pdf} \\
+\mpanel{rf/aggregate/pa/f1_pa.pdf} & \mpanel{rf/aggregate/pa/hamming_accuracy_pa.pdf} & \mpanel{rf/aggregate/pa/rec.pdf} \\
+\mpanel{rf/aggregate/pa/subset0_1_pa.pdf} &  &  \\
+\end{tabular}
+\caption{Partial abstention (PartialAbstention), RF base learner, averaged across datasets. Method indices and line colors follow the encoding paragraph above.}
+\label{tab:rf_agg_pa}
+\end{table}
+
+\subsubsection*{RF $\bullet$ Aggregate $\bullet$ ScoreVector --- Score-vector ranking metrics (AUROC, AUPRC, etc.)}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.6}
+\begin{tabular}{ccc}
+\mpanel{rf/aggregate/sv/auc_macro.pdf} & \mpanel{rf/aggregate/sv/auc_micro.pdf} & \mpanel{rf/aggregate/sv/auprc_macro.pdf} \\
+\mpanel{rf/aggregate/sv/auprc_micro.pdf} & \mpanel{rf/aggregate/sv/coverage.pdf} & \mpanel{rf/aggregate/sv/lr_ap.pdf} \\
+\mpanel{rf/aggregate/sv/one_error.pdf} & \mpanel{rf/aggregate/sv/ranking_loss.pdf} &  \\
+\end{tabular}
+\caption{Score-vector ranking metrics (AUROC, AUPRC, etc.) (ScoreVector), RF base learner, averaged across datasets. Method indices and line colors follow the encoding paragraph above.}
+\label{tab:rf_agg_sv}
+\end{table}
+
+\clearpage
+\appendix
+
+\section{Per-dataset results (RF base learner)}
+
+\subsection{GpositivePseAAC ($K=4$)}
+
+\subsubsection*{RF $\bullet$ \texttt{GpositivePseAAC} $\bullet$ BinaryVector --- Standard MLC predictions}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.6}
+\begin{tabular}{ccc}
+\mpanel{rf/per_dataset/GpositivePseAAC/bv/afrd.pdf} & \mpanel{rf/per_dataset/GpositivePseAAC/bv/example_precision.pdf} & \mpanel{rf/per_dataset/GpositivePseAAC/bv/example_recall.pdf} \\
+\mpanel{rf/per_dataset/GpositivePseAAC/bv/f1.pdf} & \mpanel{rf/per_dataset/GpositivePseAAC/bv/hamming_accuracy.pdf} & \mpanel{rf/per_dataset/GpositivePseAAC/bv/jaccard.pdf} \\
+\mpanel{rf/per_dataset/GpositivePseAAC/bv/macro_f1.pdf} & \mpanel{rf/per_dataset/GpositivePseAAC/bv/macro_precision.pdf} & \mpanel{rf/per_dataset/GpositivePseAAC/bv/macro_recall.pdf} \\
+\mpanel{rf/per_dataset/GpositivePseAAC/bv/mfrd.pdf} & \mpanel{rf/per_dataset/GpositivePseAAC/bv/micro_f1.pdf} & \mpanel{rf/per_dataset/GpositivePseAAC/bv/micro_precision.pdf} \\
+\mpanel{rf/per_dataset/GpositivePseAAC/bv/micro_recall.pdf} & \mpanel{rf/per_dataset/GpositivePseAAC/bv/subset0_1.pdf} &  \\
+\end{tabular}
+\caption{Standard MLC predictions (BinaryVector) on \texttt{GpositivePseAAC} (RF base learner).}
+\label{tab:rf_GpositivePseAAC_bv}
+\end{table}
+
+\subsubsection*{RF $\bullet$ \texttt{GpositivePseAAC} $\bullet$ PartialAbstention --- Partial abstention}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.6}
+\begin{tabular}{ccc}
+\mpanel{rf/per_dataset/GpositivePseAAC/pa/aabs.pdf} & \mpanel{rf/per_dataset/GpositivePseAAC/pa/abs.pdf} & \mpanel{rf/per_dataset/GpositivePseAAC/pa/arec.pdf} \\
+\mpanel{rf/per_dataset/GpositivePseAAC/pa/f1_pa.pdf} & \mpanel{rf/per_dataset/GpositivePseAAC/pa/hamming_accuracy_pa.pdf} & \mpanel{rf/per_dataset/GpositivePseAAC/pa/rec.pdf} \\
+\mpanel{rf/per_dataset/GpositivePseAAC/pa/subset0_1_pa.pdf} &  &  \\
+\end{tabular}
+\caption{Partial abstention (PartialAbstention) on \texttt{GpositivePseAAC} (RF base learner).}
+\label{tab:rf_GpositivePseAAC_pa}
+\end{table}
+
+\subsubsection*{RF $\bullet$ \texttt{GpositivePseAAC} $\bullet$ ScoreVector --- Score-vector ranking metrics (AUROC, AUPRC, etc.)}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.6}
+\begin{tabular}{ccc}
+\mpanel{rf/per_dataset/GpositivePseAAC/sv/auc_macro.pdf} & \mpanel{rf/per_dataset/GpositivePseAAC/sv/auc_micro.pdf} & \mpanel{rf/per_dataset/GpositivePseAAC/sv/auprc_macro.pdf} \\
+\mpanel{rf/per_dataset/GpositivePseAAC/sv/auprc_micro.pdf} & \mpanel{rf/per_dataset/GpositivePseAAC/sv/coverage.pdf} & \mpanel{rf/per_dataset/GpositivePseAAC/sv/lr_ap.pdf} \\
+\mpanel{rf/per_dataset/GpositivePseAAC/sv/one_error.pdf} & \mpanel{rf/per_dataset/GpositivePseAAC/sv/ranking_loss.pdf} &  \\
+\end{tabular}
+\caption{Score-vector ranking metrics (AUROC, AUPRC, etc.) (ScoreVector) on \texttt{GpositivePseAAC} (RF base learner).}
+\label{tab:rf_GpositivePseAAC_sv}
+\end{table}
+
+\subsection{Emotions ($K=6$)}
+
+\subsubsection*{RF $\bullet$ \texttt{emotions} $\bullet$ BinaryVector --- Standard MLC predictions}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.6}
+\begin{tabular}{ccc}
+\mpanel{rf/per_dataset/emotions/bv/afrd.pdf} & \mpanel{rf/per_dataset/emotions/bv/example_precision.pdf} & \mpanel{rf/per_dataset/emotions/bv/example_recall.pdf} \\
+\mpanel{rf/per_dataset/emotions/bv/f1.pdf} & \mpanel{rf/per_dataset/emotions/bv/hamming_accuracy.pdf} & \mpanel{rf/per_dataset/emotions/bv/jaccard.pdf} \\
+\mpanel{rf/per_dataset/emotions/bv/macro_f1.pdf} & \mpanel{rf/per_dataset/emotions/bv/macro_precision.pdf} & \mpanel{rf/per_dataset/emotions/bv/macro_recall.pdf} \\
+\mpanel{rf/per_dataset/emotions/bv/mfrd.pdf} & \mpanel{rf/per_dataset/emotions/bv/micro_f1.pdf} & \mpanel{rf/per_dataset/emotions/bv/micro_precision.pdf} \\
+\mpanel{rf/per_dataset/emotions/bv/micro_recall.pdf} & \mpanel{rf/per_dataset/emotions/bv/subset0_1.pdf} &  \\
+\end{tabular}
+\caption{Standard MLC predictions (BinaryVector) on \texttt{emotions} (RF base learner).}
+\label{tab:rf_emotions_bv}
+\end{table}
+
+\subsubsection*{RF $\bullet$ \texttt{emotions} $\bullet$ PartialAbstention --- Partial abstention}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.6}
+\begin{tabular}{ccc}
+\mpanel{rf/per_dataset/emotions/pa/aabs.pdf} & \mpanel{rf/per_dataset/emotions/pa/abs.pdf} & \mpanel{rf/per_dataset/emotions/pa/arec.pdf} \\
+\mpanel{rf/per_dataset/emotions/pa/f1_pa.pdf} & \mpanel{rf/per_dataset/emotions/pa/hamming_accuracy_pa.pdf} & \mpanel{rf/per_dataset/emotions/pa/rec.pdf} \\
+\mpanel{rf/per_dataset/emotions/pa/subset0_1_pa.pdf} &  &  \\
+\end{tabular}
+\caption{Partial abstention (PartialAbstention) on \texttt{emotions} (RF base learner).}
+\label{tab:rf_emotions_pa}
+\end{table}
+
+\subsubsection*{RF $\bullet$ \texttt{emotions} $\bullet$ ScoreVector --- Score-vector ranking metrics (AUROC, AUPRC, etc.)}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.6}
+\begin{tabular}{ccc}
+\mpanel{rf/per_dataset/emotions/sv/auc_macro.pdf} & \mpanel{rf/per_dataset/emotions/sv/auc_micro.pdf} & \mpanel{rf/per_dataset/emotions/sv/auprc_macro.pdf} \\
+\mpanel{rf/per_dataset/emotions/sv/auprc_micro.pdf} & \mpanel{rf/per_dataset/emotions/sv/coverage.pdf} & \mpanel{rf/per_dataset/emotions/sv/lr_ap.pdf} \\
+\mpanel{rf/per_dataset/emotions/sv/one_error.pdf} & \mpanel{rf/per_dataset/emotions/sv/ranking_loss.pdf} &  \\
+\end{tabular}
+\caption{Score-vector ranking metrics (AUROC, AUPRC, etc.) (ScoreVector) on \texttt{emotions} (RF base learner).}
+\label{tab:rf_emotions_sv}
+\end{table}
+
+\subsection{Scene ($K=6$)}
+
+\subsubsection*{RF $\bullet$ \texttt{scene} $\bullet$ BinaryVector --- Standard MLC predictions}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.6}
+\begin{tabular}{ccc}
+\mpanel{rf/per_dataset/scene/bv/afrd.pdf} & \mpanel{rf/per_dataset/scene/bv/example_precision.pdf} & \mpanel{rf/per_dataset/scene/bv/example_recall.pdf} \\
+\mpanel{rf/per_dataset/scene/bv/f1.pdf} & \mpanel{rf/per_dataset/scene/bv/hamming_accuracy.pdf} & \mpanel{rf/per_dataset/scene/bv/jaccard.pdf} \\
+\mpanel{rf/per_dataset/scene/bv/macro_f1.pdf} & \mpanel{rf/per_dataset/scene/bv/macro_precision.pdf} & \mpanel{rf/per_dataset/scene/bv/macro_recall.pdf} \\
+\mpanel{rf/per_dataset/scene/bv/mfrd.pdf} & \mpanel{rf/per_dataset/scene/bv/micro_f1.pdf} & \mpanel{rf/per_dataset/scene/bv/micro_precision.pdf} \\
+\mpanel{rf/per_dataset/scene/bv/micro_recall.pdf} & \mpanel{rf/per_dataset/scene/bv/subset0_1.pdf} &  \\
+\end{tabular}
+\caption{Standard MLC predictions (BinaryVector) on \texttt{scene} (RF base learner).}
+\label{tab:rf_scene_bv}
+\end{table}
+
+\subsubsection*{RF $\bullet$ \texttt{scene} $\bullet$ PartialAbstention --- Partial abstention}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.6}
+\begin{tabular}{ccc}
+\mpanel{rf/per_dataset/scene/pa/aabs.pdf} & \mpanel{rf/per_dataset/scene/pa/abs.pdf} & \mpanel{rf/per_dataset/scene/pa/arec.pdf} \\
+\mpanel{rf/per_dataset/scene/pa/f1_pa.pdf} & \mpanel{rf/per_dataset/scene/pa/hamming_accuracy_pa.pdf} & \mpanel{rf/per_dataset/scene/pa/rec.pdf} \\
+\mpanel{rf/per_dataset/scene/pa/subset0_1_pa.pdf} &  &  \\
+\end{tabular}
+\caption{Partial abstention (PartialAbstention) on \texttt{scene} (RF base learner).}
+\label{tab:rf_scene_pa}
+\end{table}
+
+\subsubsection*{RF $\bullet$ \texttt{scene} $\bullet$ ScoreVector --- Score-vector ranking metrics (AUROC, AUPRC, etc.)}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.6}
+\begin{tabular}{ccc}
+\mpanel{rf/per_dataset/scene/sv/auc_macro.pdf} & \mpanel{rf/per_dataset/scene/sv/auc_micro.pdf} & \mpanel{rf/per_dataset/scene/sv/auprc_macro.pdf} \\
+\mpanel{rf/per_dataset/scene/sv/auprc_micro.pdf} & \mpanel{rf/per_dataset/scene/sv/coverage.pdf} & \mpanel{rf/per_dataset/scene/sv/lr_ap.pdf} \\
+\mpanel{rf/per_dataset/scene/sv/one_error.pdf} & \mpanel{rf/per_dataset/scene/sv/ranking_loss.pdf} &  \\
+\end{tabular}
+\caption{Score-vector ranking metrics (AUROC, AUPRC, etc.) (ScoreVector) on \texttt{scene} (RF base learner).}
+\label{tab:rf_scene_sv}
+\end{table}
+
+\subsection{PlantPseAAC ($K=12$)}
+
+\subsubsection*{RF $\bullet$ \texttt{PlantPseAAC} $\bullet$ BinaryVector --- Standard MLC predictions}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.6}
+\begin{tabular}{ccc}
+\mpanel{rf/per_dataset/PlantPseAAC/bv/afrd.pdf} & \mpanel{rf/per_dataset/PlantPseAAC/bv/example_precision.pdf} & \mpanel{rf/per_dataset/PlantPseAAC/bv/example_recall.pdf} \\
+\mpanel{rf/per_dataset/PlantPseAAC/bv/f1.pdf} & \mpanel{rf/per_dataset/PlantPseAAC/bv/hamming_accuracy.pdf} & \mpanel{rf/per_dataset/PlantPseAAC/bv/jaccard.pdf} \\
+\mpanel{rf/per_dataset/PlantPseAAC/bv/macro_f1.pdf} & \mpanel{rf/per_dataset/PlantPseAAC/bv/macro_precision.pdf} & \mpanel{rf/per_dataset/PlantPseAAC/bv/macro_recall.pdf} \\
+\mpanel{rf/per_dataset/PlantPseAAC/bv/mfrd.pdf} & \mpanel{rf/per_dataset/PlantPseAAC/bv/micro_f1.pdf} & \mpanel{rf/per_dataset/PlantPseAAC/bv/micro_precision.pdf} \\
+\mpanel{rf/per_dataset/PlantPseAAC/bv/micro_recall.pdf} & \mpanel{rf/per_dataset/PlantPseAAC/bv/subset0_1.pdf} &  \\
+\end{tabular}
+\caption{Standard MLC predictions (BinaryVector) on \texttt{PlantPseAAC} (RF base learner).}
+\label{tab:rf_PlantPseAAC_bv}
+\end{table}
+
+\subsubsection*{RF $\bullet$ \texttt{PlantPseAAC} $\bullet$ PartialAbstention --- Partial abstention}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.6}
+\begin{tabular}{ccc}
+\mpanel{rf/per_dataset/PlantPseAAC/pa/aabs.pdf} & \mpanel{rf/per_dataset/PlantPseAAC/pa/abs.pdf} & \mpanel{rf/per_dataset/PlantPseAAC/pa/arec.pdf} \\
+\mpanel{rf/per_dataset/PlantPseAAC/pa/f1_pa.pdf} & \mpanel{rf/per_dataset/PlantPseAAC/pa/hamming_accuracy_pa.pdf} & \mpanel{rf/per_dataset/PlantPseAAC/pa/rec.pdf} \\
+\mpanel{rf/per_dataset/PlantPseAAC/pa/subset0_1_pa.pdf} &  &  \\
+\end{tabular}
+\caption{Partial abstention (PartialAbstention) on \texttt{PlantPseAAC} (RF base learner).}
+\label{tab:rf_PlantPseAAC_pa}
+\end{table}
+
+\subsubsection*{RF $\bullet$ \texttt{PlantPseAAC} $\bullet$ ScoreVector --- Score-vector ranking metrics (AUROC, AUPRC, etc.)}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.6}
+\begin{tabular}{ccc}
+\mpanel{rf/per_dataset/PlantPseAAC/sv/auc_macro.pdf} & \mpanel{rf/per_dataset/PlantPseAAC/sv/auc_micro.pdf} & \mpanel{rf/per_dataset/PlantPseAAC/sv/auprc_macro.pdf} \\
+\mpanel{rf/per_dataset/PlantPseAAC/sv/auprc_micro.pdf} & \mpanel{rf/per_dataset/PlantPseAAC/sv/coverage.pdf} & \mpanel{rf/per_dataset/PlantPseAAC/sv/lr_ap.pdf} \\
+\mpanel{rf/per_dataset/PlantPseAAC/sv/one_error.pdf} & \mpanel{rf/per_dataset/PlantPseAAC/sv/ranking_loss.pdf} &  \\
+\end{tabular}
+\caption{Score-vector ranking metrics (AUROC, AUPRC, etc.) (ScoreVector) on \texttt{PlantPseAAC} (RF base learner).}
+\label{tab:rf_PlantPseAAC_sv}
+\end{table}
+
+\subsection{HumanPseAAC ($K=14$)}
+
+\subsubsection*{RF $\bullet$ \texttt{HumanPseAAC} $\bullet$ BinaryVector --- Standard MLC predictions}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.6}
+\begin{tabular}{ccc}
+\mpanel{rf/per_dataset/HumanPseAAC/bv/afrd.pdf} & \mpanel{rf/per_dataset/HumanPseAAC/bv/example_precision.pdf} & \mpanel{rf/per_dataset/HumanPseAAC/bv/example_recall.pdf} \\
+\mpanel{rf/per_dataset/HumanPseAAC/bv/f1.pdf} & \mpanel{rf/per_dataset/HumanPseAAC/bv/hamming_accuracy.pdf} & \mpanel{rf/per_dataset/HumanPseAAC/bv/jaccard.pdf} \\
+\mpanel{rf/per_dataset/HumanPseAAC/bv/macro_f1.pdf} & \mpanel{rf/per_dataset/HumanPseAAC/bv/macro_precision.pdf} & \mpanel{rf/per_dataset/HumanPseAAC/bv/macro_recall.pdf} \\
+\mpanel{rf/per_dataset/HumanPseAAC/bv/mfrd.pdf} & \mpanel{rf/per_dataset/HumanPseAAC/bv/micro_f1.pdf} & \mpanel{rf/per_dataset/HumanPseAAC/bv/micro_precision.pdf} \\
+\mpanel{rf/per_dataset/HumanPseAAC/bv/micro_recall.pdf} & \mpanel{rf/per_dataset/HumanPseAAC/bv/subset0_1.pdf} &  \\
+\end{tabular}
+\caption{Standard MLC predictions (BinaryVector) on \texttt{HumanPseAAC} (RF base learner).}
+\label{tab:rf_HumanPseAAC_bv}
+\end{table}
+
+\subsubsection*{RF $\bullet$ \texttt{HumanPseAAC} $\bullet$ PartialAbstention --- Partial abstention}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.6}
+\begin{tabular}{ccc}
+\mpanel{rf/per_dataset/HumanPseAAC/pa/aabs.pdf} & \mpanel{rf/per_dataset/HumanPseAAC/pa/abs.pdf} & \mpanel{rf/per_dataset/HumanPseAAC/pa/arec.pdf} \\
+\mpanel{rf/per_dataset/HumanPseAAC/pa/f1_pa.pdf} & \mpanel{rf/per_dataset/HumanPseAAC/pa/hamming_accuracy_pa.pdf} & \mpanel{rf/per_dataset/HumanPseAAC/pa/rec.pdf} \\
+\mpanel{rf/per_dataset/HumanPseAAC/pa/subset0_1_pa.pdf} &  &  \\
+\end{tabular}
+\caption{Partial abstention (PartialAbstention) on \texttt{HumanPseAAC} (RF base learner).}
+\label{tab:rf_HumanPseAAC_pa}
+\end{table}
+
+\subsubsection*{RF $\bullet$ \texttt{HumanPseAAC} $\bullet$ ScoreVector --- Score-vector ranking metrics (AUROC, AUPRC, etc.)}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.6}
+\begin{tabular}{ccc}
+\mpanel{rf/per_dataset/HumanPseAAC/sv/auc_macro.pdf} & \mpanel{rf/per_dataset/HumanPseAAC/sv/auc_micro.pdf} & \mpanel{rf/per_dataset/HumanPseAAC/sv/auprc_macro.pdf} \\
+\mpanel{rf/per_dataset/HumanPseAAC/sv/auprc_micro.pdf} & \mpanel{rf/per_dataset/HumanPseAAC/sv/coverage.pdf} & \mpanel{rf/per_dataset/HumanPseAAC/sv/lr_ap.pdf} \\
+\mpanel{rf/per_dataset/HumanPseAAC/sv/one_error.pdf} & \mpanel{rf/per_dataset/HumanPseAAC/sv/ranking_loss.pdf} &  \\
+\end{tabular}
+\caption{Score-vector ranking metrics (AUROC, AUPRC, etc.) (ScoreVector) on \texttt{HumanPseAAC} (RF base learner).}
+\label{tab:rf_HumanPseAAC_sv}
+\end{table}
+
+\subsection{Yeast ($K=14$)}
+
+\subsubsection*{RF $\bullet$ \texttt{Yeast} $\bullet$ BinaryVector --- Standard MLC predictions}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.6}
+\begin{tabular}{ccc}
+\mpanel{rf/per_dataset/Yeast/bv/afrd.pdf} & \mpanel{rf/per_dataset/Yeast/bv/example_precision.pdf} & \mpanel{rf/per_dataset/Yeast/bv/example_recall.pdf} \\
+\mpanel{rf/per_dataset/Yeast/bv/f1.pdf} & \mpanel{rf/per_dataset/Yeast/bv/hamming_accuracy.pdf} & \mpanel{rf/per_dataset/Yeast/bv/jaccard.pdf} \\
+\mpanel{rf/per_dataset/Yeast/bv/macro_f1.pdf} & \mpanel{rf/per_dataset/Yeast/bv/macro_precision.pdf} & \mpanel{rf/per_dataset/Yeast/bv/macro_recall.pdf} \\
+\mpanel{rf/per_dataset/Yeast/bv/mfrd.pdf} & \mpanel{rf/per_dataset/Yeast/bv/micro_f1.pdf} & \mpanel{rf/per_dataset/Yeast/bv/micro_precision.pdf} \\
+\mpanel{rf/per_dataset/Yeast/bv/micro_recall.pdf} & \mpanel{rf/per_dataset/Yeast/bv/subset0_1.pdf} &  \\
+\end{tabular}
+\caption{Standard MLC predictions (BinaryVector) on \texttt{Yeast} (RF base learner).}
+\label{tab:rf_Yeast_bv}
+\end{table}
+
+\subsubsection*{RF $\bullet$ \texttt{Yeast} $\bullet$ PartialAbstention --- Partial abstention}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.6}
+\begin{tabular}{ccc}
+\mpanel{rf/per_dataset/Yeast/pa/aabs.pdf} & \mpanel{rf/per_dataset/Yeast/pa/abs.pdf} & \mpanel{rf/per_dataset/Yeast/pa/arec.pdf} \\
+\mpanel{rf/per_dataset/Yeast/pa/f1_pa.pdf} & \mpanel{rf/per_dataset/Yeast/pa/hamming_accuracy_pa.pdf} & \mpanel{rf/per_dataset/Yeast/pa/rec.pdf} \\
+\mpanel{rf/per_dataset/Yeast/pa/subset0_1_pa.pdf} &  &  \\
+\end{tabular}
+\caption{Partial abstention (PartialAbstention) on \texttt{Yeast} (RF base learner).}
+\label{tab:rf_Yeast_pa}
+\end{table}
+
+\subsubsection*{RF $\bullet$ \texttt{Yeast} $\bullet$ ScoreVector --- Score-vector ranking metrics (AUROC, AUPRC, etc.)}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.6}
+\begin{tabular}{ccc}
+\mpanel{rf/per_dataset/Yeast/sv/auc_macro.pdf} & \mpanel{rf/per_dataset/Yeast/sv/auc_micro.pdf} & \mpanel{rf/per_dataset/Yeast/sv/auprc_macro.pdf} \\
+\mpanel{rf/per_dataset/Yeast/sv/auprc_micro.pdf} & \mpanel{rf/per_dataset/Yeast/sv/coverage.pdf} & \mpanel{rf/per_dataset/Yeast/sv/lr_ap.pdf} \\
+\mpanel{rf/per_dataset/Yeast/sv/one_error.pdf} & \mpanel{rf/per_dataset/Yeast/sv/ranking_loss.pdf} &  \\
+\end{tabular}
+\caption{Score-vector ranking metrics (AUROC, AUPRC, etc.) (ScoreVector) on \texttt{Yeast} (RF base learner).}
+\label{tab:rf_Yeast_sv}
+\end{table}
+
+\subsection{birds ($K=19$)}
+
+\subsubsection*{RF $\bullet$ \texttt{birds} $\bullet$ BinaryVector --- Standard MLC predictions}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.6}
+\begin{tabular}{ccc}
+\mpanel{rf/per_dataset/birds/bv/afrd.pdf} & \mpanel{rf/per_dataset/birds/bv/example_precision.pdf} & \mpanel{rf/per_dataset/birds/bv/example_recall.pdf} \\
+\mpanel{rf/per_dataset/birds/bv/f1.pdf} & \mpanel{rf/per_dataset/birds/bv/hamming_accuracy.pdf} & \mpanel{rf/per_dataset/birds/bv/jaccard.pdf} \\
+\mpanel{rf/per_dataset/birds/bv/macro_f1.pdf} & \mpanel{rf/per_dataset/birds/bv/macro_precision.pdf} & \mpanel{rf/per_dataset/birds/bv/macro_recall.pdf} \\
+\mpanel{rf/per_dataset/birds/bv/mfrd.pdf} & \mpanel{rf/per_dataset/birds/bv/micro_f1.pdf} & \mpanel{rf/per_dataset/birds/bv/micro_precision.pdf} \\
+\mpanel{rf/per_dataset/birds/bv/micro_recall.pdf} & \mpanel{rf/per_dataset/birds/bv/subset0_1.pdf} &  \\
+\end{tabular}
+\caption{Standard MLC predictions (BinaryVector) on \texttt{birds} (RF base learner).}
+\label{tab:rf_birds_bv}
+\end{table}
+
+\subsubsection*{RF $\bullet$ \texttt{birds} $\bullet$ PartialAbstention --- Partial abstention}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.6}
+\begin{tabular}{ccc}
+\mpanel{rf/per_dataset/birds/pa/aabs.pdf} & \mpanel{rf/per_dataset/birds/pa/abs.pdf} & \mpanel{rf/per_dataset/birds/pa/arec.pdf} \\
+\mpanel{rf/per_dataset/birds/pa/f1_pa.pdf} & \mpanel{rf/per_dataset/birds/pa/hamming_accuracy_pa.pdf} & \mpanel{rf/per_dataset/birds/pa/rec.pdf} \\
+\mpanel{rf/per_dataset/birds/pa/subset0_1_pa.pdf} &  &  \\
+\end{tabular}
+\caption{Partial abstention (PartialAbstention) on \texttt{birds} (RF base learner).}
+\label{tab:rf_birds_pa}
+\end{table}
+
+\subsubsection*{RF $\bullet$ \texttt{birds} $\bullet$ ScoreVector --- Score-vector ranking metrics (AUROC, AUPRC, etc.)}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.6}
+\begin{tabular}{ccc}
+\mpanel{rf/per_dataset/birds/sv/auc_macro.pdf} & \mpanel{rf/per_dataset/birds/sv/auc_micro.pdf} & \mpanel{rf/per_dataset/birds/sv/auprc_macro.pdf} \\
+\mpanel{rf/per_dataset/birds/sv/auprc_micro.pdf} & \mpanel{rf/per_dataset/birds/sv/coverage.pdf} & \mpanel{rf/per_dataset/birds/sv/lr_ap.pdf} \\
+\mpanel{rf/per_dataset/birds/sv/one_error.pdf} & \mpanel{rf/per_dataset/birds/sv/ranking_loss.pdf} &  \\
+\end{tabular}
+\caption{Score-vector ranking metrics (AUROC, AUPRC, etc.) (ScoreVector) on \texttt{birds} (RF base learner).}
+\label{tab:rf_birds_sv}
+\end{table}
+
+\subsection{medical ($K=45$)}
+
+\subsubsection*{RF $\bullet$ \texttt{medical} $\bullet$ BinaryVector --- Standard MLC predictions}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.6}
+\begin{tabular}{ccc}
+\mpanel{rf/per_dataset/medical/bv/afrd.pdf} & \mpanel{rf/per_dataset/medical/bv/example_precision.pdf} & \mpanel{rf/per_dataset/medical/bv/example_recall.pdf} \\
+\mpanel{rf/per_dataset/medical/bv/f1.pdf} & \mpanel{rf/per_dataset/medical/bv/hamming_accuracy.pdf} & \mpanel{rf/per_dataset/medical/bv/jaccard.pdf} \\
+\mpanel{rf/per_dataset/medical/bv/macro_f1.pdf} & \mpanel{rf/per_dataset/medical/bv/macro_precision.pdf} & \mpanel{rf/per_dataset/medical/bv/macro_recall.pdf} \\
+\mpanel{rf/per_dataset/medical/bv/mfrd.pdf} & \mpanel{rf/per_dataset/medical/bv/micro_f1.pdf} & \mpanel{rf/per_dataset/medical/bv/micro_precision.pdf} \\
+\mpanel{rf/per_dataset/medical/bv/micro_recall.pdf} & \mpanel{rf/per_dataset/medical/bv/subset0_1.pdf} &  \\
+\end{tabular}
+\caption{Standard MLC predictions (BinaryVector) on \texttt{medical} (RF base learner).}
+\label{tab:rf_medical_bv}
+\end{table}
+
+\subsubsection*{RF $\bullet$ \texttt{medical} $\bullet$ PartialAbstention --- Partial abstention}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.6}
+\begin{tabular}{ccc}
+\mpanel{rf/per_dataset/medical/pa/aabs.pdf} & \mpanel{rf/per_dataset/medical/pa/abs.pdf} & \mpanel{rf/per_dataset/medical/pa/arec.pdf} \\
+\mpanel{rf/per_dataset/medical/pa/f1_pa.pdf} & \mpanel{rf/per_dataset/medical/pa/hamming_accuracy_pa.pdf} & \mpanel{rf/per_dataset/medical/pa/rec.pdf} \\
+\mpanel{rf/per_dataset/medical/pa/subset0_1_pa.pdf} &  &  \\
+\end{tabular}
+\caption{Partial abstention (PartialAbstention) on \texttt{medical} (RF base learner).}
+\label{tab:rf_medical_pa}
+\end{table}
+
+\subsubsection*{RF $\bullet$ \texttt{medical} $\bullet$ ScoreVector --- Score-vector ranking metrics (AUROC, AUPRC, etc.)}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.6}
+\begin{tabular}{ccc}
+\mpanel{rf/per_dataset/medical/sv/auc_macro.pdf} & \mpanel{rf/per_dataset/medical/sv/auc_micro.pdf} & \mpanel{rf/per_dataset/medical/sv/auprc_macro.pdf} \\
+\mpanel{rf/per_dataset/medical/sv/auprc_micro.pdf} & \mpanel{rf/per_dataset/medical/sv/coverage.pdf} & \mpanel{rf/per_dataset/medical/sv/lr_ap.pdf} \\
+\mpanel{rf/per_dataset/medical/sv/one_error.pdf} & \mpanel{rf/per_dataset/medical/sv/ranking_loss.pdf} &  \\
+\end{tabular}
+\caption{Score-vector ranking metrics (AUROC, AUPRC, etc.) (ScoreVector) on \texttt{medical} (RF base learner).}
+\label{tab:rf_medical_sv}
+\end{table}
+
+\subsection{enron ($K=53$)}
+
+\subsubsection*{RF $\bullet$ \texttt{enron} $\bullet$ BinaryVector --- Standard MLC predictions}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.6}
+\begin{tabular}{ccc}
+\mpanel{rf/per_dataset/enron/bv/afrd.pdf} & \mpanel{rf/per_dataset/enron/bv/example_precision.pdf} & \mpanel{rf/per_dataset/enron/bv/example_recall.pdf} \\
+\mpanel{rf/per_dataset/enron/bv/f1.pdf} & \mpanel{rf/per_dataset/enron/bv/hamming_accuracy.pdf} & \mpanel{rf/per_dataset/enron/bv/jaccard.pdf} \\
+\mpanel{rf/per_dataset/enron/bv/macro_f1.pdf} & \mpanel{rf/per_dataset/enron/bv/macro_precision.pdf} & \mpanel{rf/per_dataset/enron/bv/macro_recall.pdf} \\
+\mpanel{rf/per_dataset/enron/bv/mfrd.pdf} & \mpanel{rf/per_dataset/enron/bv/micro_f1.pdf} & \mpanel{rf/per_dataset/enron/bv/micro_precision.pdf} \\
+\mpanel{rf/per_dataset/enron/bv/micro_recall.pdf} & \mpanel{rf/per_dataset/enron/bv/subset0_1.pdf} &  \\
+\end{tabular}
+\caption{Standard MLC predictions (BinaryVector) on \texttt{enron} (RF base learner).}
+\label{tab:rf_enron_bv}
+\end{table}
+
+\subsubsection*{RF $\bullet$ \texttt{enron} $\bullet$ PartialAbstention --- Partial abstention}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.6}
+\begin{tabular}{ccc}
+\mpanel{rf/per_dataset/enron/pa/aabs.pdf} & \mpanel{rf/per_dataset/enron/pa/abs.pdf} & \mpanel{rf/per_dataset/enron/pa/arec.pdf} \\
+\mpanel{rf/per_dataset/enron/pa/f1_pa.pdf} & \mpanel{rf/per_dataset/enron/pa/hamming_accuracy_pa.pdf} & \mpanel{rf/per_dataset/enron/pa/rec.pdf} \\
+\mpanel{rf/per_dataset/enron/pa/subset0_1_pa.pdf} &  &  \\
+\end{tabular}
+\caption{Partial abstention (PartialAbstention) on \texttt{enron} (RF base learner).}
+\label{tab:rf_enron_pa}
+\end{table}
+
+\subsubsection*{RF $\bullet$ \texttt{enron} $\bullet$ ScoreVector --- Score-vector ranking metrics (AUROC, AUPRC, etc.)}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.6}
+\begin{tabular}{ccc}
+\mpanel{rf/per_dataset/enron/sv/auc_macro.pdf} & \mpanel{rf/per_dataset/enron/sv/auc_micro.pdf} & \mpanel{rf/per_dataset/enron/sv/auprc_macro.pdf} \\
+\mpanel{rf/per_dataset/enron/sv/auprc_micro.pdf} & \mpanel{rf/per_dataset/enron/sv/coverage.pdf} & \mpanel{rf/per_dataset/enron/sv/lr_ap.pdf} \\
+\mpanel{rf/per_dataset/enron/sv/one_error.pdf} & \mpanel{rf/per_dataset/enron/sv/ranking_loss.pdf} &  \\
+\end{tabular}
+\caption{Score-vector ranking metrics (AUROC, AUPRC, etc.) (ScoreVector) on \texttt{enron} (RF base learner).}
+\label{tab:rf_enron_sv}
+\end{table}
+
+\clearpage
+\section{LGBM aggregated results}
+
+\subsubsection*{LGBM $\bullet$ Aggregate $\bullet$ BinaryVector --- Standard MLC predictions}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.6}
+\begin{tabular}{ccc}
+\mpanel{lgbm/aggregate/bv/afrd.pdf} & \mpanel{lgbm/aggregate/bv/example_precision.pdf} & \mpanel{lgbm/aggregate/bv/example_recall.pdf} \\
+\mpanel{lgbm/aggregate/bv/f1.pdf} & \mpanel{lgbm/aggregate/bv/hamming_accuracy.pdf} & \mpanel{lgbm/aggregate/bv/jaccard.pdf} \\
+\mpanel{lgbm/aggregate/bv/macro_f1.pdf} & \mpanel{lgbm/aggregate/bv/macro_precision.pdf} & \mpanel{lgbm/aggregate/bv/macro_recall.pdf} \\
+\mpanel{lgbm/aggregate/bv/mfrd.pdf} & \mpanel{lgbm/aggregate/bv/micro_f1.pdf} & \mpanel{lgbm/aggregate/bv/micro_precision.pdf} \\
+\mpanel{lgbm/aggregate/bv/micro_recall.pdf} & \mpanel{lgbm/aggregate/bv/subset0_1.pdf} &  \\
+\end{tabular}
+\caption{Standard MLC predictions (BinaryVector), LGBM base learner, averaged across datasets (enron / GpositivePseAAC / emotions / scene / PlantPseAAC / HumanPseAAC / Yeast: RF only). Method indices and line colors follow the encoding paragraph above.}
+\label{tab:lgbm_agg_bv}
+\end{table}
+
+\subsubsection*{LGBM $\bullet$ Aggregate $\bullet$ PartialAbstention --- Partial abstention}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.6}
+\begin{tabular}{ccc}
+\mpanel{lgbm/aggregate/pa/aabs.pdf} & \mpanel{lgbm/aggregate/pa/abs.pdf} & \mpanel{lgbm/aggregate/pa/arec.pdf} \\
+\mpanel{lgbm/aggregate/pa/f1_pa.pdf} & \mpanel{lgbm/aggregate/pa/hamming_accuracy_pa.pdf} & \mpanel{lgbm/aggregate/pa/rec.pdf} \\
+\mpanel{lgbm/aggregate/pa/subset0_1_pa.pdf} &  &  \\
+\end{tabular}
+\caption{Partial abstention (PartialAbstention), LGBM base learner, averaged across datasets (enron / GpositivePseAAC / emotions / scene / PlantPseAAC / HumanPseAAC / Yeast: RF only). Method indices and line colors follow the encoding paragraph above.}
+\label{tab:lgbm_agg_pa}
+\end{table}
+
+\subsubsection*{LGBM $\bullet$ Aggregate $\bullet$ ScoreVector --- Score-vector ranking metrics (AUROC, AUPRC, etc.)}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.6}
+\begin{tabular}{ccc}
+\mpanel{lgbm/aggregate/sv/auc_macro.pdf} & \mpanel{lgbm/aggregate/sv/auc_micro.pdf} & \mpanel{lgbm/aggregate/sv/auprc_macro.pdf} \\
+\mpanel{lgbm/aggregate/sv/auprc_micro.pdf} & \mpanel{lgbm/aggregate/sv/coverage.pdf} & \mpanel{lgbm/aggregate/sv/lr_ap.pdf} \\
+\mpanel{lgbm/aggregate/sv/one_error.pdf} & \mpanel{lgbm/aggregate/sv/ranking_loss.pdf} &  \\
+\end{tabular}
+\caption{Score-vector ranking metrics (AUROC, AUPRC, etc.) (ScoreVector), LGBM base learner, averaged across datasets (enron / GpositivePseAAC / emotions / scene / PlantPseAAC / HumanPseAAC / Yeast: RF only). Method indices and line colors follow the encoding paragraph above.}
+\label{tab:lgbm_agg_sv}
+\end{table}
+
+
+\end{document}

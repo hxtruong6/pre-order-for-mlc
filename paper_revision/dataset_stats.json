@@ -1,0 +1,83 @@
+{
+  "GpositivePseAAC": {
+    "display": "GpositivePseAAC",
+    "N": 519,
+    "P": 440,
+    "K": 4,
+    "MeanIR": 3.86,
+    "CVIR": 1.15,
+    "source": "computed (full dataset)"
+  },
+  "emotions": {
+    "display": "Emotions",
+    "N": 593,
+    "P": 72,
+    "K": 6,
+    "MeanIR": 1.48,
+    "CVIR": 0.16,
+    "source": "computed (full dataset)"
+  },
+  "scene": {
+    "display": "Scene",
+    "N": 2407,
+    "P": 294,
+    "K": 6,
+    "MeanIR": 1.25,
+    "CVIR": 0.11,
+    "source": "computed (full dataset)"
+  },
+  "PlantPseAAC": {
+    "display": "PlantPseAAC",
+    "N": 978,
+    "P": 440,
+    "K": 12,
+    "MeanIR": 6.69,
+    "CVIR": 0.68,
+    "source": "computed (full dataset)"
+  },
+  "HumanPseAAC": {
+    "display": "HumanPseAAC",
+    "N": 3106,
+    "P": 440,
+    "K": 14,
+    "MeanIR": 15.29,
+    "CVIR": 1.05,
+    "source": "computed (full dataset)"
+  },
+  "Yeast": {
+    "display": "Yeast",
+    "N": 2417,
+    "P": 103,
+    "K": 14,
+    "MeanIR": 7.2,
+    "CVIR": 1.82,
+    "source": "computed (full dataset)"
+  },
+  "birds": {
+    "display": "birds",
+    "N": 645,
+    "P": 260,
+    "K": 19,
+    "MeanIR": 5.41,
+    "CVIR": 0.8,
+    "source": "computed (full dataset)"
+  },
+  "medical": {
+    "display": "medical",
+    "N": 978,
+    "P": 1449,
+    "K": 45,
+    "MeanIR": 222.37,
+    "CVIR": 0.72,
+    "source": "computed (full dataset)"
+  },
+  "enron": {
+    "display": "enron",
+    "N": 1702,
+    "P": 1001,
+    "K": 53,
+    "MeanIR": 10.45,
+    "CVIR": 0.8,
+    "source": "computed (full dataset)"
+  }
+}

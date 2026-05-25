@@ -41,6 +41,18 @@ data/bibtex.arff
 # Untracked working paper draft
 paper.tex
 
+# Overleaf clone (synced separately via its own git remote)
+overleaf/
+
+# LaTeX build artefacts under paper_revision/
+paper_revision/*.aux
+paper_revision/*.log
+paper_revision/*.out
+paper_revision/*.fdb_latexmk
+paper_revision/*.fls
+paper_revision/*.synctex.gz
+paper_revision/*.toc
+
 # --- Python ---------------------------------------------------------------
 
 __pycache__/

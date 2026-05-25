@@ -94,6 +94,17 @@ class EvaluationConfig:
             EvaluationMetricName.HAMMING_ACCURACY_PA,
             EvaluationMetricName.SUBSET0_1_PA,
             EvaluationMetricName.F1_PA,
+            EvaluationMetricName.JACCARD_PA,
+            EvaluationMetricName.EXAMPLE_PRECISION_PA,
+            EvaluationMetricName.EXAMPLE_RECALL_PA,
+            EvaluationMetricName.MACRO_PRECISION_PA,
+            EvaluationMetricName.MICRO_PRECISION_PA,
+            EvaluationMetricName.MACRO_RECALL_PA,
+            EvaluationMetricName.MICRO_RECALL_PA,
+            EvaluationMetricName.MACRO_F1_PA,
+            EvaluationMetricName.MICRO_F1_PA,
+            EvaluationMetricName.MFRD_PA,
+            EvaluationMetricName.AFRD_PA,
             EvaluationMetricName.AREC,
             EvaluationMetricName.AABS,
             EvaluationMetricName.REC,
@@ -335,6 +346,29 @@ class EvaluationFramework:
                 predicted_Y=partial_abstention,
                 true_Y=true_labels,
             )
+        # PA mirrors of BV metrics (added for major revision).
+        elif metric_name == EvaluationMetricName.JACCARD_PA:
+            return self.evaluation_metric.jaccard_pa(partial_abstention, true_labels)
+        elif metric_name == EvaluationMetricName.EXAMPLE_PRECISION_PA:
+            return self.evaluation_metric.example_precision_pa(partial_abstention, true_labels)
+        elif metric_name == EvaluationMetricName.EXAMPLE_RECALL_PA:
+            return self.evaluation_metric.example_recall_pa(partial_abstention, true_labels)
+        elif metric_name == EvaluationMetricName.MACRO_PRECISION_PA:
+            return self.evaluation_metric.macro_precision_pa(partial_abstention, true_labels)
+        elif metric_name == EvaluationMetricName.MICRO_PRECISION_PA:
+            return self.evaluation_metric.micro_precision_pa(partial_abstention, true_labels)
+        elif metric_name == EvaluationMetricName.MACRO_RECALL_PA:
+            return self.evaluation_metric.macro_recall_pa(partial_abstention, true_labels)
+        elif metric_name == EvaluationMetricName.MICRO_RECALL_PA:
+            return self.evaluation_metric.micro_recall_pa(partial_abstention, true_labels)
+        elif metric_name == EvaluationMetricName.MACRO_F1_PA:
+            return self.evaluation_metric.macro_f1_pa(partial_abstention, true_labels)
+        elif metric_name == EvaluationMetricName.MICRO_F1_PA:
+            return self.evaluation_metric.micro_f1_pa(partial_abstention, true_labels)
+        elif metric_name == EvaluationMetricName.MFRD_PA:
+            return self.evaluation_metric.mfrd_pa(partial_abstention, true_labels)
+        elif metric_name == EvaluationMetricName.AFRD_PA:
+            return self.evaluation_metric.afrd_pa(partial_abstention, true_labels)
         else:
             raise ValueError(f"Unknown metric for partial abstention: {metric_name}")
 
