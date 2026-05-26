@@ -69,10 +69,12 @@ PANEL_WIDTH = r"0.31\linewidth"
 _PREAMBLE_TEMPLATE = r"""\documentclass[11pt]{article}
 \usepackage[margin=1in]{geometry}
 \usepackage{graphicx}
+\usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{xcolor}
 \usepackage{caption}
 \usepackage{booktabs}
+\usepackage{placeins}
 \usepackage[hidelinks]{hyperref}
 
 \graphicspath{{__GRAPHICS_PATH__/}}
@@ -351,6 +353,67 @@ PENDING_TODO = r"""\section*{Pending follow-ups (to fill before final submission
 _ABSTAIN_METRICS = ["f1_pa", "jaccard_pa"]
 
 
+def _abstain_figure_block(
+    fig_root: Path,
+    learner_dir: str,
+    learner_name: str,
+    pa_metric: str,
+    metric_tex: str,
+    scope_dir: str,
+    scope_label: str,
+    label_suffix: str,
+) -> list[str]:
+    """Emit three figures (existing pair, gain pair, robustness pair) for a scope."""
+    base = f"{learner_dir}/abstain/{pa_metric}/{scope_dir}"
+    abs_path = fig_root / learner_dir / "abstain" / pa_metric / scope_dir
+    if not abs_path.exists():
+        return []
+
+    out: list[str] = []
+    # Figure 1: existing coverage_risk + paired_bars.
+    out.append(
+        "\\begin{figure}[!htbp]\n\\centering\n"
+        f"\\mpanel{{{base}/coverage_risk.pdf}}\\hfill\n"
+        f"\\mpanel{{{base}/paired_bars.pdf}}\n"
+        f"\\caption{{{learner_name} ({metric_tex}) {scope_label}: "
+        "coverage-risk scatter (left) and standard-MLC-vs-abstention "
+        "paired bars across $\\alpha\\in\\{0.0,0.1,0.2,0.3\\}$ (right).}\n"
+        f"\\label{{fig:abstain_{learner_dir}_{pa_metric}_{label_suffix}_basic}}\n"
+        "\\end{figure}\n"
+    )
+    # Figure 2: Pareto + heatmap.
+    out.append(
+        "\\begin{figure}[!htbp]\n\\centering\n"
+        f"\\mpanel{{{base}/coverage_risk_pareto.pdf}}\\hfill\n"
+        f"\\mpanel{{{base}/gain_heatmap.pdf}}\n"
+        f"\\caption{{{learner_name} ({metric_tex}) {scope_label}:"
+        f" Pareto frontier of (abstention, retained quality) with the"
+        f" win-region shaded green (left); per-method per-noise gain"
+        f" $(\\text{{{metric_tex}}}-f_1)$ heatmap (right).}}\n"
+        f"\\label{{fig:abstain_{learner_dir}_{pa_metric}_{label_suffix}_gain}}\n"
+        "\\end{figure}\n"
+    )
+    # Figure 3: robustness (efficiency-quality + effective f1).
+    out.append(
+        "\\begin{figure}[!htbp]\n\\centering\n"
+        f"\\mpanel{{{base}/efficiency_quality.pdf}}\\hfill\n"
+        f"\\mpanel{{{base}/effective_f1.pdf}}\n"
+        f"\\caption{{{learner_name} ({metric_tex}) {scope_label} ---"
+        f" robustness view. Left: efficiency-quality scatter"
+        f" (x = coverage $= 1-\\text{{abs}}$); upper-right is robust"
+        f" (predicts many labels and keeps quality high). Right:"
+        f" effective {metric_tex} $= (1-\\text{{abs}}) \\cdot {metric_tex}$,"
+        f" i.e.\\ retained quality penalised by skipped coverage. A"
+        f" method whose effective curve stays above the dashed standard-MLC"
+        f" baseline at every $\\alpha$ is robust to noise, not just"
+        f" selectively abstaining on hard labels.}}\n"
+        f"\\label{{fig:abstain_{learner_dir}_{pa_metric}_{label_suffix}_robust}}\n"
+        "\\end{figure}\n"
+    )
+    out.append("\\FloatBarrier\n")
+    return out
+
+
 def emit_abstain_section(fig_root: Path) -> list[str]:
     """Emit the abstention-benefit section.
 
@@ -411,20 +474,11 @@ def emit_abstain_section(fig_root: Path) -> list[str]:
                 f"\\subsection{{{learner_name}, metric \\texttt{{{metric_tex}}}"
                 " --- aggregate}\n"
             )
-            agg_dir = metric_root / "aggregate"
-            if (agg_dir / "coverage_risk.pdf").exists():
-                parts.append(
-                    "\\begin{figure}[!htbp]\n\\centering\n"
-                    f"\\mpanel{{{learner_dir}/abstain/{pa_metric}/aggregate/coverage_risk.pdf}}"
-                    "\\hfill\n"
-                    f"\\mpanel{{{learner_dir}/abstain/{pa_metric}/aggregate/paired_bars.pdf}}\n"
-                    f"\\caption{{{learner_name} ({metric_tex}): coverage-risk"
-                    " (left) and standard-MLC-vs-abstention paired bars"
-                    " across $\\alpha\\in\\{0.0,0.1,0.2,0.3\\}$ (right),"
-                    " averaged across all datasets.}\n"
-                    f"\\label{{fig:abstain_{learner_dir}_{pa_metric}_agg}}\n"
-                    "\\end{figure}\n"
-                )
+            parts.extend(_abstain_figure_block(
+                fig_root, learner_dir, learner_name, pa_metric, metric_tex,
+                scope_dir="aggregate", scope_label="averaged across all datasets",
+                label_suffix="agg",
+            ))
             per_ds_root = metric_root / "per_dataset"
             if per_ds_root.exists():
                 parts.append(
@@ -435,17 +489,12 @@ def emit_abstain_section(fig_root: Path) -> list[str]:
                     ds_dir = per_ds_root / ds
                     if not ds_dir.exists():
                         continue
-                    parts.append(
-                        "\\begin{figure}[!htbp]\n\\centering\n"
-                        f"\\mpanel{{{learner_dir}/abstain/{pa_metric}/per_dataset/{ds}/coverage_risk.pdf}}"
-                        "\\hfill\n"
-                        f"\\mpanel{{{learner_dir}/abstain/{pa_metric}/per_dataset/{ds}/paired_bars.pdf}}\n"
-                        f"\\caption{{{learner_name} on \\texttt{{{tex_escape(ds)}}}"
-                        f" ({metric_tex}): coverage-risk (left) and"
-                        " standard-MLC-vs-abstention paired bars (right).}\n"
-                        f"\\label{{fig:abstain_{learner_dir}_{pa_metric}_{ds}}}\n"
-                        "\\end{figure}\n"
-                    )
+                    parts.extend(_abstain_figure_block(
+                        fig_root, learner_dir, learner_name, pa_metric, metric_tex,
+                        scope_dir=f"per_dataset/{ds}",
+                        scope_label=f"on \\texttt{{{tex_escape(ds)}}}",
+                        label_suffix=ds,
+                    ))
             parts.append("\\clearpage\n")
     return parts
 

@@ -1,10 +1,12 @@
 \documentclass[11pt]{article}
 \usepackage[margin=1in]{geometry}
 \usepackage{graphicx}
+\usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{xcolor}
 \usepackage{caption}
 \usepackage{booktabs}
+\usepackage{placeins}
 \usepackage[hidelinks]{hyperref}
 
 \graphicspath{{figures_enhanced/}}
@@ -185,9 +187,27 @@ panel).
 \centering
 \mpanel{rf/abstain/f1_pa/aggregate/coverage_risk.pdf}\hfill
 \mpanel{rf/abstain/f1_pa/aggregate/paired_bars.pdf}
-\caption{RF (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right), averaged across all datasets.}
-\label{fig:abstain_rf_f1_pa_agg}
+\caption{RF (f1\_pa) averaged across all datasets: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_rf_f1_pa_agg_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/f1_pa/aggregate/coverage_risk_pareto.pdf}\hfill
+\mpanel{rf/abstain/f1_pa/aggregate/gain_heatmap.pdf}
+\caption{RF (f1\_pa) averaged across all datasets: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{f1\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_rf_f1_pa_agg_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/f1_pa/aggregate/efficiency_quality.pdf}\hfill
+\mpanel{rf/abstain/f1_pa/aggregate/effective_f1.pdf}
+\caption{RF (f1\_pa) averaged across all datasets --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective f1\_pa $= (1-\text{abs}) \cdot f1\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_rf_f1_pa_agg_robust}
+\end{figure}
+
+\FloatBarrier
 
 \subsection{RF, metric \texttt{f1\_pa} --- per dataset}
 
@@ -195,73 +215,235 @@ panel).
 \centering
 \mpanel{rf/abstain/f1_pa/per_dataset/GpositivePseAAC/coverage_risk.pdf}\hfill
 \mpanel{rf/abstain/f1_pa/per_dataset/GpositivePseAAC/paired_bars.pdf}
-\caption{RF on \texttt{GpositivePseAAC} (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
-\label{fig:abstain_rf_f1_pa_GpositivePseAAC}
+\caption{RF (f1\_pa) on \texttt{GpositivePseAAC}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_rf_f1_pa_GpositivePseAAC_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/f1_pa/per_dataset/GpositivePseAAC/coverage_risk_pareto.pdf}\hfill
+\mpanel{rf/abstain/f1_pa/per_dataset/GpositivePseAAC/gain_heatmap.pdf}
+\caption{RF (f1\_pa) on \texttt{GpositivePseAAC}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{f1\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_rf_f1_pa_GpositivePseAAC_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/f1_pa/per_dataset/GpositivePseAAC/efficiency_quality.pdf}\hfill
+\mpanel{rf/abstain/f1_pa/per_dataset/GpositivePseAAC/effective_f1.pdf}
+\caption{RF (f1\_pa) on \texttt{GpositivePseAAC} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective f1\_pa $= (1-\text{abs}) \cdot f1\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_rf_f1_pa_GpositivePseAAC_robust}
+\end{figure}
+
+\FloatBarrier
 
 \begin{figure}[!htbp]
 \centering
 \mpanel{rf/abstain/f1_pa/per_dataset/emotions/coverage_risk.pdf}\hfill
 \mpanel{rf/abstain/f1_pa/per_dataset/emotions/paired_bars.pdf}
-\caption{RF on \texttt{emotions} (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
-\label{fig:abstain_rf_f1_pa_emotions}
+\caption{RF (f1\_pa) on \texttt{emotions}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_rf_f1_pa_emotions_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/f1_pa/per_dataset/emotions/coverage_risk_pareto.pdf}\hfill
+\mpanel{rf/abstain/f1_pa/per_dataset/emotions/gain_heatmap.pdf}
+\caption{RF (f1\_pa) on \texttt{emotions}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{f1\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_rf_f1_pa_emotions_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/f1_pa/per_dataset/emotions/efficiency_quality.pdf}\hfill
+\mpanel{rf/abstain/f1_pa/per_dataset/emotions/effective_f1.pdf}
+\caption{RF (f1\_pa) on \texttt{emotions} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective f1\_pa $= (1-\text{abs}) \cdot f1\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_rf_f1_pa_emotions_robust}
+\end{figure}
+
+\FloatBarrier
 
 \begin{figure}[!htbp]
 \centering
 \mpanel{rf/abstain/f1_pa/per_dataset/scene/coverage_risk.pdf}\hfill
 \mpanel{rf/abstain/f1_pa/per_dataset/scene/paired_bars.pdf}
-\caption{RF on \texttt{scene} (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
-\label{fig:abstain_rf_f1_pa_scene}
+\caption{RF (f1\_pa) on \texttt{scene}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_rf_f1_pa_scene_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/f1_pa/per_dataset/scene/coverage_risk_pareto.pdf}\hfill
+\mpanel{rf/abstain/f1_pa/per_dataset/scene/gain_heatmap.pdf}
+\caption{RF (f1\_pa) on \texttt{scene}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{f1\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_rf_f1_pa_scene_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/f1_pa/per_dataset/scene/efficiency_quality.pdf}\hfill
+\mpanel{rf/abstain/f1_pa/per_dataset/scene/effective_f1.pdf}
+\caption{RF (f1\_pa) on \texttt{scene} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective f1\_pa $= (1-\text{abs}) \cdot f1\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_rf_f1_pa_scene_robust}
+\end{figure}
+
+\FloatBarrier
 
 \begin{figure}[!htbp]
 \centering
 \mpanel{rf/abstain/f1_pa/per_dataset/PlantPseAAC/coverage_risk.pdf}\hfill
 \mpanel{rf/abstain/f1_pa/per_dataset/PlantPseAAC/paired_bars.pdf}
-\caption{RF on \texttt{PlantPseAAC} (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
-\label{fig:abstain_rf_f1_pa_PlantPseAAC}
+\caption{RF (f1\_pa) on \texttt{PlantPseAAC}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_rf_f1_pa_PlantPseAAC_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/f1_pa/per_dataset/PlantPseAAC/coverage_risk_pareto.pdf}\hfill
+\mpanel{rf/abstain/f1_pa/per_dataset/PlantPseAAC/gain_heatmap.pdf}
+\caption{RF (f1\_pa) on \texttt{PlantPseAAC}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{f1\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_rf_f1_pa_PlantPseAAC_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/f1_pa/per_dataset/PlantPseAAC/efficiency_quality.pdf}\hfill
+\mpanel{rf/abstain/f1_pa/per_dataset/PlantPseAAC/effective_f1.pdf}
+\caption{RF (f1\_pa) on \texttt{PlantPseAAC} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective f1\_pa $= (1-\text{abs}) \cdot f1\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_rf_f1_pa_PlantPseAAC_robust}
+\end{figure}
+
+\FloatBarrier
 
 \begin{figure}[!htbp]
 \centering
 \mpanel{rf/abstain/f1_pa/per_dataset/HumanPseAAC/coverage_risk.pdf}\hfill
 \mpanel{rf/abstain/f1_pa/per_dataset/HumanPseAAC/paired_bars.pdf}
-\caption{RF on \texttt{HumanPseAAC} (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
-\label{fig:abstain_rf_f1_pa_HumanPseAAC}
+\caption{RF (f1\_pa) on \texttt{HumanPseAAC}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_rf_f1_pa_HumanPseAAC_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/f1_pa/per_dataset/HumanPseAAC/coverage_risk_pareto.pdf}\hfill
+\mpanel{rf/abstain/f1_pa/per_dataset/HumanPseAAC/gain_heatmap.pdf}
+\caption{RF (f1\_pa) on \texttt{HumanPseAAC}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{f1\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_rf_f1_pa_HumanPseAAC_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/f1_pa/per_dataset/HumanPseAAC/efficiency_quality.pdf}\hfill
+\mpanel{rf/abstain/f1_pa/per_dataset/HumanPseAAC/effective_f1.pdf}
+\caption{RF (f1\_pa) on \texttt{HumanPseAAC} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective f1\_pa $= (1-\text{abs}) \cdot f1\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_rf_f1_pa_HumanPseAAC_robust}
+\end{figure}
+
+\FloatBarrier
 
 \begin{figure}[!htbp]
 \centering
 \mpanel{rf/abstain/f1_pa/per_dataset/Yeast/coverage_risk.pdf}\hfill
 \mpanel{rf/abstain/f1_pa/per_dataset/Yeast/paired_bars.pdf}
-\caption{RF on \texttt{Yeast} (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
-\label{fig:abstain_rf_f1_pa_Yeast}
+\caption{RF (f1\_pa) on \texttt{Yeast}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_rf_f1_pa_Yeast_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/f1_pa/per_dataset/Yeast/coverage_risk_pareto.pdf}\hfill
+\mpanel{rf/abstain/f1_pa/per_dataset/Yeast/gain_heatmap.pdf}
+\caption{RF (f1\_pa) on \texttt{Yeast}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{f1\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_rf_f1_pa_Yeast_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/f1_pa/per_dataset/Yeast/efficiency_quality.pdf}\hfill
+\mpanel{rf/abstain/f1_pa/per_dataset/Yeast/effective_f1.pdf}
+\caption{RF (f1\_pa) on \texttt{Yeast} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective f1\_pa $= (1-\text{abs}) \cdot f1\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_rf_f1_pa_Yeast_robust}
+\end{figure}
+
+\FloatBarrier
 
 \begin{figure}[!htbp]
 \centering
 \mpanel{rf/abstain/f1_pa/per_dataset/birds/coverage_risk.pdf}\hfill
 \mpanel{rf/abstain/f1_pa/per_dataset/birds/paired_bars.pdf}
-\caption{RF on \texttt{birds} (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
-\label{fig:abstain_rf_f1_pa_birds}
+\caption{RF (f1\_pa) on \texttt{birds}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_rf_f1_pa_birds_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/f1_pa/per_dataset/birds/coverage_risk_pareto.pdf}\hfill
+\mpanel{rf/abstain/f1_pa/per_dataset/birds/gain_heatmap.pdf}
+\caption{RF (f1\_pa) on \texttt{birds}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{f1\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_rf_f1_pa_birds_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/f1_pa/per_dataset/birds/efficiency_quality.pdf}\hfill
+\mpanel{rf/abstain/f1_pa/per_dataset/birds/effective_f1.pdf}
+\caption{RF (f1\_pa) on \texttt{birds} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective f1\_pa $= (1-\text{abs}) \cdot f1\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_rf_f1_pa_birds_robust}
+\end{figure}
+
+\FloatBarrier
 
 \begin{figure}[!htbp]
 \centering
 \mpanel{rf/abstain/f1_pa/per_dataset/medical/coverage_risk.pdf}\hfill
 \mpanel{rf/abstain/f1_pa/per_dataset/medical/paired_bars.pdf}
-\caption{RF on \texttt{medical} (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
-\label{fig:abstain_rf_f1_pa_medical}
+\caption{RF (f1\_pa) on \texttt{medical}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_rf_f1_pa_medical_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/f1_pa/per_dataset/medical/coverage_risk_pareto.pdf}\hfill
+\mpanel{rf/abstain/f1_pa/per_dataset/medical/gain_heatmap.pdf}
+\caption{RF (f1\_pa) on \texttt{medical}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{f1\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_rf_f1_pa_medical_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/f1_pa/per_dataset/medical/efficiency_quality.pdf}\hfill
+\mpanel{rf/abstain/f1_pa/per_dataset/medical/effective_f1.pdf}
+\caption{RF (f1\_pa) on \texttt{medical} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective f1\_pa $= (1-\text{abs}) \cdot f1\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_rf_f1_pa_medical_robust}
+\end{figure}
+
+\FloatBarrier
 
 \begin{figure}[!htbp]
 \centering
 \mpanel{rf/abstain/f1_pa/per_dataset/enron/coverage_risk.pdf}\hfill
 \mpanel{rf/abstain/f1_pa/per_dataset/enron/paired_bars.pdf}
-\caption{RF on \texttt{enron} (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
-\label{fig:abstain_rf_f1_pa_enron}
+\caption{RF (f1\_pa) on \texttt{enron}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_rf_f1_pa_enron_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/f1_pa/per_dataset/enron/coverage_risk_pareto.pdf}\hfill
+\mpanel{rf/abstain/f1_pa/per_dataset/enron/gain_heatmap.pdf}
+\caption{RF (f1\_pa) on \texttt{enron}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{f1\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_rf_f1_pa_enron_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/f1_pa/per_dataset/enron/efficiency_quality.pdf}\hfill
+\mpanel{rf/abstain/f1_pa/per_dataset/enron/effective_f1.pdf}
+\caption{RF (f1\_pa) on \texttt{enron} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective f1\_pa $= (1-\text{abs}) \cdot f1\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_rf_f1_pa_enron_robust}
+\end{figure}
+
+\FloatBarrier
 
 \clearpage
 
@@ -271,9 +453,27 @@ panel).
 \centering
 \mpanel{rf/abstain/jaccard_pa/aggregate/coverage_risk.pdf}\hfill
 \mpanel{rf/abstain/jaccard_pa/aggregate/paired_bars.pdf}
-\caption{RF (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right), averaged across all datasets.}
-\label{fig:abstain_rf_jaccard_pa_agg}
+\caption{RF (jaccard\_pa) averaged across all datasets: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_rf_jaccard_pa_agg_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/jaccard_pa/aggregate/coverage_risk_pareto.pdf}\hfill
+\mpanel{rf/abstain/jaccard_pa/aggregate/gain_heatmap.pdf}
+\caption{RF (jaccard\_pa) averaged across all datasets: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{jaccard\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_rf_jaccard_pa_agg_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/jaccard_pa/aggregate/efficiency_quality.pdf}\hfill
+\mpanel{rf/abstain/jaccard_pa/aggregate/effective_f1.pdf}
+\caption{RF (jaccard\_pa) averaged across all datasets --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective jaccard\_pa $= (1-\text{abs}) \cdot jaccard\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_rf_jaccard_pa_agg_robust}
+\end{figure}
+
+\FloatBarrier
 
 \subsection{RF, metric \texttt{jaccard\_pa} --- per dataset}
 
@@ -281,73 +481,235 @@ panel).
 \centering
 \mpanel{rf/abstain/jaccard_pa/per_dataset/GpositivePseAAC/coverage_risk.pdf}\hfill
 \mpanel{rf/abstain/jaccard_pa/per_dataset/GpositivePseAAC/paired_bars.pdf}
-\caption{RF on \texttt{GpositivePseAAC} (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
-\label{fig:abstain_rf_jaccard_pa_GpositivePseAAC}
+\caption{RF (jaccard\_pa) on \texttt{GpositivePseAAC}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_rf_jaccard_pa_GpositivePseAAC_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/jaccard_pa/per_dataset/GpositivePseAAC/coverage_risk_pareto.pdf}\hfill
+\mpanel{rf/abstain/jaccard_pa/per_dataset/GpositivePseAAC/gain_heatmap.pdf}
+\caption{RF (jaccard\_pa) on \texttt{GpositivePseAAC}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{jaccard\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_rf_jaccard_pa_GpositivePseAAC_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/jaccard_pa/per_dataset/GpositivePseAAC/efficiency_quality.pdf}\hfill
+\mpanel{rf/abstain/jaccard_pa/per_dataset/GpositivePseAAC/effective_f1.pdf}
+\caption{RF (jaccard\_pa) on \texttt{GpositivePseAAC} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective jaccard\_pa $= (1-\text{abs}) \cdot jaccard\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_rf_jaccard_pa_GpositivePseAAC_robust}
+\end{figure}
+
+\FloatBarrier
 
 \begin{figure}[!htbp]
 \centering
 \mpanel{rf/abstain/jaccard_pa/per_dataset/emotions/coverage_risk.pdf}\hfill
 \mpanel{rf/abstain/jaccard_pa/per_dataset/emotions/paired_bars.pdf}
-\caption{RF on \texttt{emotions} (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
-\label{fig:abstain_rf_jaccard_pa_emotions}
+\caption{RF (jaccard\_pa) on \texttt{emotions}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_rf_jaccard_pa_emotions_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/jaccard_pa/per_dataset/emotions/coverage_risk_pareto.pdf}\hfill
+\mpanel{rf/abstain/jaccard_pa/per_dataset/emotions/gain_heatmap.pdf}
+\caption{RF (jaccard\_pa) on \texttt{emotions}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{jaccard\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_rf_jaccard_pa_emotions_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/jaccard_pa/per_dataset/emotions/efficiency_quality.pdf}\hfill
+\mpanel{rf/abstain/jaccard_pa/per_dataset/emotions/effective_f1.pdf}
+\caption{RF (jaccard\_pa) on \texttt{emotions} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective jaccard\_pa $= (1-\text{abs}) \cdot jaccard\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_rf_jaccard_pa_emotions_robust}
+\end{figure}
+
+\FloatBarrier
 
 \begin{figure}[!htbp]
 \centering
 \mpanel{rf/abstain/jaccard_pa/per_dataset/scene/coverage_risk.pdf}\hfill
 \mpanel{rf/abstain/jaccard_pa/per_dataset/scene/paired_bars.pdf}
-\caption{RF on \texttt{scene} (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
-\label{fig:abstain_rf_jaccard_pa_scene}
+\caption{RF (jaccard\_pa) on \texttt{scene}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_rf_jaccard_pa_scene_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/jaccard_pa/per_dataset/scene/coverage_risk_pareto.pdf}\hfill
+\mpanel{rf/abstain/jaccard_pa/per_dataset/scene/gain_heatmap.pdf}
+\caption{RF (jaccard\_pa) on \texttt{scene}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{jaccard\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_rf_jaccard_pa_scene_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/jaccard_pa/per_dataset/scene/efficiency_quality.pdf}\hfill
+\mpanel{rf/abstain/jaccard_pa/per_dataset/scene/effective_f1.pdf}
+\caption{RF (jaccard\_pa) on \texttt{scene} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective jaccard\_pa $= (1-\text{abs}) \cdot jaccard\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_rf_jaccard_pa_scene_robust}
+\end{figure}
+
+\FloatBarrier
 
 \begin{figure}[!htbp]
 \centering
 \mpanel{rf/abstain/jaccard_pa/per_dataset/PlantPseAAC/coverage_risk.pdf}\hfill
 \mpanel{rf/abstain/jaccard_pa/per_dataset/PlantPseAAC/paired_bars.pdf}
-\caption{RF on \texttt{PlantPseAAC} (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
-\label{fig:abstain_rf_jaccard_pa_PlantPseAAC}
+\caption{RF (jaccard\_pa) on \texttt{PlantPseAAC}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_rf_jaccard_pa_PlantPseAAC_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/jaccard_pa/per_dataset/PlantPseAAC/coverage_risk_pareto.pdf}\hfill
+\mpanel{rf/abstain/jaccard_pa/per_dataset/PlantPseAAC/gain_heatmap.pdf}
+\caption{RF (jaccard\_pa) on \texttt{PlantPseAAC}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{jaccard\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_rf_jaccard_pa_PlantPseAAC_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/jaccard_pa/per_dataset/PlantPseAAC/efficiency_quality.pdf}\hfill
+\mpanel{rf/abstain/jaccard_pa/per_dataset/PlantPseAAC/effective_f1.pdf}
+\caption{RF (jaccard\_pa) on \texttt{PlantPseAAC} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective jaccard\_pa $= (1-\text{abs}) \cdot jaccard\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_rf_jaccard_pa_PlantPseAAC_robust}
+\end{figure}
+
+\FloatBarrier
 
 \begin{figure}[!htbp]
 \centering
 \mpanel{rf/abstain/jaccard_pa/per_dataset/HumanPseAAC/coverage_risk.pdf}\hfill
 \mpanel{rf/abstain/jaccard_pa/per_dataset/HumanPseAAC/paired_bars.pdf}
-\caption{RF on \texttt{HumanPseAAC} (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
-\label{fig:abstain_rf_jaccard_pa_HumanPseAAC}
+\caption{RF (jaccard\_pa) on \texttt{HumanPseAAC}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_rf_jaccard_pa_HumanPseAAC_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/jaccard_pa/per_dataset/HumanPseAAC/coverage_risk_pareto.pdf}\hfill
+\mpanel{rf/abstain/jaccard_pa/per_dataset/HumanPseAAC/gain_heatmap.pdf}
+\caption{RF (jaccard\_pa) on \texttt{HumanPseAAC}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{jaccard\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_rf_jaccard_pa_HumanPseAAC_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/jaccard_pa/per_dataset/HumanPseAAC/efficiency_quality.pdf}\hfill
+\mpanel{rf/abstain/jaccard_pa/per_dataset/HumanPseAAC/effective_f1.pdf}
+\caption{RF (jaccard\_pa) on \texttt{HumanPseAAC} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective jaccard\_pa $= (1-\text{abs}) \cdot jaccard\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_rf_jaccard_pa_HumanPseAAC_robust}
+\end{figure}
+
+\FloatBarrier
 
 \begin{figure}[!htbp]
 \centering
 \mpanel{rf/abstain/jaccard_pa/per_dataset/Yeast/coverage_risk.pdf}\hfill
 \mpanel{rf/abstain/jaccard_pa/per_dataset/Yeast/paired_bars.pdf}
-\caption{RF on \texttt{Yeast} (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
-\label{fig:abstain_rf_jaccard_pa_Yeast}
+\caption{RF (jaccard\_pa) on \texttt{Yeast}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_rf_jaccard_pa_Yeast_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/jaccard_pa/per_dataset/Yeast/coverage_risk_pareto.pdf}\hfill
+\mpanel{rf/abstain/jaccard_pa/per_dataset/Yeast/gain_heatmap.pdf}
+\caption{RF (jaccard\_pa) on \texttt{Yeast}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{jaccard\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_rf_jaccard_pa_Yeast_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/jaccard_pa/per_dataset/Yeast/efficiency_quality.pdf}\hfill
+\mpanel{rf/abstain/jaccard_pa/per_dataset/Yeast/effective_f1.pdf}
+\caption{RF (jaccard\_pa) on \texttt{Yeast} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective jaccard\_pa $= (1-\text{abs}) \cdot jaccard\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_rf_jaccard_pa_Yeast_robust}
+\end{figure}
+
+\FloatBarrier
 
 \begin{figure}[!htbp]
 \centering
 \mpanel{rf/abstain/jaccard_pa/per_dataset/birds/coverage_risk.pdf}\hfill
 \mpanel{rf/abstain/jaccard_pa/per_dataset/birds/paired_bars.pdf}
-\caption{RF on \texttt{birds} (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
-\label{fig:abstain_rf_jaccard_pa_birds}
+\caption{RF (jaccard\_pa) on \texttt{birds}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_rf_jaccard_pa_birds_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/jaccard_pa/per_dataset/birds/coverage_risk_pareto.pdf}\hfill
+\mpanel{rf/abstain/jaccard_pa/per_dataset/birds/gain_heatmap.pdf}
+\caption{RF (jaccard\_pa) on \texttt{birds}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{jaccard\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_rf_jaccard_pa_birds_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/jaccard_pa/per_dataset/birds/efficiency_quality.pdf}\hfill
+\mpanel{rf/abstain/jaccard_pa/per_dataset/birds/effective_f1.pdf}
+\caption{RF (jaccard\_pa) on \texttt{birds} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective jaccard\_pa $= (1-\text{abs}) \cdot jaccard\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_rf_jaccard_pa_birds_robust}
+\end{figure}
+
+\FloatBarrier
 
 \begin{figure}[!htbp]
 \centering
 \mpanel{rf/abstain/jaccard_pa/per_dataset/medical/coverage_risk.pdf}\hfill
 \mpanel{rf/abstain/jaccard_pa/per_dataset/medical/paired_bars.pdf}
-\caption{RF on \texttt{medical} (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
-\label{fig:abstain_rf_jaccard_pa_medical}
+\caption{RF (jaccard\_pa) on \texttt{medical}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_rf_jaccard_pa_medical_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/jaccard_pa/per_dataset/medical/coverage_risk_pareto.pdf}\hfill
+\mpanel{rf/abstain/jaccard_pa/per_dataset/medical/gain_heatmap.pdf}
+\caption{RF (jaccard\_pa) on \texttt{medical}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{jaccard\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_rf_jaccard_pa_medical_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/jaccard_pa/per_dataset/medical/efficiency_quality.pdf}\hfill
+\mpanel{rf/abstain/jaccard_pa/per_dataset/medical/effective_f1.pdf}
+\caption{RF (jaccard\_pa) on \texttt{medical} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective jaccard\_pa $= (1-\text{abs}) \cdot jaccard\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_rf_jaccard_pa_medical_robust}
+\end{figure}
+
+\FloatBarrier
 
 \begin{figure}[!htbp]
 \centering
 \mpanel{rf/abstain/jaccard_pa/per_dataset/enron/coverage_risk.pdf}\hfill
 \mpanel{rf/abstain/jaccard_pa/per_dataset/enron/paired_bars.pdf}
-\caption{RF on \texttt{enron} (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
-\label{fig:abstain_rf_jaccard_pa_enron}
+\caption{RF (jaccard\_pa) on \texttt{enron}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_rf_jaccard_pa_enron_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/jaccard_pa/per_dataset/enron/coverage_risk_pareto.pdf}\hfill
+\mpanel{rf/abstain/jaccard_pa/per_dataset/enron/gain_heatmap.pdf}
+\caption{RF (jaccard\_pa) on \texttt{enron}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{jaccard\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_rf_jaccard_pa_enron_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/jaccard_pa/per_dataset/enron/efficiency_quality.pdf}\hfill
+\mpanel{rf/abstain/jaccard_pa/per_dataset/enron/effective_f1.pdf}
+\caption{RF (jaccard\_pa) on \texttt{enron} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective jaccard\_pa $= (1-\text{abs}) \cdot jaccard\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_rf_jaccard_pa_enron_robust}
+\end{figure}
+
+\FloatBarrier
 
 \clearpage
 
@@ -357,9 +719,27 @@ panel).
 \centering
 \mpanel{lgbm/abstain/f1_pa/aggregate/coverage_risk.pdf}\hfill
 \mpanel{lgbm/abstain/f1_pa/aggregate/paired_bars.pdf}
-\caption{LGBM (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right), averaged across all datasets.}
-\label{fig:abstain_lgbm_f1_pa_agg}
+\caption{LGBM (f1\_pa) averaged across all datasets: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_lgbm_f1_pa_agg_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/f1_pa/aggregate/coverage_risk_pareto.pdf}\hfill
+\mpanel{lgbm/abstain/f1_pa/aggregate/gain_heatmap.pdf}
+\caption{LGBM (f1\_pa) averaged across all datasets: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{f1\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_lgbm_f1_pa_agg_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/f1_pa/aggregate/efficiency_quality.pdf}\hfill
+\mpanel{lgbm/abstain/f1_pa/aggregate/effective_f1.pdf}
+\caption{LGBM (f1\_pa) averaged across all datasets --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective f1\_pa $= (1-\text{abs}) \cdot f1\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_lgbm_f1_pa_agg_robust}
+\end{figure}
+
+\FloatBarrier
 
 \subsection{LGBM, metric \texttt{f1\_pa} --- per dataset}
 
@@ -367,65 +747,209 @@ panel).
 \centering
 \mpanel{lgbm/abstain/f1_pa/per_dataset/GpositivePseAAC/coverage_risk.pdf}\hfill
 \mpanel{lgbm/abstain/f1_pa/per_dataset/GpositivePseAAC/paired_bars.pdf}
-\caption{LGBM on \texttt{GpositivePseAAC} (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
-\label{fig:abstain_lgbm_f1_pa_GpositivePseAAC}
+\caption{LGBM (f1\_pa) on \texttt{GpositivePseAAC}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_lgbm_f1_pa_GpositivePseAAC_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/f1_pa/per_dataset/GpositivePseAAC/coverage_risk_pareto.pdf}\hfill
+\mpanel{lgbm/abstain/f1_pa/per_dataset/GpositivePseAAC/gain_heatmap.pdf}
+\caption{LGBM (f1\_pa) on \texttt{GpositivePseAAC}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{f1\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_lgbm_f1_pa_GpositivePseAAC_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/f1_pa/per_dataset/GpositivePseAAC/efficiency_quality.pdf}\hfill
+\mpanel{lgbm/abstain/f1_pa/per_dataset/GpositivePseAAC/effective_f1.pdf}
+\caption{LGBM (f1\_pa) on \texttt{GpositivePseAAC} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective f1\_pa $= (1-\text{abs}) \cdot f1\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_lgbm_f1_pa_GpositivePseAAC_robust}
+\end{figure}
+
+\FloatBarrier
 
 \begin{figure}[!htbp]
 \centering
 \mpanel{lgbm/abstain/f1_pa/per_dataset/emotions/coverage_risk.pdf}\hfill
 \mpanel{lgbm/abstain/f1_pa/per_dataset/emotions/paired_bars.pdf}
-\caption{LGBM on \texttt{emotions} (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
-\label{fig:abstain_lgbm_f1_pa_emotions}
+\caption{LGBM (f1\_pa) on \texttt{emotions}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_lgbm_f1_pa_emotions_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/f1_pa/per_dataset/emotions/coverage_risk_pareto.pdf}\hfill
+\mpanel{lgbm/abstain/f1_pa/per_dataset/emotions/gain_heatmap.pdf}
+\caption{LGBM (f1\_pa) on \texttt{emotions}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{f1\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_lgbm_f1_pa_emotions_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/f1_pa/per_dataset/emotions/efficiency_quality.pdf}\hfill
+\mpanel{lgbm/abstain/f1_pa/per_dataset/emotions/effective_f1.pdf}
+\caption{LGBM (f1\_pa) on \texttt{emotions} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective f1\_pa $= (1-\text{abs}) \cdot f1\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_lgbm_f1_pa_emotions_robust}
+\end{figure}
+
+\FloatBarrier
 
 \begin{figure}[!htbp]
 \centering
 \mpanel{lgbm/abstain/f1_pa/per_dataset/scene/coverage_risk.pdf}\hfill
 \mpanel{lgbm/abstain/f1_pa/per_dataset/scene/paired_bars.pdf}
-\caption{LGBM on \texttt{scene} (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
-\label{fig:abstain_lgbm_f1_pa_scene}
+\caption{LGBM (f1\_pa) on \texttt{scene}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_lgbm_f1_pa_scene_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/f1_pa/per_dataset/scene/coverage_risk_pareto.pdf}\hfill
+\mpanel{lgbm/abstain/f1_pa/per_dataset/scene/gain_heatmap.pdf}
+\caption{LGBM (f1\_pa) on \texttt{scene}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{f1\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_lgbm_f1_pa_scene_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/f1_pa/per_dataset/scene/efficiency_quality.pdf}\hfill
+\mpanel{lgbm/abstain/f1_pa/per_dataset/scene/effective_f1.pdf}
+\caption{LGBM (f1\_pa) on \texttt{scene} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective f1\_pa $= (1-\text{abs}) \cdot f1\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_lgbm_f1_pa_scene_robust}
+\end{figure}
+
+\FloatBarrier
 
 \begin{figure}[!htbp]
 \centering
 \mpanel{lgbm/abstain/f1_pa/per_dataset/PlantPseAAC/coverage_risk.pdf}\hfill
 \mpanel{lgbm/abstain/f1_pa/per_dataset/PlantPseAAC/paired_bars.pdf}
-\caption{LGBM on \texttt{PlantPseAAC} (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
-\label{fig:abstain_lgbm_f1_pa_PlantPseAAC}
+\caption{LGBM (f1\_pa) on \texttt{PlantPseAAC}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_lgbm_f1_pa_PlantPseAAC_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/f1_pa/per_dataset/PlantPseAAC/coverage_risk_pareto.pdf}\hfill
+\mpanel{lgbm/abstain/f1_pa/per_dataset/PlantPseAAC/gain_heatmap.pdf}
+\caption{LGBM (f1\_pa) on \texttt{PlantPseAAC}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{f1\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_lgbm_f1_pa_PlantPseAAC_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/f1_pa/per_dataset/PlantPseAAC/efficiency_quality.pdf}\hfill
+\mpanel{lgbm/abstain/f1_pa/per_dataset/PlantPseAAC/effective_f1.pdf}
+\caption{LGBM (f1\_pa) on \texttt{PlantPseAAC} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective f1\_pa $= (1-\text{abs}) \cdot f1\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_lgbm_f1_pa_PlantPseAAC_robust}
+\end{figure}
+
+\FloatBarrier
 
 \begin{figure}[!htbp]
 \centering
 \mpanel{lgbm/abstain/f1_pa/per_dataset/HumanPseAAC/coverage_risk.pdf}\hfill
 \mpanel{lgbm/abstain/f1_pa/per_dataset/HumanPseAAC/paired_bars.pdf}
-\caption{LGBM on \texttt{HumanPseAAC} (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
-\label{fig:abstain_lgbm_f1_pa_HumanPseAAC}
+\caption{LGBM (f1\_pa) on \texttt{HumanPseAAC}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_lgbm_f1_pa_HumanPseAAC_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/f1_pa/per_dataset/HumanPseAAC/coverage_risk_pareto.pdf}\hfill
+\mpanel{lgbm/abstain/f1_pa/per_dataset/HumanPseAAC/gain_heatmap.pdf}
+\caption{LGBM (f1\_pa) on \texttt{HumanPseAAC}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{f1\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_lgbm_f1_pa_HumanPseAAC_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/f1_pa/per_dataset/HumanPseAAC/efficiency_quality.pdf}\hfill
+\mpanel{lgbm/abstain/f1_pa/per_dataset/HumanPseAAC/effective_f1.pdf}
+\caption{LGBM (f1\_pa) on \texttt{HumanPseAAC} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective f1\_pa $= (1-\text{abs}) \cdot f1\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_lgbm_f1_pa_HumanPseAAC_robust}
+\end{figure}
+
+\FloatBarrier
 
 \begin{figure}[!htbp]
 \centering
 \mpanel{lgbm/abstain/f1_pa/per_dataset/Yeast/coverage_risk.pdf}\hfill
 \mpanel{lgbm/abstain/f1_pa/per_dataset/Yeast/paired_bars.pdf}
-\caption{LGBM on \texttt{Yeast} (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
-\label{fig:abstain_lgbm_f1_pa_Yeast}
+\caption{LGBM (f1\_pa) on \texttt{Yeast}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_lgbm_f1_pa_Yeast_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/f1_pa/per_dataset/Yeast/coverage_risk_pareto.pdf}\hfill
+\mpanel{lgbm/abstain/f1_pa/per_dataset/Yeast/gain_heatmap.pdf}
+\caption{LGBM (f1\_pa) on \texttt{Yeast}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{f1\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_lgbm_f1_pa_Yeast_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/f1_pa/per_dataset/Yeast/efficiency_quality.pdf}\hfill
+\mpanel{lgbm/abstain/f1_pa/per_dataset/Yeast/effective_f1.pdf}
+\caption{LGBM (f1\_pa) on \texttt{Yeast} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective f1\_pa $= (1-\text{abs}) \cdot f1\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_lgbm_f1_pa_Yeast_robust}
+\end{figure}
+
+\FloatBarrier
 
 \begin{figure}[!htbp]
 \centering
 \mpanel{lgbm/abstain/f1_pa/per_dataset/birds/coverage_risk.pdf}\hfill
 \mpanel{lgbm/abstain/f1_pa/per_dataset/birds/paired_bars.pdf}
-\caption{LGBM on \texttt{birds} (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
-\label{fig:abstain_lgbm_f1_pa_birds}
+\caption{LGBM (f1\_pa) on \texttt{birds}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_lgbm_f1_pa_birds_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/f1_pa/per_dataset/birds/coverage_risk_pareto.pdf}\hfill
+\mpanel{lgbm/abstain/f1_pa/per_dataset/birds/gain_heatmap.pdf}
+\caption{LGBM (f1\_pa) on \texttt{birds}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{f1\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_lgbm_f1_pa_birds_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/f1_pa/per_dataset/birds/efficiency_quality.pdf}\hfill
+\mpanel{lgbm/abstain/f1_pa/per_dataset/birds/effective_f1.pdf}
+\caption{LGBM (f1\_pa) on \texttt{birds} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective f1\_pa $= (1-\text{abs}) \cdot f1\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_lgbm_f1_pa_birds_robust}
+\end{figure}
+
+\FloatBarrier
 
 \begin{figure}[!htbp]
 \centering
 \mpanel{lgbm/abstain/f1_pa/per_dataset/medical/coverage_risk.pdf}\hfill
 \mpanel{lgbm/abstain/f1_pa/per_dataset/medical/paired_bars.pdf}
-\caption{LGBM on \texttt{medical} (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
-\label{fig:abstain_lgbm_f1_pa_medical}
+\caption{LGBM (f1\_pa) on \texttt{medical}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_lgbm_f1_pa_medical_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/f1_pa/per_dataset/medical/coverage_risk_pareto.pdf}\hfill
+\mpanel{lgbm/abstain/f1_pa/per_dataset/medical/gain_heatmap.pdf}
+\caption{LGBM (f1\_pa) on \texttt{medical}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{f1\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_lgbm_f1_pa_medical_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/f1_pa/per_dataset/medical/efficiency_quality.pdf}\hfill
+\mpanel{lgbm/abstain/f1_pa/per_dataset/medical/effective_f1.pdf}
+\caption{LGBM (f1\_pa) on \texttt{medical} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective f1\_pa $= (1-\text{abs}) \cdot f1\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_lgbm_f1_pa_medical_robust}
+\end{figure}
+
+\FloatBarrier
 
 \clearpage
 
@@ -435,9 +959,27 @@ panel).
 \centering
 \mpanel{lgbm/abstain/jaccard_pa/aggregate/coverage_risk.pdf}\hfill
 \mpanel{lgbm/abstain/jaccard_pa/aggregate/paired_bars.pdf}
-\caption{LGBM (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right), averaged across all datasets.}
-\label{fig:abstain_lgbm_jaccard_pa_agg}
+\caption{LGBM (jaccard\_pa) averaged across all datasets: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_lgbm_jaccard_pa_agg_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/jaccard_pa/aggregate/coverage_risk_pareto.pdf}\hfill
+\mpanel{lgbm/abstain/jaccard_pa/aggregate/gain_heatmap.pdf}
+\caption{LGBM (jaccard\_pa) averaged across all datasets: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{jaccard\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_lgbm_jaccard_pa_agg_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/jaccard_pa/aggregate/efficiency_quality.pdf}\hfill
+\mpanel{lgbm/abstain/jaccard_pa/aggregate/effective_f1.pdf}
+\caption{LGBM (jaccard\_pa) averaged across all datasets --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective jaccard\_pa $= (1-\text{abs}) \cdot jaccard\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_lgbm_jaccard_pa_agg_robust}
+\end{figure}
+
+\FloatBarrier
 
 \subsection{LGBM, metric \texttt{jaccard\_pa} --- per dataset}
 
@@ -445,65 +987,209 @@ panel).
 \centering
 \mpanel{lgbm/abstain/jaccard_pa/per_dataset/GpositivePseAAC/coverage_risk.pdf}\hfill
 \mpanel{lgbm/abstain/jaccard_pa/per_dataset/GpositivePseAAC/paired_bars.pdf}
-\caption{LGBM on \texttt{GpositivePseAAC} (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
-\label{fig:abstain_lgbm_jaccard_pa_GpositivePseAAC}
+\caption{LGBM (jaccard\_pa) on \texttt{GpositivePseAAC}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_lgbm_jaccard_pa_GpositivePseAAC_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/GpositivePseAAC/coverage_risk_pareto.pdf}\hfill
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/GpositivePseAAC/gain_heatmap.pdf}
+\caption{LGBM (jaccard\_pa) on \texttt{GpositivePseAAC}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{jaccard\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_lgbm_jaccard_pa_GpositivePseAAC_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/GpositivePseAAC/efficiency_quality.pdf}\hfill
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/GpositivePseAAC/effective_f1.pdf}
+\caption{LGBM (jaccard\_pa) on \texttt{GpositivePseAAC} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective jaccard\_pa $= (1-\text{abs}) \cdot jaccard\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_lgbm_jaccard_pa_GpositivePseAAC_robust}
+\end{figure}
+
+\FloatBarrier
 
 \begin{figure}[!htbp]
 \centering
 \mpanel{lgbm/abstain/jaccard_pa/per_dataset/emotions/coverage_risk.pdf}\hfill
 \mpanel{lgbm/abstain/jaccard_pa/per_dataset/emotions/paired_bars.pdf}
-\caption{LGBM on \texttt{emotions} (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
-\label{fig:abstain_lgbm_jaccard_pa_emotions}
+\caption{LGBM (jaccard\_pa) on \texttt{emotions}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_lgbm_jaccard_pa_emotions_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/emotions/coverage_risk_pareto.pdf}\hfill
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/emotions/gain_heatmap.pdf}
+\caption{LGBM (jaccard\_pa) on \texttt{emotions}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{jaccard\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_lgbm_jaccard_pa_emotions_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/emotions/efficiency_quality.pdf}\hfill
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/emotions/effective_f1.pdf}
+\caption{LGBM (jaccard\_pa) on \texttt{emotions} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective jaccard\_pa $= (1-\text{abs}) \cdot jaccard\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_lgbm_jaccard_pa_emotions_robust}
+\end{figure}
+
+\FloatBarrier
 
 \begin{figure}[!htbp]
 \centering
 \mpanel{lgbm/abstain/jaccard_pa/per_dataset/scene/coverage_risk.pdf}\hfill
 \mpanel{lgbm/abstain/jaccard_pa/per_dataset/scene/paired_bars.pdf}
-\caption{LGBM on \texttt{scene} (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
-\label{fig:abstain_lgbm_jaccard_pa_scene}
+\caption{LGBM (jaccard\_pa) on \texttt{scene}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_lgbm_jaccard_pa_scene_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/scene/coverage_risk_pareto.pdf}\hfill
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/scene/gain_heatmap.pdf}
+\caption{LGBM (jaccard\_pa) on \texttt{scene}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{jaccard\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_lgbm_jaccard_pa_scene_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/scene/efficiency_quality.pdf}\hfill
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/scene/effective_f1.pdf}
+\caption{LGBM (jaccard\_pa) on \texttt{scene} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective jaccard\_pa $= (1-\text{abs}) \cdot jaccard\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_lgbm_jaccard_pa_scene_robust}
+\end{figure}
+
+\FloatBarrier
 
 \begin{figure}[!htbp]
 \centering
 \mpanel{lgbm/abstain/jaccard_pa/per_dataset/PlantPseAAC/coverage_risk.pdf}\hfill
 \mpanel{lgbm/abstain/jaccard_pa/per_dataset/PlantPseAAC/paired_bars.pdf}
-\caption{LGBM on \texttt{PlantPseAAC} (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
-\label{fig:abstain_lgbm_jaccard_pa_PlantPseAAC}
+\caption{LGBM (jaccard\_pa) on \texttt{PlantPseAAC}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_lgbm_jaccard_pa_PlantPseAAC_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/PlantPseAAC/coverage_risk_pareto.pdf}\hfill
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/PlantPseAAC/gain_heatmap.pdf}
+\caption{LGBM (jaccard\_pa) on \texttt{PlantPseAAC}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{jaccard\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_lgbm_jaccard_pa_PlantPseAAC_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/PlantPseAAC/efficiency_quality.pdf}\hfill
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/PlantPseAAC/effective_f1.pdf}
+\caption{LGBM (jaccard\_pa) on \texttt{PlantPseAAC} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective jaccard\_pa $= (1-\text{abs}) \cdot jaccard\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_lgbm_jaccard_pa_PlantPseAAC_robust}
+\end{figure}
+
+\FloatBarrier
 
 \begin{figure}[!htbp]
 \centering
 \mpanel{lgbm/abstain/jaccard_pa/per_dataset/HumanPseAAC/coverage_risk.pdf}\hfill
 \mpanel{lgbm/abstain/jaccard_pa/per_dataset/HumanPseAAC/paired_bars.pdf}
-\caption{LGBM on \texttt{HumanPseAAC} (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
-\label{fig:abstain_lgbm_jaccard_pa_HumanPseAAC}
+\caption{LGBM (jaccard\_pa) on \texttt{HumanPseAAC}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_lgbm_jaccard_pa_HumanPseAAC_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/HumanPseAAC/coverage_risk_pareto.pdf}\hfill
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/HumanPseAAC/gain_heatmap.pdf}
+\caption{LGBM (jaccard\_pa) on \texttt{HumanPseAAC}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{jaccard\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_lgbm_jaccard_pa_HumanPseAAC_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/HumanPseAAC/efficiency_quality.pdf}\hfill
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/HumanPseAAC/effective_f1.pdf}
+\caption{LGBM (jaccard\_pa) on \texttt{HumanPseAAC} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective jaccard\_pa $= (1-\text{abs}) \cdot jaccard\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_lgbm_jaccard_pa_HumanPseAAC_robust}
+\end{figure}
+
+\FloatBarrier
 
 \begin{figure}[!htbp]
 \centering
 \mpanel{lgbm/abstain/jaccard_pa/per_dataset/Yeast/coverage_risk.pdf}\hfill
 \mpanel{lgbm/abstain/jaccard_pa/per_dataset/Yeast/paired_bars.pdf}
-\caption{LGBM on \texttt{Yeast} (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
-\label{fig:abstain_lgbm_jaccard_pa_Yeast}
+\caption{LGBM (jaccard\_pa) on \texttt{Yeast}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_lgbm_jaccard_pa_Yeast_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/Yeast/coverage_risk_pareto.pdf}\hfill
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/Yeast/gain_heatmap.pdf}
+\caption{LGBM (jaccard\_pa) on \texttt{Yeast}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{jaccard\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_lgbm_jaccard_pa_Yeast_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/Yeast/efficiency_quality.pdf}\hfill
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/Yeast/effective_f1.pdf}
+\caption{LGBM (jaccard\_pa) on \texttt{Yeast} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective jaccard\_pa $= (1-\text{abs}) \cdot jaccard\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_lgbm_jaccard_pa_Yeast_robust}
+\end{figure}
+
+\FloatBarrier
 
 \begin{figure}[!htbp]
 \centering
 \mpanel{lgbm/abstain/jaccard_pa/per_dataset/birds/coverage_risk.pdf}\hfill
 \mpanel{lgbm/abstain/jaccard_pa/per_dataset/birds/paired_bars.pdf}
-\caption{LGBM on \texttt{birds} (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
-\label{fig:abstain_lgbm_jaccard_pa_birds}
+\caption{LGBM (jaccard\_pa) on \texttt{birds}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_lgbm_jaccard_pa_birds_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/birds/coverage_risk_pareto.pdf}\hfill
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/birds/gain_heatmap.pdf}
+\caption{LGBM (jaccard\_pa) on \texttt{birds}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{jaccard\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_lgbm_jaccard_pa_birds_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/birds/efficiency_quality.pdf}\hfill
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/birds/effective_f1.pdf}
+\caption{LGBM (jaccard\_pa) on \texttt{birds} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective jaccard\_pa $= (1-\text{abs}) \cdot jaccard\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_lgbm_jaccard_pa_birds_robust}
+\end{figure}
+
+\FloatBarrier
 
 \begin{figure}[!htbp]
 \centering
 \mpanel{lgbm/abstain/jaccard_pa/per_dataset/medical/coverage_risk.pdf}\hfill
 \mpanel{lgbm/abstain/jaccard_pa/per_dataset/medical/paired_bars.pdf}
-\caption{LGBM on \texttt{medical} (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
-\label{fig:abstain_lgbm_jaccard_pa_medical}
+\caption{LGBM (jaccard\_pa) on \texttt{medical}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
+\label{fig:abstain_lgbm_jaccard_pa_medical_basic}
 \end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/medical/coverage_risk_pareto.pdf}\hfill
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/medical/gain_heatmap.pdf}
+\caption{LGBM (jaccard\_pa) on \texttt{medical}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{jaccard\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_lgbm_jaccard_pa_medical_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/medical/efficiency_quality.pdf}\hfill
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/medical/effective_f1.pdf}
+\caption{LGBM (jaccard\_pa) on \texttt{medical} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective jaccard\_pa $= (1-\text{abs}) \cdot jaccard\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_lgbm_jaccard_pa_medical_robust}
+\end{figure}
+
+\FloatBarrier
 
 \clearpage
 

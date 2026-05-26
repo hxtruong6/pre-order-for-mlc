@@ -245,6 +245,316 @@ def render_paired_bars(
     plt.close(fig)
 
 
+def _pareto_front(xs: np.ndarray, ys: np.ndarray) -> np.ndarray:
+    """Return boolean mask of points on the Pareto front (max y, min x).
+
+    A point (xi, yi) is dominated if some (xj, yj) satisfies
+    xj <= xi and yj >= yi with strict inequality somewhere.
+    """
+    n = xs.size
+    on_front = np.ones(n, dtype=bool)
+    for i in range(n):
+        if not np.isfinite(xs[i]) or not np.isfinite(ys[i]):
+            on_front[i] = False
+            continue
+        for j in range(n):
+            if i == j or not (np.isfinite(xs[j]) and np.isfinite(ys[j])):
+                continue
+            if xs[j] <= xs[i] and ys[j] >= ys[i] and (xs[j] < xs[i] or ys[j] > ys[i]):
+                on_front[i] = False
+                break
+    return on_front
+
+
+def render_coverage_risk_pareto(
+    df: pd.DataFrame,
+    pa_metric: str,
+    bv_metric: str,
+    out_pdf: Path,
+    title: str,
+    style: str,
+) -> None:
+    """Coverage-risk with Pareto frontier highlighted + win-region shaded.
+
+    Win region: y > best_baseline_quality. Pareto points connected with a
+    grey line; dominated points faded.
+    """
+    palette = NOISE_COLORS_ENHANCED if style == "enhanced" else NOISE_COLORS_ORIGINAL
+    fig, ax = plt.subplots(figsize=(3.8, 2.6))
+
+    baseline_qualities: list[float] = []
+    for algo, _ in BASELINE_METHODS:
+        vals = df[(df.algorithm == algo) & (df.metric == bv_metric)].value.dropna()
+        if vals.size:
+            baseline_qualities.append(float(vals.mean()) * 100.0)
+    best_baseline = max(baseline_qualities, default=float("nan"))
+
+    xs_all: list[float] = []
+    ys_all: list[float] = []
+    colors_all: list[str] = []
+    for algo, _ in PA_METHODS:
+        for noise in NOISE_LEVELS:
+            a = _aggregate_value(df, algo, "abs", noise)
+            q = _aggregate_value(df, algo, pa_metric, noise)
+            if np.isfinite(a) and np.isfinite(q):
+                xs_all.append(a * 100.0)
+                ys_all.append(q * 100.0)
+                colors_all.append(palette[noise])
+    xs = np.array(xs_all)
+    ys = np.array(ys_all)
+
+    # Shade win region.
+    if np.isfinite(best_baseline):
+        ax.axhspan(
+            best_baseline, max(ys.max() if ys.size else best_baseline, best_baseline) + 5,
+            color="#c7e9c0", alpha=0.4, zorder=0,
+        )
+        ax.axhline(
+            y=best_baseline, color="grey", linestyle="--", linewidth=0.7,
+            label=f"best standard-MLC {bv_metric}",
+        )
+
+    if xs.size:
+        mask = _pareto_front(xs, ys)
+        # Dominated points: faded.
+        for i in range(xs.size):
+            if not mask[i]:
+                ax.scatter(xs[i], ys[i], color=colors_all[i], s=16, alpha=0.25,
+                           edgecolors="none")
+        # Frontier: solid + connecting line.
+        idx = np.where(mask)[0]
+        order = sorted(idx, key=lambda k: xs[k])
+        if len(order) >= 2:
+            ax.plot([xs[k] for k in order], [ys[k] for k in order],
+                    color="black", linewidth=0.7, alpha=0.6, zorder=2)
+        for k in order:
+            ax.scatter(xs[k], ys[k], color=colors_all[k], s=28,
+                       edgecolors="black", linewidths=0.4, zorder=3)
+
+    ax.set_xlabel("Abstention rate (%)", fontsize=6)
+    ax.set_ylabel(f"{pa_metric} on retained (%)", fontsize=6)
+    ax.set_title(f"{title}  -- Pareto frontier + win-region", fontsize=7)
+    ax.tick_params(axis="both", labelsize=6)
+    ax.legend(fontsize=5, loc="lower right", framealpha=0.85, borderpad=0.3)
+    ax.grid(True, linestyle="-", linewidth=0.4, alpha=0.4)
+    for spine in ("top", "right"):
+        ax.spines[spine].set_visible(False)
+    fig.tight_layout(pad=0.2)
+    out_pdf.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_pdf, format="pdf", bbox_inches="tight", pad_inches=0.02)
+    plt.close(fig)
+
+
+def render_gain_heatmap(
+    df: pd.DataFrame,
+    pa_metric: str,
+    bv_metric: str,
+    out_pdf: Path,
+    title: str,
+    style: str,
+) -> None:
+    """8x4 heatmap: gain = pa_metric - bv_metric, per (method, noise)."""
+    gain = np.full((len(PA_METHODS), len(NOISE_LEVELS)), np.nan)
+    for i, (algo, _) in enumerate(PA_METHODS):
+        for j, noise in enumerate(NOISE_LEVELS):
+            pa = _aggregate_value(df, algo, pa_metric, noise)
+            bv = _aggregate_value(df, algo, bv_metric, noise)
+            if np.isfinite(pa) and np.isfinite(bv):
+                gain[i, j] = (pa - bv) * 100.0
+
+    fig, ax = plt.subplots(figsize=(3.6, 2.8))
+    vmax = max(np.nanmax(np.abs(gain)), 1.0) if np.any(np.isfinite(gain)) else 1.0
+    im = ax.imshow(gain, cmap="RdBu_r", vmin=-vmax, vmax=vmax, aspect="auto")
+    for i in range(len(PA_METHODS)):
+        for j in range(len(NOISE_LEVELS)):
+            if np.isfinite(gain[i, j]):
+                ax.text(
+                    j, i, f"{gain[i, j]:+.1f}",
+                    ha="center", va="center", fontsize=6,
+                    color="white" if abs(gain[i, j]) > 0.6 * vmax else "black",
+                )
+    ax.set_xticks(np.arange(len(NOISE_LEVELS)))
+    ax.set_xticklabels([fr"$\alpha={n}$" for n in NOISE_LEVELS], fontsize=6)
+    ax.set_yticks(np.arange(len(PA_METHODS)))
+    ax.set_yticklabels([m[1] for m in PA_METHODS], fontsize=6)
+    ax.set_title(f"{title}  -- gain ({pa_metric} - {bv_metric}, percentage points)",
+                 fontsize=7)
+    cbar = fig.colorbar(im, ax=ax, fraction=0.04, pad=0.02)
+    cbar.ax.tick_params(labelsize=5)
+    fig.tight_layout(pad=0.2)
+    out_pdf.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_pdf, format="pdf", bbox_inches="tight", pad_inches=0.02)
+    plt.close(fig)
+
+
+def render_delta_bars(
+    df: pd.DataFrame,
+    pa_metric: str,
+    bv_metric: str,
+    out_pdf: Path,
+    title: str,
+    style: str,
+) -> None:
+    """2x2 grid of gain bars (one bar per PA method, signed)."""
+    fig, axes = plt.subplots(2, 2, figsize=(7.5, 4.4), sharey=True)
+    for ax, noise in zip(axes.flat, NOISE_LEVELS):
+        gains = np.full(len(PA_METHODS), np.nan)
+        for i, (algo, _) in enumerate(PA_METHODS):
+            pa = _aggregate_value(df, algo, pa_metric, noise)
+            bv = _aggregate_value(df, algo, bv_metric, noise)
+            if np.isfinite(pa) and np.isfinite(bv):
+                gains[i] = (pa - bv) * 100.0
+        colors = ["#1a9850" if g >= 0 else "#d73027" for g in gains]
+        x = np.arange(len(PA_METHODS))
+        ax.bar(x, gains, color=colors, edgecolor="black", linewidth=0.3)
+        ax.axhline(y=0, color="black", linewidth=0.5)
+        for i, g in enumerate(gains):
+            if np.isfinite(g):
+                ax.text(
+                    i, g + (0.3 if g >= 0 else -0.6),
+                    f"{g:+.1f}", ha="center", fontsize=5,
+                    color="darkgreen" if g >= 0 else "darkred",
+                )
+        ax.set_xticks(x)
+        ax.set_xticklabels([m[1] for m in PA_METHODS], rotation=-35, ha="left",
+                           fontsize=5)
+        ax.set_title(fr"$\alpha={noise}$", fontsize=7)
+        ax.tick_params(axis="y", labelsize=6)
+        ax.grid(True, axis="y", linestyle="-", linewidth=0.4, alpha=0.4)
+        for spine in ("top", "right"):
+            ax.spines[spine].set_visible(False)
+    axes[0, 0].set_ylabel(f"gain (pp): {pa_metric} - {bv_metric}", fontsize=6)
+    axes[1, 0].set_ylabel(f"gain (pp): {pa_metric} - {bv_metric}", fontsize=6)
+    fig.suptitle(title, fontsize=8)
+    fig.tight_layout(pad=0.4, rect=(0.0, 0.0, 1.0, 0.96))
+    out_pdf.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_pdf, format="pdf", bbox_inches="tight", pad_inches=0.02)
+    plt.close(fig)
+
+
+def render_efficiency_quality(
+    df: pd.DataFrame,
+    pa_metric: str,
+    bv_metric: str,
+    out_pdf: Path,
+    title: str,
+    style: str,
+) -> None:
+    """Scatter: x = coverage (1 - abs), y = pa_metric. Upper-right = robust."""
+    palette = NOISE_COLORS_ENHANCED if style == "enhanced" else NOISE_COLORS_ORIGINAL
+    fig, ax = plt.subplots(figsize=(3.8, 2.8))
+
+    baseline_qualities = [
+        float(df[(df.algorithm == a) & (df.metric == bv_metric)].value.mean()) * 100.0
+        for a, _ in BASELINE_METHODS
+        if df[(df.algorithm == a) & (df.metric == bv_metric)].value.dropna().size
+    ]
+    best_baseline = max(baseline_qualities, default=float("nan"))
+    if np.isfinite(best_baseline):
+        ax.axhline(
+            y=best_baseline, color="grey", linestyle="--", linewidth=0.7,
+            label=f"best standard-MLC {bv_metric}",
+        )
+
+    marker_per_method = ["o", "s", "^", "D", "v", "P", "X", "*"]
+    for i, (algo, _label) in enumerate(PA_METHODS):
+        for noise in NOISE_LEVELS:
+            a = _aggregate_value(df, algo, "abs", noise)
+            q = _aggregate_value(df, algo, pa_metric, noise)
+            if not (np.isfinite(a) and np.isfinite(q)):
+                continue
+            coverage = (1.0 - a) * 100.0
+            ax.scatter(
+                coverage, q * 100.0,
+                color=palette[noise], marker=marker_per_method[i],
+                s=24, edgecolors="black", linewidths=0.3,
+            )
+    ax.set_xlabel("Coverage = 1 - abstention (% labels predicted)", fontsize=6)
+    ax.set_ylabel(f"{pa_metric} on retained (%)", fontsize=6)
+    ax.set_title(f"{title}  -- robustness: upper-right = robust", fontsize=7)
+    ax.tick_params(axis="both", labelsize=6)
+    ax.legend(fontsize=5, loc="lower left", framealpha=0.85, borderpad=0.3)
+    ax.grid(True, linestyle="-", linewidth=0.4, alpha=0.4)
+    for spine in ("top", "right"):
+        ax.spines[spine].set_visible(False)
+    fig.tight_layout(pad=0.2)
+    out_pdf.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_pdf, format="pdf", bbox_inches="tight", pad_inches=0.02)
+    plt.close(fig)
+
+
+def render_effective_f1(
+    df: pd.DataFrame,
+    pa_metric: str,
+    bv_metric: str,
+    out_pdf: Path,
+    title: str,
+    style: str,
+) -> None:
+    """Effective metric = (1 - abs) * pa_metric. Plot vs alpha for each method.
+
+    Compares against baseline bv_metric line (per noise) so the reader can
+    see when abstention's net effect (after penalising for skipped labels)
+    still beats standard MLC.
+    """
+    fig, ax = plt.subplots(figsize=(3.8, 2.6))
+    xs = np.arange(len(NOISE_LEVELS))
+
+    # PA/PR methods.
+    cmap = plt.get_cmap("tab10")
+    for i, (algo, label) in enumerate(PA_METHODS):
+        ys = []
+        for noise in NOISE_LEVELS:
+            a = _aggregate_value(df, algo, "abs", noise)
+            q = _aggregate_value(df, algo, pa_metric, noise)
+            ys.append((1 - a) * q * 100.0 if (np.isfinite(a) and np.isfinite(q)) else np.nan)
+        ax.plot(xs, ys, marker="o", markersize=3, linewidth=1.0,
+                color=cmap(i % 10), label=label)
+
+    # Best baseline reference (BV metric, per noise).
+    best_baseline_per_noise = []
+    for noise in NOISE_LEVELS:
+        vals = [
+            _aggregate_value(df, a, bv_metric, noise) * 100.0
+            for a, _ in BASELINE_METHODS
+        ]
+        vals = [v for v in vals if np.isfinite(v)]
+        best_baseline_per_noise.append(max(vals) if vals else float("nan"))
+    ax.plot(xs, best_baseline_per_noise, color="grey", linestyle="--",
+            linewidth=1.0, marker="s", markersize=3,
+            label=f"best standard-MLC {bv_metric}")
+
+    ax.set_xticks(xs)
+    ax.set_xticklabels([fr"$\alpha={n}$" for n in NOISE_LEVELS], fontsize=6)
+    ax.set_ylabel(f"effective {pa_metric} = (1-abs) * {pa_metric} (%)", fontsize=6)
+    ax.set_title(f"{title}  -- penalised quality (abstention costs labels)",
+                 fontsize=7)
+    ax.tick_params(axis="y", labelsize=6)
+    ax.legend(fontsize=4, loc="lower left", ncol=3, framealpha=0.85,
+              borderpad=0.3, handletextpad=0.3, columnspacing=0.6)
+    ax.grid(True, linestyle="-", linewidth=0.4, alpha=0.4)
+    for spine in ("top", "right"):
+        ax.spines[spine].set_visible(False)
+    fig.tight_layout(pad=0.2)
+    out_pdf.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_pdf, format="pdf", bbox_inches="tight", pad_inches=0.02)
+    plt.close(fig)
+
+
+def _render_scope(df: pd.DataFrame, out_dir: Path, pa_metric: str, bv_metric: str,
+                  title: str, style: str) -> int:
+    """Render all 7 chart variants for one scope. Returns count."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    render_coverage_risk(df, pa_metric, bv_metric, out_dir / "coverage_risk.pdf", title, style)
+    render_coverage_risk_pareto(df, pa_metric, bv_metric, out_dir / "coverage_risk_pareto.pdf", title, style)
+    render_paired_bars(df, pa_metric, bv_metric, out_dir / "paired_bars.pdf", title, style)
+    render_gain_heatmap(df, pa_metric, bv_metric, out_dir / "gain_heatmap.pdf", title, style)
+    render_delta_bars(df, pa_metric, bv_metric, out_dir / "delta_bars.pdf", title, style)
+    render_efficiency_quality(df, pa_metric, bv_metric, out_dir / "efficiency_quality.pdf", title, style)
+    render_effective_f1(df, pa_metric, bv_metric, out_dir / "effective_f1.pdf", title, style)
+    return 7
+
+
 def build_all(
     long_df: pd.DataFrame,
     out_root: Path,
@@ -266,35 +576,18 @@ def build_all(
             if pa_metric not in learner_df.metric.unique():
                 continue
             base = out_root / learner.lower() / "abstain" / pa_metric
-            agg_dir = base / "aggregate"
-            render_coverage_risk(
-                learner_df, pa_metric, bv_metric,
-                agg_dir / "coverage_risk.pdf",
-                f"{learner} aggregate ({pa_metric})",
-                style,
+            n += _render_scope(
+                learner_df, base / "aggregate", pa_metric, bv_metric,
+                f"{learner} aggregate ({pa_metric})", style,
             )
-            render_paired_bars(
-                learner_df, pa_metric, bv_metric,
-                agg_dir / "paired_bars.pdf",
-                f"{learner} aggregate ({pa_metric})",
-                style,
-            )
-            n += 2
             for ds in DATASETS:
                 ds_df = learner_df[learner_df.dataset == ds]
                 if ds_df.empty:
                     continue
-                ds_dir = base / "per_dataset" / ds
-                t = f"{learner} on {ds} ({pa_metric})"
-                render_coverage_risk(
-                    ds_df, pa_metric, bv_metric,
-                    ds_dir / "coverage_risk.pdf", t, style,
+                n += _render_scope(
+                    ds_df, base / "per_dataset" / ds, pa_metric, bv_metric,
+                    f"{learner} on {ds} ({pa_metric})", style,
                 )
-                render_paired_bars(
-                    ds_df, pa_metric, bv_metric,
-                    ds_dir / "paired_bars.pdf", t, style,
-                )
-                n += 2
     return n
 
 
