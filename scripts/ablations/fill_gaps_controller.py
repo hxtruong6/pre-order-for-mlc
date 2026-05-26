@@ -64,7 +64,12 @@ CELLS = {
         # each HiGHS solve at 5s (340 instances × 5s = ~28min per IA →
         # ~3.7h total). Near-optimal solutions are acceptable for the
         # paper-baseline comparison.
-        "mem": "16G", "time": "06:00:00",
+        # 32G needed: GLPK fallback (when HiGHS times out) uses more RAM
+        # than HiGHS path; noise>=0.2 ILPs are larger and OOM'd at 16G.
+        # n=0.3 ILPs are slowest (noisiest pairwise probas → more GLPK fallbacks);
+        # 6h was hit before finishing IA1, bumped to 12h. Lower noises finish
+        # well under 6h but inherit 12h cap for safety.
+        "mem": "32G", "time": "12:00:00",
         "n_repeats": 1, "n_folds": 5,
         "n_jobs": 1,
         "highs_time_limit": 5.0,

@@ -117,6 +117,11 @@ def _solve_highs(c, G, h, A, b, I, B):
         options=_options if _options else None,
     )
     if res.x is None:
-        raise RuntimeError(f"HiGHS failed: status={res.status} message={res.message}")
+        # HiGHS hit the time limit before finding any integer-feasible
+        # solution (common on K>=50 BOPOs ILPs at HIGHS_TIME_LIMIT<=5s).
+        # Fall back to GLPK which has no built-in time limit. If GLPK
+        # also struggles, _solve_glpk would block — accept that worst
+        # case to avoid losing the entire (instance, IA) result.
+        return _solve_glpk(c, G, h, A, b, I, B)
     x = np.asarray(res.x, dtype=np.float64).reshape(-1, 1)
     return res.status, x
