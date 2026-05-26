@@ -9,7 +9,7 @@ one matplotlib bar-chart PDF per (learner, scope, prediction_type, metric):
     paper_revision/figures/<learner>/per_dataset/<ds>/<bv|pa>/<metric>.pdf
 
 Within a panel: x-axis = method index 1..14 (PA: 1..8). Four bars per
-method, colored red/blue/green/cyan for noise alpha in {0.0, 0.1, 0.2,
+method, colored red/blue/green/black for noise alpha in {0.0, 0.1, 0.2,
 0.3} (matches the original paper's caption legend). Methods missing for
 a given (dataset, learner) pair are rendered as an empty slot with a
 small grey em dash above the axis.
@@ -55,7 +55,7 @@ PREDICTION_TYPES = ["BinaryVector", "PartialAbstention", "ScoreVector"]
 NOISE_LEVELS = ["0.0", "0.1", "0.2", "0.3"]
 
 # Two palettes, switched by --style:
-#   "original" reproduces the qualitative red/blue/green/cyan scheme used by
+#   "original" reproduces the qualitative red/blue/green/black scheme used by
 #   the original paper (Table 5 caption).
 #   "enhanced" uses ColorBrewer Reds[4] so noise level maps to colour intensity
 #   (light = clean, dark = noisy), perceptually-ordered and colorblind-safe.
@@ -63,7 +63,7 @@ NOISE_COLORS_ORIGINAL = {
     "0.0": "#FF0000",
     "0.1": "#0000FF",
     "0.2": "#339933",
-    "0.3": "#00FFFF",
+    "0.3": "#000000",
 }
 NOISE_COLORS_ENHANCED = {
     # ColorBrewer YlOrRd[5] dropping the lightest shade. Wider hue spread
@@ -292,6 +292,7 @@ def render_panel(
             markersize=4.0,
             color=palette[noise],
             markeredgewidth=0,
+            zorder=3,
         )
     # Vertical dividers grouping methods into 4 blocks:
     #   1..4   = Partial-order predictors (PA-*)
@@ -300,11 +301,11 @@ def render_panel(
     #   12     = Extended baseline (ECC)
     # PA/PR boundary is always drawn; baseline boundaries only when those
     # methods appear in this panel (PA / SV panels show only 1..8).
-    ax.axvline(x=4.5, color="grey", linewidth=0.5, linestyle="--", alpha=0.5)
+    ax.axvline(x=4.5, color="grey", linewidth=0.5, linestyle="--", alpha=0.5, zorder=1)
     if n_methods > 8:
-        ax.axvline(x=8.5, color="grey", linewidth=0.6, linestyle="--", alpha=0.65)
+        ax.axvline(x=8.5, color="grey", linewidth=0.6, linestyle="--", alpha=0.65, zorder=1)
     if n_methods > 11:
-        ax.axvline(x=11.5, color="grey", linewidth=0.6, linestyle="--", alpha=0.65)
+        ax.axvline(x=11.5, color="grey", linewidth=0.6, linestyle="--", alpha=0.65, zorder=1)
     # Methods that have no data anywhere in this panel get a small grey "x"
     # at the bottom so the reader can tell "missing" from "low value".
     all_nan_methods = np.all(np.isnan(values), axis=1)
@@ -317,7 +318,7 @@ def render_panel(
     ax.set_xticks(x_pos)
     if style == "enhanced":
         # 2-tier xticks: number on top, method label rotated below.
-        ax.set_xticklabels([str(int(p)) for p in x_pos], fontsize=6)
+        ax.set_xticklabels([str(int(p)) for p in x_pos], fontsize=9)
         # Secondary tick row beneath: method labels.
         labels = [m[1] for m in methods]
         ax2 = ax.secondary_xaxis("bottom")
@@ -326,7 +327,7 @@ def render_panel(
         ax2.tick_params(axis="x", pad=10, length=0)
         ax2.spines["bottom"].set_visible(False)
     else:
-        ax.set_xticklabels([str(int(p)) for p in x_pos], fontsize=6)
+        ax.set_xticklabels([str(int(p)) for p in x_pos], fontsize=9)
     ax.set_xlim(0.7, n_methods + 0.3)
     # Y-axis: always auto-zoom to the data range (this matches the original
     # paper's Table 5 — see the GpositivePse / plantPse / HumanPse panels
@@ -336,15 +337,19 @@ def render_panel(
         ymax = float(np.nanmax(finite_vals)) * scale
         span = max(ymax - ymin, 1.0)
         pad = span * 0.10
-        if use_percent:
-            ax.set_ylim(max(0.0, ymin - pad), min(100.0, ymax + pad))
-        else:
-            ax.set_ylim(max(0.0, ymin - pad), ymax + pad)
+        # Always pad above the max so markers sitting at or near 100 are
+        # not clipped against the top spine. Bottom is still floored at 0.
+        ax.set_ylim(max(0.0, ymin - pad), ymax + pad)
     elif use_percent:
         ax.set_ylim(0, 100)
-    ax.tick_params(axis="y", labelsize=6)
-    ax.set_title(metric, fontsize=7)
+    ax.tick_params(axis="y", labelsize=9)
+    # Per-panel title (metric name) is needed by the per-dataset appendix
+    # tables to identify each subplot. The Paper-results section has its
+    # own richer bottom caption per panel; the small redundancy is the
+    # lesser evil vs. breaking the appendix's readability.
+    ax.set_title(metric, fontsize=8)
     ax.grid(True, which="major", linestyle="-", linewidth=0.4, alpha=0.4)
+    ax.set_axisbelow(True)
     for spine in ("top", "right"):
         ax.spines[spine].set_visible(False)
     fig.tight_layout(pad=0.2)
@@ -450,7 +455,7 @@ def main() -> None:
         choices=["original", "enhanced"],
         help=(
             "Visual style. 'original' reproduces the paper's Table 5 look "
-            "(red/blue/green/cyan, numeric xticks, ylim [0,100]). 'enhanced' "
+            "(red/blue/green/black, numeric xticks, ylim [0,100]). 'enhanced' "
             "uses ColorBrewer Reds for noise, 2-tier xticks with method "
             "labels, and auto-zoomed y-axis."
         ),

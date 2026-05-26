@@ -38,7 +38,7 @@
 9 & enron & 1702 & 1001 & 53 & 10.45 & 0.80 \\
 \hline
 \end{tabular}
-\caption{Datasets used in the revised experiments. $N$, $P$, $K$ are the number of instances, features, labels. MeanIR and CVIR report per-label imbalance (higher = more imbalanced).}
+\caption{(Table 3) Datasets used in the revised experiments. $N$, $P$, $K$ are the number of instances, features, labels. MeanIR and CVIR report per-label imbalance (higher = more imbalanced).}
 \label{tab:datasets_revised}
 \end{table}
 
@@ -99,13 +99,414 @@ Each name has the form \texttt{<order>-<target>-<height>}:
 \paragraph{Reading the panels.} Each panel plots one dotted line with
 markers per noise level, colored as in the original paper's Table~5:
 \textcolor{red}{$\alpha=0.0$}, \textcolor{blue}{$\alpha=0.1$},
-\textcolor{green!60!black}{$\alpha=0.2$}, \textcolor{cyan}{$\alpha=0.3$}.
+\textcolor{green!60!black}{$\alpha=0.2$}, \textcolor{black}{$\alpha=0.3$}.
 \emph{PartialAbstention} and \emph{ScoreVector} panels show only indices
 1--8 (the remaining baselines do not export a partial-abstention prediction
 nor a probabilistic score vector). Vertical dashed lines at $x=4.5$,
 $x=8.5$, and $x=11.5$ separate the four method groups: PA (1--4), PR
 (5--8), standard baselines BR/CC/CLR (9--11), and ECC (12). Missing methods show as gaps in the line (with a small grey
 ``x'' on the axis when the method has no data at all for that panel).
+
+\clearpage
+
+\section{Paper results (RF base learner)}
+
+Reproduces the layout of the original paper's main experiment tables (Tables~5--7): 3 datasets across, 4 metrics down, one table per prediction type (binary vector, partial abstention, score vector). Per the revision, $f^{\mathrm{ham}}_{\mathrm{MLC}}$ and $f^{\mathrm{sub}}_{\mathrm{MLC}}$ are dropped in favour of $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$.
+
+
+\pdfbookmark[2]{Table 3: Datasets}{paper-rf-datasets}
+
+\begin{table}[!htbp]
+\centering
+\begin{tabular}{l|l|r|r|r|r|r}
+\hline
+\# & Name & $N$ & $P$ & $K$ & MeanIR & CVIR \\
+\hline
+1 & GpositivePseAAC & 519 & 440 & 4 & 3.86 & 1.15 \\
+2 & CHD\_49 & 555 & 49 & 6 & 5.77 & 1.60 \\
+3 & Emotions & 593 & 72 & 6 & 1.48 & 0.16 \\
+4 & Scene & 2407 & 294 & 6 & 1.25 & 0.11 \\
+5 & PlantPseAAC & 978 & 440 & 12 & 6.69 & 0.68 \\
+6 & Water-quality & 1060 & 16 & 14 & 1.77 & 0.29 \\
+7 & Yeast & 2417 & 103 & 14 & 7.20 & 1.82 \\
+8 & HumanPseAAC & 3106 & 440 & 14 & 15.29 & 1.05 \\
+9 & enron & 1702 & 1001 & 53 & 10.45 & 0.80 \\
+\hline
+\end{tabular}
+\caption{(Table 3) Datasets used in the revised experiments. $N$, $P$, $K$ are the number of instances, features, labels. MeanIR and CVIR report per-label imbalance (higher = more imbalanced).}
+\label{tab:datasets_revised}
+\end{table}
+
+\FloatBarrier
+
+\subsection{Standard MLC predictions (BinaryVector)}
+
+\pdfbookmark[3]{(Table 4) Group 1: GpositivePseAAC, PlantPseAAC, HumanPseAAC}{paper-rf-bv-g1}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.8}
+\begin{tabular}{ccc}
+\textbf{GpositivePse} & \textbf{plantPse} & \textbf{HumanPse} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/bv/f1.pdf}\\\footnotesize $f^{1}_{\mathrm{MLC}}$ (\ref{eq:f1mlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/bv/f1.pdf}\\\footnotesize $f^{1}_{\mathrm{MLC}}$ (\ref{eq:f1mlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/bv/f1.pdf}\\\footnotesize $f^{1}_{\mathrm{MLC}}$ (\ref{eq:f1mlc}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/bv/jaccard.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/bv/jaccard.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/bv/jaccard.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/bv/afrd.pdf}\\\footnotesize AFRD (\ref{eq:afrd}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/bv/afrd.pdf}\\\footnotesize AFRD (\ref{eq:afrd}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/bv/afrd.pdf}\\\footnotesize AFRD (\ref{eq:afrd}) ($\downarrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/bv/mfrd.pdf}\\\footnotesize MFRD (\ref{eq:mfrd}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/bv/mfrd.pdf}\\\footnotesize MFRD (\ref{eq:mfrd}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/bv/mfrd.pdf}\\\footnotesize MFRD (\ref{eq:mfrd}) ($\downarrow$)\end{minipage} \\
+\end{tabular}
+\caption{(Table 4) Average scores (in \%, $y$-axis) over $5\times 5$ cross-validation folds, plotted against the encoded number of the classifiers ($x$-axis): (PA-H-2, PA-H, PA-S-2, PA-S), (PR-H-2, PR-H, PR-S-2, PR-S), and (BR, CC, CLR) are encoded as (1, 2, 3, 4), (5, 6, 7, 8), and (9, 10, 11), respectively. Results are color-coded with respect to the noisy level $\alpha$ as follows: \textcolor[HTML]{FF0000}{$\alpha = 0.0$}, \textcolor[HTML]{0000FF}{$\alpha = 0.1$}, \textcolor[HTML]{339933}{$\alpha = 0.2$} and \textcolor[HTML]{000000}{$\alpha = 0.3$}.}
+\label{tab:paper_rf_bv_g1}
+\end{table}
+
+\FloatBarrier
+
+\subsection{Partial abstention (PartialAbstention)}
+
+\pdfbookmark[3]{(Table 5) Group 1: GpositivePseAAC, PlantPseAAC, HumanPseAAC}{paper-rf-pa-g1}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.8}
+\begin{tabular}{ccc}
+\textbf{GpositivePse} & \textbf{plantPse} & \textbf{HumanPse} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/pa/f1_pa.pdf}\\\footnotesize $f^{1}_{\mathrm{MLC}}$ (\ref{eq:f1mlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/pa/f1_pa.pdf}\\\footnotesize $f^{1}_{\mathrm{MLC}}$ (\ref{eq:f1mlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/pa/f1_pa.pdf}\\\footnotesize $f^{1}_{\mathrm{MLC}}$ (\ref{eq:f1mlc}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/pa/jaccard_pa.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/pa/jaccard_pa.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/pa/jaccard_pa.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} \\
+\end{tabular}
+\caption{(Table 5) Average scores (in \%, $y$-axis) over $5\times 5$ cross-validation folds, plotted against the encoded number of the classifiers ($x$-axis): (PA-H-2, PA-H, PA-S-2, PA-S) and (PR-H-2, PR-H, PR-S-2, PR-S) are encoded as (1, 2, 3, 4) and (5, 6, 7, 8), respectively. Results are color-coded with respect to the noisy level $\alpha$ as follows: \textcolor[HTML]{FF0000}{$\alpha = 0.0$}, \textcolor[HTML]{0000FF}{$\alpha = 0.1$}, \textcolor[HTML]{339933}{$\alpha = 0.2$} and \textcolor[HTML]{000000}{$\alpha = 0.3$}.}
+\label{tab:paper_rf_pa_g1}
+\end{table}
+
+\FloatBarrier
+
+\subsection{Score-vector ranking metrics (AUROC, AUPRC, etc.) (ScoreVector)}
+
+\pdfbookmark[3]{(new) Group 1: GpositivePseAAC, PlantPseAAC, HumanPseAAC}{paper-rf-sv-g1}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.8}
+\begin{tabular}{ccc}
+\textbf{GpositivePse} & \textbf{plantPse} & \textbf{HumanPse} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/sv/auc_macro.pdf}\\\footnotesize AUROC (\ref{eq:auroc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/sv/auc_macro.pdf}\\\footnotesize AUROC (\ref{eq:auroc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/sv/auc_macro.pdf}\\\footnotesize AUROC (\ref{eq:auroc}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/sv/auprc_macro.pdf}\\\footnotesize AUPRC (\ref{eq:auprc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/sv/auprc_macro.pdf}\\\footnotesize AUPRC (\ref{eq:auprc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/sv/auprc_macro.pdf}\\\footnotesize AUPRC (\ref{eq:auprc}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/sv/ranking_loss.pdf}\\\footnotesize Ranking loss (\ref{eq:rloss}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/sv/ranking_loss.pdf}\\\footnotesize Ranking loss (\ref{eq:rloss}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/sv/ranking_loss.pdf}\\\footnotesize Ranking loss (\ref{eq:rloss}) ($\downarrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/sv/one_error.pdf}\\\footnotesize One-error (\ref{eq:oneerr}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/sv/one_error.pdf}\\\footnotesize One-error (\ref{eq:oneerr}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/sv/one_error.pdf}\\\footnotesize One-error (\ref{eq:oneerr}) ($\downarrow$)\end{minipage} \\
+\end{tabular}
+\caption{(new) Average scores (in \%, $y$-axis) over $5\times 5$ cross-validation folds, plotted against the encoded number of the classifiers ($x$-axis): (PA-H-2, PA-H, PA-S-2, PA-S) and (PR-H-2, PR-H, PR-S-2, PR-S) are encoded as (1, 2, 3, 4) and (5, 6, 7, 8), respectively. Results are color-coded with respect to the noisy level $\alpha$ as follows: \textcolor[HTML]{FF0000}{$\alpha = 0.0$}, \textcolor[HTML]{0000FF}{$\alpha = 0.1$}, \textcolor[HTML]{339933}{$\alpha = 0.2$} and \textcolor[HTML]{000000}{$\alpha = 0.3$}.}
+\label{tab:paper_rf_sv_g1}
+\end{table}
+
+\FloatBarrier
+
+\subsection{Experimental results --- appendix tables (RF base learner)}\label{sec:paperapp-rf}
+
+Appendix counterpart of the main Paper results section. Tables G2--G5 mirror the original paper's appendix exactly (same metric sets, with the 6 non-main datasets split into imbalanced vs.\ balanced buckets following the original layout). Tables G6--G8 are revision additions reporting the new metrics ($f^{\mathrm{Jacc}}_{\mathrm{MLC}}$, macro-$f_1$, micro-$f_1$) and ScoreVector results.
+
+
+\subsubsection{Standard MLC predictions (BinaryVector)}
+
+\pdfbookmark[3]{(Table G2) Group 1: CHD_49, Yeast, enron}{paperapp_g2-rf-bv-g1}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.8}
+\begin{tabular}{ccc}
+\textbf{CHD-49} & \textbf{Yeast} & \textbf{enron} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/bv/f1.pdf}\\\footnotesize $f^{1}_{\mathrm{MLC}}$ (\ref{eq:f1mlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/bv/f1.pdf}\\\footnotesize $f^{1}_{\mathrm{MLC}}$ (\ref{eq:f1mlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/bv/f1.pdf}\\\footnotesize $f^{1}_{\mathrm{MLC}}$ (\ref{eq:f1mlc}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/bv/hamming_accuracy.pdf}\\\footnotesize $f^{\mathrm{ham}}_{\mathrm{MLC}}$ (\ref{eq:fham}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/bv/hamming_accuracy.pdf}\\\footnotesize $f^{\mathrm{ham}}_{\mathrm{MLC}}$ (\ref{eq:fham}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/bv/hamming_accuracy.pdf}\\\footnotesize $f^{\mathrm{ham}}_{\mathrm{MLC}}$ (\ref{eq:fham}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/bv/subset0_1.pdf}\\\footnotesize $f^{\mathrm{sub}}_{\mathrm{MLC}}$ (\ref{eq:fsub}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/bv/subset0_1.pdf}\\\footnotesize $f^{\mathrm{sub}}_{\mathrm{MLC}}$ (\ref{eq:fsub}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/bv/subset0_1.pdf}\\\footnotesize $f^{\mathrm{sub}}_{\mathrm{MLC}}$ (\ref{eq:fsub}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/bv/afrd.pdf}\\\footnotesize AFRD (\ref{eq:afrd}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/bv/afrd.pdf}\\\footnotesize AFRD (\ref{eq:afrd}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/bv/afrd.pdf}\\\footnotesize AFRD (\ref{eq:afrd}) ($\downarrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/bv/mfrd.pdf}\\\footnotesize MFRD (\ref{eq:mfrd}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/bv/mfrd.pdf}\\\footnotesize MFRD (\ref{eq:mfrd}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/bv/mfrd.pdf}\\\footnotesize MFRD (\ref{eq:mfrd}) ($\downarrow$)\end{minipage} \\
+\end{tabular}
+\caption{(Table G2) Average scores (in \%, $y$-axis) over $5\times 5$ cross-validation folds, plotted against the encoded number of the classifiers ($x$-axis): (PA-H-2, PA-H, PA-S-2, PA-S), (PR-H-2, PR-H, PR-S-2, PR-S), and (BR, CC, CLR) are encoded as (1, 2, 3, 4), (5, 6, 7, 8), and (9, 10, 11), respectively. Results are color-coded with respect to the noisy level $\alpha$ as follows: \textcolor[HTML]{FF0000}{$\alpha = 0.0$}, \textcolor[HTML]{0000FF}{$\alpha = 0.1$}, \textcolor[HTML]{339933}{$\alpha = 0.2$} and \textcolor[HTML]{000000}{$\alpha = 0.3$}.}
+\label{tab:paperapp_g2_rf_bv_g1}
+\end{table}
+
+\FloatBarrier
+
+\pdfbookmark[3]{(Table G3) Group 1: emotions, scene, Water-quality}{paperapp_g3-rf-bv-g1}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.8}
+\begin{tabular}{ccc}
+\textbf{emotions} & \textbf{scene} & \textbf{Water-quality} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/bv/f1.pdf}\\\footnotesize $f^{1}_{\mathrm{MLC}}$ (\ref{eq:f1mlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/bv/f1.pdf}\\\footnotesize $f^{1}_{\mathrm{MLC}}$ (\ref{eq:f1mlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/bv/f1.pdf}\\\footnotesize $f^{1}_{\mathrm{MLC}}$ (\ref{eq:f1mlc}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/bv/hamming_accuracy.pdf}\\\footnotesize $f^{\mathrm{ham}}_{\mathrm{MLC}}$ (\ref{eq:fham}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/bv/hamming_accuracy.pdf}\\\footnotesize $f^{\mathrm{ham}}_{\mathrm{MLC}}$ (\ref{eq:fham}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/bv/hamming_accuracy.pdf}\\\footnotesize $f^{\mathrm{ham}}_{\mathrm{MLC}}$ (\ref{eq:fham}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/bv/subset0_1.pdf}\\\footnotesize $f^{\mathrm{sub}}_{\mathrm{MLC}}$ (\ref{eq:fsub}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/bv/subset0_1.pdf}\\\footnotesize $f^{\mathrm{sub}}_{\mathrm{MLC}}$ (\ref{eq:fsub}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/bv/subset0_1.pdf}\\\footnotesize $f^{\mathrm{sub}}_{\mathrm{MLC}}$ (\ref{eq:fsub}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/bv/afrd.pdf}\\\footnotesize AFRD (\ref{eq:afrd}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/bv/afrd.pdf}\\\footnotesize AFRD (\ref{eq:afrd}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/bv/afrd.pdf}\\\footnotesize AFRD (\ref{eq:afrd}) ($\downarrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/bv/mfrd.pdf}\\\footnotesize MFRD (\ref{eq:mfrd}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/bv/mfrd.pdf}\\\footnotesize MFRD (\ref{eq:mfrd}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/bv/mfrd.pdf}\\\footnotesize MFRD (\ref{eq:mfrd}) ($\downarrow$)\end{minipage} \\
+\end{tabular}
+\caption{(Table G3) Average scores (in \%, $y$-axis) over $5\times 5$ cross-validation folds, plotted against the encoded number of the classifiers ($x$-axis): (PA-H-2, PA-H, PA-S-2, PA-S), (PR-H-2, PR-H, PR-S-2, PR-S), and (BR, CC, CLR) are encoded as (1, 2, 3, 4), (5, 6, 7, 8), and (9, 10, 11), respectively. Results are color-coded with respect to the noisy level $\alpha$ as follows: \textcolor[HTML]{FF0000}{$\alpha = 0.0$}, \textcolor[HTML]{0000FF}{$\alpha = 0.1$}, \textcolor[HTML]{339933}{$\alpha = 0.2$} and \textcolor[HTML]{000000}{$\alpha = 0.3$}.}
+\label{tab:paperapp_g3_rf_bv_g1}
+\end{table}
+
+\FloatBarrier
+
+\subsubsection{Partial abstention (PartialAbstention)}
+
+\pdfbookmark[3]{(Table G4) Group 1: CHD_49, Yeast, enron}{paperapp_g4-rf-pa-g1}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.8}
+\begin{tabular}{ccc}
+\textbf{CHD-49} & \textbf{Yeast} & \textbf{enron} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/pa/f1_pa.pdf}\\\footnotesize $f^{1}_{\mathrm{MLC}}$ (\ref{eq:f1mlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/pa/f1_pa.pdf}\\\footnotesize $f^{1}_{\mathrm{MLC}}$ (\ref{eq:f1mlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/pa/f1_pa.pdf}\\\footnotesize $f^{1}_{\mathrm{MLC}}$ (\ref{eq:f1mlc}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/pa/hamming_accuracy_pa.pdf}\\\footnotesize $f^{\mathrm{ham}}_{\mathrm{MLC}}$ (\ref{eq:fham}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/pa/hamming_accuracy_pa.pdf}\\\footnotesize $f^{\mathrm{ham}}_{\mathrm{MLC}}$ (\ref{eq:fham}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/pa/hamming_accuracy_pa.pdf}\\\footnotesize $f^{\mathrm{ham}}_{\mathrm{MLC}}$ (\ref{eq:fham}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/pa/subset0_1_pa.pdf}\\\footnotesize $f^{\mathrm{sub}}_{\mathrm{MLC}}$ (\ref{eq:fsub}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/pa/subset0_1_pa.pdf}\\\footnotesize $f^{\mathrm{sub}}_{\mathrm{MLC}}$ (\ref{eq:fsub}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/pa/subset0_1_pa.pdf}\\\footnotesize $f^{\mathrm{sub}}_{\mathrm{MLC}}$ (\ref{eq:fsub}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/pa/aabs.pdf}\\\footnotesize AABS (\ref{eq:aabs}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/pa/aabs.pdf}\\\footnotesize AABS (\ref{eq:aabs}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/pa/aabs.pdf}\\\footnotesize AABS (\ref{eq:aabs}) ($\downarrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/pa/abs.pdf}\\\footnotesize ABS (\ref{eq:abs}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/pa/abs.pdf}\\\footnotesize ABS (\ref{eq:abs}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/pa/abs.pdf}\\\footnotesize ABS (\ref{eq:abs}) ($\downarrow$)\end{minipage} \\
+\end{tabular}
+\caption{(Table G4) Average scores (in \%, $y$-axis) over $5\times 5$ cross-validation folds, plotted against the encoded number of the classifiers ($x$-axis): (PA-H-2, PA-H, PA-S-2, PA-S) and (PR-H-2, PR-H, PR-S-2, PR-S) are encoded as (1, 2, 3, 4) and (5, 6, 7, 8), respectively. Results are color-coded with respect to the noisy level $\alpha$ as follows: \textcolor[HTML]{FF0000}{$\alpha = 0.0$}, \textcolor[HTML]{0000FF}{$\alpha = 0.1$}, \textcolor[HTML]{339933}{$\alpha = 0.2$} and \textcolor[HTML]{000000}{$\alpha = 0.3$}.}
+\label{tab:paperapp_g4_rf_pa_g1}
+\end{table}
+
+\FloatBarrier
+
+\pdfbookmark[3]{(Table G5) Group 1: emotions, scene, Water-quality}{paperapp_g5-rf-pa-g1}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.8}
+\begin{tabular}{ccc}
+\textbf{emotions} & \textbf{scene} & \textbf{Water-quality} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/pa/f1_pa.pdf}\\\footnotesize $f^{1}_{\mathrm{MLC}}$ (\ref{eq:f1mlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/pa/f1_pa.pdf}\\\footnotesize $f^{1}_{\mathrm{MLC}}$ (\ref{eq:f1mlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/pa/f1_pa.pdf}\\\footnotesize $f^{1}_{\mathrm{MLC}}$ (\ref{eq:f1mlc}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/pa/hamming_accuracy_pa.pdf}\\\footnotesize $f^{\mathrm{ham}}_{\mathrm{MLC}}$ (\ref{eq:fham}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/pa/hamming_accuracy_pa.pdf}\\\footnotesize $f^{\mathrm{ham}}_{\mathrm{MLC}}$ (\ref{eq:fham}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/pa/hamming_accuracy_pa.pdf}\\\footnotesize $f^{\mathrm{ham}}_{\mathrm{MLC}}$ (\ref{eq:fham}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/pa/subset0_1_pa.pdf}\\\footnotesize $f^{\mathrm{sub}}_{\mathrm{MLC}}$ (\ref{eq:fsub}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/pa/subset0_1_pa.pdf}\\\footnotesize $f^{\mathrm{sub}}_{\mathrm{MLC}}$ (\ref{eq:fsub}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/pa/subset0_1_pa.pdf}\\\footnotesize $f^{\mathrm{sub}}_{\mathrm{MLC}}$ (\ref{eq:fsub}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/pa/aabs.pdf}\\\footnotesize AABS (\ref{eq:aabs}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/pa/aabs.pdf}\\\footnotesize AABS (\ref{eq:aabs}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/pa/aabs.pdf}\\\footnotesize AABS (\ref{eq:aabs}) ($\downarrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/pa/abs.pdf}\\\footnotesize ABS (\ref{eq:abs}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/pa/abs.pdf}\\\footnotesize ABS (\ref{eq:abs}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/pa/abs.pdf}\\\footnotesize ABS (\ref{eq:abs}) ($\downarrow$)\end{minipage} \\
+\end{tabular}
+\caption{(Table G5) Average scores (in \%, $y$-axis) over $5\times 5$ cross-validation folds, plotted against the encoded number of the classifiers ($x$-axis): (PA-H-2, PA-H, PA-S-2, PA-S) and (PR-H-2, PR-H, PR-S-2, PR-S) are encoded as (1, 2, 3, 4) and (5, 6, 7, 8), respectively. Results are color-coded with respect to the noisy level $\alpha$ as follows: \textcolor[HTML]{FF0000}{$\alpha = 0.0$}, \textcolor[HTML]{0000FF}{$\alpha = 0.1$}, \textcolor[HTML]{339933}{$\alpha = 0.2$} and \textcolor[HTML]{000000}{$\alpha = 0.3$}.}
+\label{tab:paperapp_g5_rf_pa_g1}
+\end{table}
+
+\FloatBarrier
+
+\subsubsection{Standard MLC predictions (BinaryVector)}
+
+\pdfbookmark[3]{(Table G6, new metrics --- main datasets) Group 1: GpositivePseAAC, PlantPseAAC, HumanPseAAC}{paperapp_g6a-rf-bv-g1}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.8}
+\begin{tabular}{ccc}
+\textbf{GpositivePse} & \textbf{plantPse} & \textbf{HumanPse} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/bv/jaccard.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/bv/jaccard.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/bv/jaccard.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/bv/macro_f1.pdf}\\\footnotesize macro-$f_1$ (\ref{eq:macrof1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/bv/macro_f1.pdf}\\\footnotesize macro-$f_1$ (\ref{eq:macrof1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/bv/macro_f1.pdf}\\\footnotesize macro-$f_1$ (\ref{eq:macrof1}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/bv/micro_f1.pdf}\\\footnotesize micro-$f_1$ (\ref{eq:microf1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/bv/micro_f1.pdf}\\\footnotesize micro-$f_1$ (\ref{eq:microf1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/bv/micro_f1.pdf}\\\footnotesize micro-$f_1$ (\ref{eq:microf1}) ($\uparrow$)\end{minipage} \\
+\end{tabular}
+\caption{(Table G6, new metrics --- main datasets) Average scores (in \%, $y$-axis) over $5\times 5$ cross-validation folds, plotted against the encoded number of the classifiers ($x$-axis): (PA-H-2, PA-H, PA-S-2, PA-S), (PR-H-2, PR-H, PR-S-2, PR-S), and (BR, CC, CLR) are encoded as (1, 2, 3, 4), (5, 6, 7, 8), and (9, 10, 11), respectively. Results are color-coded with respect to the noisy level $\alpha$ as follows: \textcolor[HTML]{FF0000}{$\alpha = 0.0$}, \textcolor[HTML]{0000FF}{$\alpha = 0.1$}, \textcolor[HTML]{339933}{$\alpha = 0.2$} and \textcolor[HTML]{000000}{$\alpha = 0.3$}.}
+\label{tab:paperapp_g6a_rf_bv_g1}
+\end{table}
+
+\FloatBarrier
+
+\pdfbookmark[3]{(Table G6, new metrics --- imbalanced) Group 1: CHD_49, Yeast, enron}{paperapp_g6b-rf-bv-g1}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.8}
+\begin{tabular}{ccc}
+\textbf{CHD-49} & \textbf{Yeast} & \textbf{enron} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/bv/jaccard.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/bv/jaccard.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/bv/jaccard.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/bv/macro_f1.pdf}\\\footnotesize macro-$f_1$ (\ref{eq:macrof1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/bv/macro_f1.pdf}\\\footnotesize macro-$f_1$ (\ref{eq:macrof1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/bv/macro_f1.pdf}\\\footnotesize macro-$f_1$ (\ref{eq:macrof1}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/bv/micro_f1.pdf}\\\footnotesize micro-$f_1$ (\ref{eq:microf1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/bv/micro_f1.pdf}\\\footnotesize micro-$f_1$ (\ref{eq:microf1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/bv/micro_f1.pdf}\\\footnotesize micro-$f_1$ (\ref{eq:microf1}) ($\uparrow$)\end{minipage} \\
+\end{tabular}
+\caption{(Table G6, new metrics --- imbalanced) Average scores (in \%, $y$-axis) over $5\times 5$ cross-validation folds, plotted against the encoded number of the classifiers ($x$-axis): (PA-H-2, PA-H, PA-S-2, PA-S), (PR-H-2, PR-H, PR-S-2, PR-S), and (BR, CC, CLR) are encoded as (1, 2, 3, 4), (5, 6, 7, 8), and (9, 10, 11), respectively. Results are color-coded with respect to the noisy level $\alpha$ as follows: \textcolor[HTML]{FF0000}{$\alpha = 0.0$}, \textcolor[HTML]{0000FF}{$\alpha = 0.1$}, \textcolor[HTML]{339933}{$\alpha = 0.2$} and \textcolor[HTML]{000000}{$\alpha = 0.3$}.}
+\label{tab:paperapp_g6b_rf_bv_g1}
+\end{table}
+
+\FloatBarrier
+
+\pdfbookmark[3]{(Table G6, new metrics --- balanced) Group 1: emotions, scene, Water-quality}{paperapp_g6c-rf-bv-g1}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.8}
+\begin{tabular}{ccc}
+\textbf{emotions} & \textbf{scene} & \textbf{Water-quality} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/bv/jaccard.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/bv/jaccard.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/bv/jaccard.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/bv/macro_f1.pdf}\\\footnotesize macro-$f_1$ (\ref{eq:macrof1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/bv/macro_f1.pdf}\\\footnotesize macro-$f_1$ (\ref{eq:macrof1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/bv/macro_f1.pdf}\\\footnotesize macro-$f_1$ (\ref{eq:macrof1}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/bv/micro_f1.pdf}\\\footnotesize micro-$f_1$ (\ref{eq:microf1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/bv/micro_f1.pdf}\\\footnotesize micro-$f_1$ (\ref{eq:microf1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/bv/micro_f1.pdf}\\\footnotesize micro-$f_1$ (\ref{eq:microf1}) ($\uparrow$)\end{minipage} \\
+\end{tabular}
+\caption{(Table G6, new metrics --- balanced) Average scores (in \%, $y$-axis) over $5\times 5$ cross-validation folds, plotted against the encoded number of the classifiers ($x$-axis): (PA-H-2, PA-H, PA-S-2, PA-S), (PR-H-2, PR-H, PR-S-2, PR-S), and (BR, CC, CLR) are encoded as (1, 2, 3, 4), (5, 6, 7, 8), and (9, 10, 11), respectively. Results are color-coded with respect to the noisy level $\alpha$ as follows: \textcolor[HTML]{FF0000}{$\alpha = 0.0$}, \textcolor[HTML]{0000FF}{$\alpha = 0.1$}, \textcolor[HTML]{339933}{$\alpha = 0.2$} and \textcolor[HTML]{000000}{$\alpha = 0.3$}.}
+\label{tab:paperapp_g6c_rf_bv_g1}
+\end{table}
+
+\FloatBarrier
+
+\subsubsection{Partial abstention (PartialAbstention)}
+
+\pdfbookmark[3]{(Table G7, new metrics --- main datasets) Group 1: GpositivePseAAC, PlantPseAAC, HumanPseAAC}{paperapp_g7a-rf-pa-g1}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.8}
+\begin{tabular}{ccc}
+\textbf{GpositivePse} & \textbf{plantPse} & \textbf{HumanPse} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/pa/jaccard_pa.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/pa/jaccard_pa.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/pa/jaccard_pa.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/pa/macro_f1_pa.pdf}\\\footnotesize macro-$f_1$ (\ref{eq:macrof1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/pa/macro_f1_pa.pdf}\\\footnotesize macro-$f_1$ (\ref{eq:macrof1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/pa/macro_f1_pa.pdf}\\\footnotesize macro-$f_1$ (\ref{eq:macrof1}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/pa/micro_f1_pa.pdf}\\\footnotesize micro-$f_1$ (\ref{eq:microf1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/pa/micro_f1_pa.pdf}\\\footnotesize micro-$f_1$ (\ref{eq:microf1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/pa/micro_f1_pa.pdf}\\\footnotesize micro-$f_1$ (\ref{eq:microf1}) ($\uparrow$)\end{minipage} \\
+\end{tabular}
+\caption{(Table G7, new metrics --- main datasets) Average scores (in \%, $y$-axis) over $5\times 5$ cross-validation folds, plotted against the encoded number of the classifiers ($x$-axis): (PA-H-2, PA-H, PA-S-2, PA-S) and (PR-H-2, PR-H, PR-S-2, PR-S) are encoded as (1, 2, 3, 4) and (5, 6, 7, 8), respectively. Results are color-coded with respect to the noisy level $\alpha$ as follows: \textcolor[HTML]{FF0000}{$\alpha = 0.0$}, \textcolor[HTML]{0000FF}{$\alpha = 0.1$}, \textcolor[HTML]{339933}{$\alpha = 0.2$} and \textcolor[HTML]{000000}{$\alpha = 0.3$}.}
+\label{tab:paperapp_g7a_rf_pa_g1}
+\end{table}
+
+\FloatBarrier
+
+\pdfbookmark[3]{(Table G7, new metrics --- imbalanced) Group 1: CHD_49, Yeast, enron}{paperapp_g7b-rf-pa-g1}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.8}
+\begin{tabular}{ccc}
+\textbf{CHD-49} & \textbf{Yeast} & \textbf{enron} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/pa/jaccard_pa.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/pa/jaccard_pa.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/pa/jaccard_pa.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/pa/macro_f1_pa.pdf}\\\footnotesize macro-$f_1$ (\ref{eq:macrof1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/pa/macro_f1_pa.pdf}\\\footnotesize macro-$f_1$ (\ref{eq:macrof1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/pa/macro_f1_pa.pdf}\\\footnotesize macro-$f_1$ (\ref{eq:macrof1}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/pa/micro_f1_pa.pdf}\\\footnotesize micro-$f_1$ (\ref{eq:microf1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/pa/micro_f1_pa.pdf}\\\footnotesize micro-$f_1$ (\ref{eq:microf1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/pa/micro_f1_pa.pdf}\\\footnotesize micro-$f_1$ (\ref{eq:microf1}) ($\uparrow$)\end{minipage} \\
+\end{tabular}
+\caption{(Table G7, new metrics --- imbalanced) Average scores (in \%, $y$-axis) over $5\times 5$ cross-validation folds, plotted against the encoded number of the classifiers ($x$-axis): (PA-H-2, PA-H, PA-S-2, PA-S) and (PR-H-2, PR-H, PR-S-2, PR-S) are encoded as (1, 2, 3, 4) and (5, 6, 7, 8), respectively. Results are color-coded with respect to the noisy level $\alpha$ as follows: \textcolor[HTML]{FF0000}{$\alpha = 0.0$}, \textcolor[HTML]{0000FF}{$\alpha = 0.1$}, \textcolor[HTML]{339933}{$\alpha = 0.2$} and \textcolor[HTML]{000000}{$\alpha = 0.3$}.}
+\label{tab:paperapp_g7b_rf_pa_g1}
+\end{table}
+
+\FloatBarrier
+
+\pdfbookmark[3]{(Table G7, new metrics --- balanced) Group 1: emotions, scene, Water-quality}{paperapp_g7c-rf-pa-g1}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.8}
+\begin{tabular}{ccc}
+\textbf{emotions} & \textbf{scene} & \textbf{Water-quality} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/pa/jaccard_pa.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/pa/jaccard_pa.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/pa/jaccard_pa.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/pa/macro_f1_pa.pdf}\\\footnotesize macro-$f_1$ (\ref{eq:macrof1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/pa/macro_f1_pa.pdf}\\\footnotesize macro-$f_1$ (\ref{eq:macrof1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/pa/macro_f1_pa.pdf}\\\footnotesize macro-$f_1$ (\ref{eq:macrof1}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/pa/micro_f1_pa.pdf}\\\footnotesize micro-$f_1$ (\ref{eq:microf1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/pa/micro_f1_pa.pdf}\\\footnotesize micro-$f_1$ (\ref{eq:microf1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/pa/micro_f1_pa.pdf}\\\footnotesize micro-$f_1$ (\ref{eq:microf1}) ($\uparrow$)\end{minipage} \\
+\end{tabular}
+\caption{(Table G7, new metrics --- balanced) Average scores (in \%, $y$-axis) over $5\times 5$ cross-validation folds, plotted against the encoded number of the classifiers ($x$-axis): (PA-H-2, PA-H, PA-S-2, PA-S) and (PR-H-2, PR-H, PR-S-2, PR-S) are encoded as (1, 2, 3, 4) and (5, 6, 7, 8), respectively. Results are color-coded with respect to the noisy level $\alpha$ as follows: \textcolor[HTML]{FF0000}{$\alpha = 0.0$}, \textcolor[HTML]{0000FF}{$\alpha = 0.1$}, \textcolor[HTML]{339933}{$\alpha = 0.2$} and \textcolor[HTML]{000000}{$\alpha = 0.3$}.}
+\label{tab:paperapp_g7c_rf_pa_g1}
+\end{table}
+
+\FloatBarrier
+
+\subsubsection{Score-vector ranking metrics (AUROC, AUPRC, etc.) (ScoreVector)}
+
+\pdfbookmark[3]{(Table G8, new --- main datasets) Group 1: GpositivePseAAC, PlantPseAAC, HumanPseAAC}{paperapp_g8a-rf-sv-g1}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.65}
+\begin{tabular}{ccc}
+\textbf{GpositivePse} & \textbf{plantPse} & \textbf{HumanPse} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/sv/auc_macro.pdf}\\\footnotesize AUROC (macro) (\ref{eq:aurocM}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/sv/auc_macro.pdf}\\\footnotesize AUROC (macro) (\ref{eq:aurocM}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/sv/auc_macro.pdf}\\\footnotesize AUROC (macro) (\ref{eq:aurocM}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/sv/auc_micro.pdf}\\\footnotesize AUROC (micro) (\ref{eq:aurocm}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/sv/auc_micro.pdf}\\\footnotesize AUROC (micro) (\ref{eq:aurocm}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/sv/auc_micro.pdf}\\\footnotesize AUROC (micro) (\ref{eq:aurocm}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/sv/auprc_macro.pdf}\\\footnotesize AUPRC (macro) (\ref{eq:auprcM}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/sv/auprc_macro.pdf}\\\footnotesize AUPRC (macro) (\ref{eq:auprcM}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/sv/auprc_macro.pdf}\\\footnotesize AUPRC (macro) (\ref{eq:auprcM}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/sv/auprc_micro.pdf}\\\footnotesize AUPRC (micro) (\ref{eq:auprcm}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/sv/auprc_micro.pdf}\\\footnotesize AUPRC (micro) (\ref{eq:auprcm}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/sv/auprc_micro.pdf}\\\footnotesize AUPRC (micro) (\ref{eq:auprcm}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/sv/ranking_loss.pdf}\\\footnotesize Ranking loss (\ref{eq:rloss}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/sv/ranking_loss.pdf}\\\footnotesize Ranking loss (\ref{eq:rloss}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/sv/ranking_loss.pdf}\\\footnotesize Ranking loss (\ref{eq:rloss}) ($\downarrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/sv/one_error.pdf}\\\footnotesize One-error (\ref{eq:oneerr}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/sv/one_error.pdf}\\\footnotesize One-error (\ref{eq:oneerr}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/sv/one_error.pdf}\\\footnotesize One-error (\ref{eq:oneerr}) ($\downarrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/sv/coverage.pdf}\\\footnotesize Coverage (\ref{eq:cov}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/sv/coverage.pdf}\\\footnotesize Coverage (\ref{eq:cov}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/sv/coverage.pdf}\\\footnotesize Coverage (\ref{eq:cov}) ($\downarrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/sv/lr_ap.pdf}\\\footnotesize LR-AP (\ref{eq:lrap}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/sv/lr_ap.pdf}\\\footnotesize LR-AP (\ref{eq:lrap}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/sv/lr_ap.pdf}\\\footnotesize LR-AP (\ref{eq:lrap}) ($\uparrow$)\end{minipage} \\
+\end{tabular}
+\caption{(Table G8, new --- main datasets) Average scores (in \%, $y$-axis) over $5\times 5$ cross-validation folds, plotted against the encoded number of the classifiers ($x$-axis): (PA-H-2, PA-H, PA-S-2, PA-S) and (PR-H-2, PR-H, PR-S-2, PR-S) are encoded as (1, 2, 3, 4) and (5, 6, 7, 8), respectively. Results are color-coded with respect to the noisy level $\alpha$ as follows: \textcolor[HTML]{FF0000}{$\alpha = 0.0$}, \textcolor[HTML]{0000FF}{$\alpha = 0.1$}, \textcolor[HTML]{339933}{$\alpha = 0.2$} and \textcolor[HTML]{000000}{$\alpha = 0.3$}.}
+\label{tab:paperapp_g8a_rf_sv_g1}
+\end{table}
+
+\FloatBarrier
+
+\pdfbookmark[3]{(Table G8, new --- imbalanced) Group 1: CHD_49, Yeast, enron}{paperapp_g8b-rf-sv-g1}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.65}
+\begin{tabular}{ccc}
+\textbf{CHD-49} & \textbf{Yeast} & \textbf{enron} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/sv/auc_macro.pdf}\\\footnotesize AUROC (macro) (\ref{eq:aurocM}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/sv/auc_macro.pdf}\\\footnotesize AUROC (macro) (\ref{eq:aurocM}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/sv/auc_macro.pdf}\\\footnotesize AUROC (macro) (\ref{eq:aurocM}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/sv/auc_micro.pdf}\\\footnotesize AUROC (micro) (\ref{eq:aurocm}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/sv/auc_micro.pdf}\\\footnotesize AUROC (micro) (\ref{eq:aurocm}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/sv/auc_micro.pdf}\\\footnotesize AUROC (micro) (\ref{eq:aurocm}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/sv/auprc_macro.pdf}\\\footnotesize AUPRC (macro) (\ref{eq:auprcM}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/sv/auprc_macro.pdf}\\\footnotesize AUPRC (macro) (\ref{eq:auprcM}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/sv/auprc_macro.pdf}\\\footnotesize AUPRC (macro) (\ref{eq:auprcM}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/sv/auprc_micro.pdf}\\\footnotesize AUPRC (micro) (\ref{eq:auprcm}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/sv/auprc_micro.pdf}\\\footnotesize AUPRC (micro) (\ref{eq:auprcm}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/sv/auprc_micro.pdf}\\\footnotesize AUPRC (micro) (\ref{eq:auprcm}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/sv/ranking_loss.pdf}\\\footnotesize Ranking loss (\ref{eq:rloss}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/sv/ranking_loss.pdf}\\\footnotesize Ranking loss (\ref{eq:rloss}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/sv/ranking_loss.pdf}\\\footnotesize Ranking loss (\ref{eq:rloss}) ($\downarrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/sv/one_error.pdf}\\\footnotesize One-error (\ref{eq:oneerr}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/sv/one_error.pdf}\\\footnotesize One-error (\ref{eq:oneerr}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/sv/one_error.pdf}\\\footnotesize One-error (\ref{eq:oneerr}) ($\downarrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/sv/coverage.pdf}\\\footnotesize Coverage (\ref{eq:cov}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/sv/coverage.pdf}\\\footnotesize Coverage (\ref{eq:cov}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/sv/coverage.pdf}\\\footnotesize Coverage (\ref{eq:cov}) ($\downarrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/sv/lr_ap.pdf}\\\footnotesize LR-AP (\ref{eq:lrap}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/sv/lr_ap.pdf}\\\footnotesize LR-AP (\ref{eq:lrap}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/sv/lr_ap.pdf}\\\footnotesize LR-AP (\ref{eq:lrap}) ($\uparrow$)\end{minipage} \\
+\end{tabular}
+\caption{(Table G8, new --- imbalanced) Average scores (in \%, $y$-axis) over $5\times 5$ cross-validation folds, plotted against the encoded number of the classifiers ($x$-axis): (PA-H-2, PA-H, PA-S-2, PA-S) and (PR-H-2, PR-H, PR-S-2, PR-S) are encoded as (1, 2, 3, 4) and (5, 6, 7, 8), respectively. Results are color-coded with respect to the noisy level $\alpha$ as follows: \textcolor[HTML]{FF0000}{$\alpha = 0.0$}, \textcolor[HTML]{0000FF}{$\alpha = 0.1$}, \textcolor[HTML]{339933}{$\alpha = 0.2$} and \textcolor[HTML]{000000}{$\alpha = 0.3$}.}
+\label{tab:paperapp_g8b_rf_sv_g1}
+\end{table}
+
+\FloatBarrier
+
+\pdfbookmark[3]{(Table G8, new --- balanced) Group 1: emotions, scene, Water-quality}{paperapp_g8c-rf-sv-g1}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.65}
+\begin{tabular}{ccc}
+\textbf{emotions} & \textbf{scene} & \textbf{Water-quality} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/sv/auc_macro.pdf}\\\footnotesize AUROC (macro) (\ref{eq:aurocM}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/sv/auc_macro.pdf}\\\footnotesize AUROC (macro) (\ref{eq:aurocM}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/sv/auc_macro.pdf}\\\footnotesize AUROC (macro) (\ref{eq:aurocM}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/sv/auc_micro.pdf}\\\footnotesize AUROC (micro) (\ref{eq:aurocm}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/sv/auc_micro.pdf}\\\footnotesize AUROC (micro) (\ref{eq:aurocm}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/sv/auc_micro.pdf}\\\footnotesize AUROC (micro) (\ref{eq:aurocm}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/sv/auprc_macro.pdf}\\\footnotesize AUPRC (macro) (\ref{eq:auprcM}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/sv/auprc_macro.pdf}\\\footnotesize AUPRC (macro) (\ref{eq:auprcM}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/sv/auprc_macro.pdf}\\\footnotesize AUPRC (macro) (\ref{eq:auprcM}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/sv/auprc_micro.pdf}\\\footnotesize AUPRC (micro) (\ref{eq:auprcm}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/sv/auprc_micro.pdf}\\\footnotesize AUPRC (micro) (\ref{eq:auprcm}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/sv/auprc_micro.pdf}\\\footnotesize AUPRC (micro) (\ref{eq:auprcm}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/sv/ranking_loss.pdf}\\\footnotesize Ranking loss (\ref{eq:rloss}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/sv/ranking_loss.pdf}\\\footnotesize Ranking loss (\ref{eq:rloss}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/sv/ranking_loss.pdf}\\\footnotesize Ranking loss (\ref{eq:rloss}) ($\downarrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/sv/one_error.pdf}\\\footnotesize One-error (\ref{eq:oneerr}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/sv/one_error.pdf}\\\footnotesize One-error (\ref{eq:oneerr}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/sv/one_error.pdf}\\\footnotesize One-error (\ref{eq:oneerr}) ($\downarrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/sv/coverage.pdf}\\\footnotesize Coverage (\ref{eq:cov}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/sv/coverage.pdf}\\\footnotesize Coverage (\ref{eq:cov}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/sv/coverage.pdf}\\\footnotesize Coverage (\ref{eq:cov}) ($\downarrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/sv/lr_ap.pdf}\\\footnotesize LR-AP (\ref{eq:lrap}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/sv/lr_ap.pdf}\\\footnotesize LR-AP (\ref{eq:lrap}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/sv/lr_ap.pdf}\\\footnotesize LR-AP (\ref{eq:lrap}) ($\uparrow$)\end{minipage} \\
+\end{tabular}
+\caption{(Table G8, new --- balanced) Average scores (in \%, $y$-axis) over $5\times 5$ cross-validation folds, plotted against the encoded number of the classifiers ($x$-axis): (PA-H-2, PA-H, PA-S-2, PA-S) and (PR-H-2, PR-H, PR-S-2, PR-S) are encoded as (1, 2, 3, 4) and (5, 6, 7, 8), respectively. Results are color-coded with respect to the noisy level $\alpha$ as follows: \textcolor[HTML]{FF0000}{$\alpha = 0.0$}, \textcolor[HTML]{0000FF}{$\alpha = 0.1$}, \textcolor[HTML]{339933}{$\alpha = 0.2$} and \textcolor[HTML]{000000}{$\alpha = 0.3$}.}
+\label{tab:paperapp_g8c_rf_sv_g1}
+\end{table}
+
+\FloatBarrier
+
+\subsection{Abstention overview: aggregate trends}\label{sec:abstain_overview}
+\paragraph{Purpose.} This compact section shows the headline abstention-vs-standard-MLC trend across noise levels, averaged over all datasets, for both base learners (RF, LGBM) and both retained quality metrics ($f_1$, Jaccard). Use it as a quick visual summary before diving into the detailed per-method / per-dataset figures in Section~\ref{sec:abstain_vs_mlc}.
+
+\paragraph{How to read.} In each panel: blue bar = standard MLC (no abstention) on its native quality metric; coloured bar = with-abstention quality on retained labels. Green ``$+x.y$'' label = score-point gain of abstention over the standard-MLC bar of the same method. The four sub-panels per figure correspond to $\alpha\in\{0.0, 0.1, 0.2, 0.3\}$.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth]{rf/abstain/_shared/aggregate/summary.pdf}
+\caption{Figure~1.1: RF averaged across all datasets --- paired bars (light blue = std MLC, hatched = with-abstention) for $f_1$ and Jaccard, plus abstention rates. Color = $\alpha\in\{0.0, 0.1, 0.2, 0.3\}$.}
+\label{fig:abstain_summary_rf_1_1}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth]{rf/abstain/_shared/aggregate/summary_gain.pdf}
+\caption{Figure~1.2: RF averaged across all datasets --- gain-only view: bar height = (with-abstention) $-$ (std MLC) in score points, so positive bars show the empirical benefit of abstaining. Right panel: abstention rates. Color = $\alpha\in\{0.0, 0.1, 0.2, 0.3\}$.}
+\label{fig:abstain_summary_rf_1_2}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth]{rf/abstain/_shared/aggregate/summary_2row.pdf}
+\caption{Figure~1.3: RF averaged across all datasets --- detailed 2-row layout (low noise top, high noise bottom): (a) $f_1$ paired bars, (b) Jaccard paired bars, (c) abstention rates --- bar = \texttt{abs} = \% of instances with at least one abstained label (instance-level), dot = \texttt{aabs} = \% of labels skipped (per-cell, label-level). The rates in panel (c) are independent of which quality metric is reported in (a)/(b) --- they characterise the abstention decision rule, not its downstream effect on $f_1$ or Jaccard. Color = $\alpha\in\{0.0, 0.1, 0.2, 0.3\}$.}
+\label{fig:abstain_summary_rf_1_3}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth]{lgbm/abstain/_shared/aggregate/summary.pdf}
+\caption{Figure~1.1: LGBM averaged across all datasets --- paired bars (light blue = std MLC, hatched = with-abstention) for $f_1$ and Jaccard, plus abstention rates. Color = $\alpha\in\{0.0, 0.1, 0.2, 0.3\}$.}
+\label{fig:abstain_summary_lgbm_1_1}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth]{lgbm/abstain/_shared/aggregate/summary_gain.pdf}
+\caption{Figure~1.2: LGBM averaged across all datasets --- gain-only view: bar height = (with-abstention) $-$ (std MLC) in score points, so positive bars show the empirical benefit of abstaining. Right panel: abstention rates. Color = $\alpha\in\{0.0, 0.1, 0.2, 0.3\}$.}
+\label{fig:abstain_summary_lgbm_1_2}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth]{lgbm/abstain/_shared/aggregate/summary_2row.pdf}
+\caption{Figure~1.3: LGBM averaged across all datasets --- detailed 2-row layout (low noise top, high noise bottom): (a) $f_1$ paired bars, (b) Jaccard paired bars, (c) abstention rates --- bar = \texttt{abs} = \% of instances with at least one abstained label (instance-level), dot = \texttt{aabs} = \% of labels skipped (per-cell, label-level). The rates in panel (c) are independent of which quality metric is reported in (a)/(b) --- they characterise the abstention decision rule, not its downstream effect on $f_1$ or Jaccard. Color = $\alpha\in\{0.0, 0.1, 0.2, 0.3\}$.}
+\label{fig:abstain_summary_lgbm_1_3}
+\end{figure}
+
+\FloatBarrier
+\clearpage
+
+\clearpage
 
 \section{Main results: RF base learner, aggregated}
 
@@ -156,42 +557,6 @@ $x=8.5$, and $x=11.5$ separate the four method groups: PA (1--4), PR
 \label{tab:rf_agg_sv}
 \end{table}
 
-\clearpage
-
-\section{Abstention overview: aggregate trends}\label{sec:abstain_overview}
-\paragraph{Purpose.} This compact section shows the headline abstention-vs-standard-MLC trend across noise levels, averaged over all datasets, for both base learners (RF, LGBM) and both retained quality metrics ($f_1$, Jaccard). Use it as a quick visual summary before diving into the detailed per-method / per-dataset figures in Section~\ref{sec:abstain_vs_mlc}.
-
-\paragraph{How to read.} In each panel: blue bar = standard MLC (no abstention) on its native quality metric; coloured bar = with-abstention quality on retained labels. Green ``$+x.y$'' label = score-point gain of abstention over the standard-MLC bar of the same method. The four sub-panels per figure correspond to $\alpha\in\{0.0, 0.1, 0.2, 0.3\}$.
-
-\begin{figure}[!htbp]
-\centering
-\includegraphics[width=0.95\linewidth]{rf/abstain/f1_pa/aggregate/paired_bars.pdf}
-\caption{RF aggregate (f1\_pa): standard-MLC vs.\ with-abstention quality across $\alpha\in\{0.0,0.1,0.2,0.3\}$, averaged over all datasets.}
-\label{fig:abstain_overview_rf_f1_pa}
-\end{figure}
-
-\begin{figure}[!htbp]
-\centering
-\includegraphics[width=0.95\linewidth]{rf/abstain/jaccard_pa/aggregate/paired_bars.pdf}
-\caption{RF aggregate (jaccard\_pa): standard-MLC vs.\ with-abstention quality across $\alpha\in\{0.0,0.1,0.2,0.3\}$, averaged over all datasets.}
-\label{fig:abstain_overview_rf_jaccard_pa}
-\end{figure}
-
-\begin{figure}[!htbp]
-\centering
-\includegraphics[width=0.95\linewidth]{lgbm/abstain/f1_pa/aggregate/paired_bars.pdf}
-\caption{LGBM aggregate (f1\_pa): standard-MLC vs.\ with-abstention quality across $\alpha\in\{0.0,0.1,0.2,0.3\}$, averaged over all datasets.}
-\label{fig:abstain_overview_lgbm_f1_pa}
-\end{figure}
-
-\begin{figure}[!htbp]
-\centering
-\includegraphics[width=0.95\linewidth]{lgbm/abstain/jaccard_pa/aggregate/paired_bars.pdf}
-\caption{LGBM aggregate (jaccard\_pa): standard-MLC vs.\ with-abstention quality across $\alpha\in\{0.0,0.1,0.2,0.3\}$, averaged over all datasets.}
-\label{fig:abstain_overview_lgbm_jaccard_pa}
-\end{figure}
-
-\FloatBarrier
 \clearpage
 
 \section{Abstention vs standard MLC}\label{sec:abstain_vs_mlc}
@@ -1483,6 +1848,267 @@ $x=8.5$, and $x=11.5$ separate the four method groups: PA (1--4), PR
 
 \clearpage
 \appendix
+
+\section{Experimental results --- appendix tables (RF base learner)}\label{sec:paperapp-rf}
+
+Appendix counterpart of the main Paper results section. Tables G2--G5 mirror the original paper's appendix exactly (same metric sets, with the 6 non-main datasets split into imbalanced vs.\ balanced buckets following the original layout). Tables G6--G8 are revision additions reporting the new metrics ($f^{\mathrm{Jacc}}_{\mathrm{MLC}}$, macro-$f_1$, micro-$f_1$) and ScoreVector results.
+
+
+\subsection{Standard MLC predictions (BinaryVector)}
+
+\pdfbookmark[3]{(Table G2) Group 1: CHD_49, Yeast, enron}{paperapp_g2-rf-bv-g1}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.8}
+\begin{tabular}{ccc}
+\textbf{CHD-49} & \textbf{Yeast} & \textbf{enron} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/bv/f1.pdf}\\\footnotesize $f^{1}_{\mathrm{MLC}}$ (\ref{eq:f1mlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/bv/f1.pdf}\\\footnotesize $f^{1}_{\mathrm{MLC}}$ (\ref{eq:f1mlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/bv/f1.pdf}\\\footnotesize $f^{1}_{\mathrm{MLC}}$ (\ref{eq:f1mlc}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/bv/hamming_accuracy.pdf}\\\footnotesize $f^{\mathrm{ham}}_{\mathrm{MLC}}$ (\ref{eq:fham}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/bv/hamming_accuracy.pdf}\\\footnotesize $f^{\mathrm{ham}}_{\mathrm{MLC}}$ (\ref{eq:fham}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/bv/hamming_accuracy.pdf}\\\footnotesize $f^{\mathrm{ham}}_{\mathrm{MLC}}$ (\ref{eq:fham}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/bv/subset0_1.pdf}\\\footnotesize $f^{\mathrm{sub}}_{\mathrm{MLC}}$ (\ref{eq:fsub}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/bv/subset0_1.pdf}\\\footnotesize $f^{\mathrm{sub}}_{\mathrm{MLC}}$ (\ref{eq:fsub}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/bv/subset0_1.pdf}\\\footnotesize $f^{\mathrm{sub}}_{\mathrm{MLC}}$ (\ref{eq:fsub}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/bv/afrd.pdf}\\\footnotesize AFRD (\ref{eq:afrd}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/bv/afrd.pdf}\\\footnotesize AFRD (\ref{eq:afrd}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/bv/afrd.pdf}\\\footnotesize AFRD (\ref{eq:afrd}) ($\downarrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/bv/mfrd.pdf}\\\footnotesize MFRD (\ref{eq:mfrd}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/bv/mfrd.pdf}\\\footnotesize MFRD (\ref{eq:mfrd}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/bv/mfrd.pdf}\\\footnotesize MFRD (\ref{eq:mfrd}) ($\downarrow$)\end{minipage} \\
+\end{tabular}
+\caption{(Table G2) Average scores (in \%, $y$-axis) over $5\times 5$ cross-validation folds, plotted against the encoded number of the classifiers ($x$-axis): (PA-H-2, PA-H, PA-S-2, PA-S), (PR-H-2, PR-H, PR-S-2, PR-S), and (BR, CC, CLR) are encoded as (1, 2, 3, 4), (5, 6, 7, 8), and (9, 10, 11), respectively. Results are color-coded with respect to the noisy level $\alpha$ as follows: \textcolor[HTML]{FF0000}{$\alpha = 0.0$}, \textcolor[HTML]{0000FF}{$\alpha = 0.1$}, \textcolor[HTML]{339933}{$\alpha = 0.2$} and \textcolor[HTML]{000000}{$\alpha = 0.3$}.}
+\label{tab:paperapp_g2_rf_bv_g1}
+\end{table}
+
+\FloatBarrier
+
+\pdfbookmark[3]{(Table G3) Group 1: emotions, scene, Water-quality}{paperapp_g3-rf-bv-g1}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.8}
+\begin{tabular}{ccc}
+\textbf{emotions} & \textbf{scene} & \textbf{Water-quality} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/bv/f1.pdf}\\\footnotesize $f^{1}_{\mathrm{MLC}}$ (\ref{eq:f1mlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/bv/f1.pdf}\\\footnotesize $f^{1}_{\mathrm{MLC}}$ (\ref{eq:f1mlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/bv/f1.pdf}\\\footnotesize $f^{1}_{\mathrm{MLC}}$ (\ref{eq:f1mlc}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/bv/hamming_accuracy.pdf}\\\footnotesize $f^{\mathrm{ham}}_{\mathrm{MLC}}$ (\ref{eq:fham}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/bv/hamming_accuracy.pdf}\\\footnotesize $f^{\mathrm{ham}}_{\mathrm{MLC}}$ (\ref{eq:fham}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/bv/hamming_accuracy.pdf}\\\footnotesize $f^{\mathrm{ham}}_{\mathrm{MLC}}$ (\ref{eq:fham}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/bv/subset0_1.pdf}\\\footnotesize $f^{\mathrm{sub}}_{\mathrm{MLC}}$ (\ref{eq:fsub}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/bv/subset0_1.pdf}\\\footnotesize $f^{\mathrm{sub}}_{\mathrm{MLC}}$ (\ref{eq:fsub}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/bv/subset0_1.pdf}\\\footnotesize $f^{\mathrm{sub}}_{\mathrm{MLC}}$ (\ref{eq:fsub}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/bv/afrd.pdf}\\\footnotesize AFRD (\ref{eq:afrd}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/bv/afrd.pdf}\\\footnotesize AFRD (\ref{eq:afrd}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/bv/afrd.pdf}\\\footnotesize AFRD (\ref{eq:afrd}) ($\downarrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/bv/mfrd.pdf}\\\footnotesize MFRD (\ref{eq:mfrd}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/bv/mfrd.pdf}\\\footnotesize MFRD (\ref{eq:mfrd}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/bv/mfrd.pdf}\\\footnotesize MFRD (\ref{eq:mfrd}) ($\downarrow$)\end{minipage} \\
+\end{tabular}
+\caption{(Table G3) Average scores (in \%, $y$-axis) over $5\times 5$ cross-validation folds, plotted against the encoded number of the classifiers ($x$-axis): (PA-H-2, PA-H, PA-S-2, PA-S), (PR-H-2, PR-H, PR-S-2, PR-S), and (BR, CC, CLR) are encoded as (1, 2, 3, 4), (5, 6, 7, 8), and (9, 10, 11), respectively. Results are color-coded with respect to the noisy level $\alpha$ as follows: \textcolor[HTML]{FF0000}{$\alpha = 0.0$}, \textcolor[HTML]{0000FF}{$\alpha = 0.1$}, \textcolor[HTML]{339933}{$\alpha = 0.2$} and \textcolor[HTML]{000000}{$\alpha = 0.3$}.}
+\label{tab:paperapp_g3_rf_bv_g1}
+\end{table}
+
+\FloatBarrier
+
+\subsection{Partial abstention (PartialAbstention)}
+
+\pdfbookmark[3]{(Table G4) Group 1: CHD_49, Yeast, enron}{paperapp_g4-rf-pa-g1}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.8}
+\begin{tabular}{ccc}
+\textbf{CHD-49} & \textbf{Yeast} & \textbf{enron} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/pa/f1_pa.pdf}\\\footnotesize $f^{1}_{\mathrm{MLC}}$ (\ref{eq:f1mlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/pa/f1_pa.pdf}\\\footnotesize $f^{1}_{\mathrm{MLC}}$ (\ref{eq:f1mlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/pa/f1_pa.pdf}\\\footnotesize $f^{1}_{\mathrm{MLC}}$ (\ref{eq:f1mlc}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/pa/hamming_accuracy_pa.pdf}\\\footnotesize $f^{\mathrm{ham}}_{\mathrm{MLC}}$ (\ref{eq:fham}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/pa/hamming_accuracy_pa.pdf}\\\footnotesize $f^{\mathrm{ham}}_{\mathrm{MLC}}$ (\ref{eq:fham}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/pa/hamming_accuracy_pa.pdf}\\\footnotesize $f^{\mathrm{ham}}_{\mathrm{MLC}}$ (\ref{eq:fham}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/pa/subset0_1_pa.pdf}\\\footnotesize $f^{\mathrm{sub}}_{\mathrm{MLC}}$ (\ref{eq:fsub}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/pa/subset0_1_pa.pdf}\\\footnotesize $f^{\mathrm{sub}}_{\mathrm{MLC}}$ (\ref{eq:fsub}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/pa/subset0_1_pa.pdf}\\\footnotesize $f^{\mathrm{sub}}_{\mathrm{MLC}}$ (\ref{eq:fsub}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/pa/aabs.pdf}\\\footnotesize AABS (\ref{eq:aabs}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/pa/aabs.pdf}\\\footnotesize AABS (\ref{eq:aabs}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/pa/aabs.pdf}\\\footnotesize AABS (\ref{eq:aabs}) ($\downarrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/pa/abs.pdf}\\\footnotesize ABS (\ref{eq:abs}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/pa/abs.pdf}\\\footnotesize ABS (\ref{eq:abs}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/pa/abs.pdf}\\\footnotesize ABS (\ref{eq:abs}) ($\downarrow$)\end{minipage} \\
+\end{tabular}
+\caption{(Table G4) Average scores (in \%, $y$-axis) over $5\times 5$ cross-validation folds, plotted against the encoded number of the classifiers ($x$-axis): (PA-H-2, PA-H, PA-S-2, PA-S) and (PR-H-2, PR-H, PR-S-2, PR-S) are encoded as (1, 2, 3, 4) and (5, 6, 7, 8), respectively. Results are color-coded with respect to the noisy level $\alpha$ as follows: \textcolor[HTML]{FF0000}{$\alpha = 0.0$}, \textcolor[HTML]{0000FF}{$\alpha = 0.1$}, \textcolor[HTML]{339933}{$\alpha = 0.2$} and \textcolor[HTML]{000000}{$\alpha = 0.3$}.}
+\label{tab:paperapp_g4_rf_pa_g1}
+\end{table}
+
+\FloatBarrier
+
+\pdfbookmark[3]{(Table G5) Group 1: emotions, scene, Water-quality}{paperapp_g5-rf-pa-g1}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.8}
+\begin{tabular}{ccc}
+\textbf{emotions} & \textbf{scene} & \textbf{Water-quality} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/pa/f1_pa.pdf}\\\footnotesize $f^{1}_{\mathrm{MLC}}$ (\ref{eq:f1mlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/pa/f1_pa.pdf}\\\footnotesize $f^{1}_{\mathrm{MLC}}$ (\ref{eq:f1mlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/pa/f1_pa.pdf}\\\footnotesize $f^{1}_{\mathrm{MLC}}$ (\ref{eq:f1mlc}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/pa/hamming_accuracy_pa.pdf}\\\footnotesize $f^{\mathrm{ham}}_{\mathrm{MLC}}$ (\ref{eq:fham}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/pa/hamming_accuracy_pa.pdf}\\\footnotesize $f^{\mathrm{ham}}_{\mathrm{MLC}}$ (\ref{eq:fham}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/pa/hamming_accuracy_pa.pdf}\\\footnotesize $f^{\mathrm{ham}}_{\mathrm{MLC}}$ (\ref{eq:fham}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/pa/subset0_1_pa.pdf}\\\footnotesize $f^{\mathrm{sub}}_{\mathrm{MLC}}$ (\ref{eq:fsub}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/pa/subset0_1_pa.pdf}\\\footnotesize $f^{\mathrm{sub}}_{\mathrm{MLC}}$ (\ref{eq:fsub}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/pa/subset0_1_pa.pdf}\\\footnotesize $f^{\mathrm{sub}}_{\mathrm{MLC}}$ (\ref{eq:fsub}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/pa/aabs.pdf}\\\footnotesize AABS (\ref{eq:aabs}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/pa/aabs.pdf}\\\footnotesize AABS (\ref{eq:aabs}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/pa/aabs.pdf}\\\footnotesize AABS (\ref{eq:aabs}) ($\downarrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/pa/abs.pdf}\\\footnotesize ABS (\ref{eq:abs}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/pa/abs.pdf}\\\footnotesize ABS (\ref{eq:abs}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/pa/abs.pdf}\\\footnotesize ABS (\ref{eq:abs}) ($\downarrow$)\end{minipage} \\
+\end{tabular}
+\caption{(Table G5) Average scores (in \%, $y$-axis) over $5\times 5$ cross-validation folds, plotted against the encoded number of the classifiers ($x$-axis): (PA-H-2, PA-H, PA-S-2, PA-S) and (PR-H-2, PR-H, PR-S-2, PR-S) are encoded as (1, 2, 3, 4) and (5, 6, 7, 8), respectively. Results are color-coded with respect to the noisy level $\alpha$ as follows: \textcolor[HTML]{FF0000}{$\alpha = 0.0$}, \textcolor[HTML]{0000FF}{$\alpha = 0.1$}, \textcolor[HTML]{339933}{$\alpha = 0.2$} and \textcolor[HTML]{000000}{$\alpha = 0.3$}.}
+\label{tab:paperapp_g5_rf_pa_g1}
+\end{table}
+
+\FloatBarrier
+
+\subsection{Standard MLC predictions (BinaryVector)}
+
+\pdfbookmark[3]{(Table G6, new metrics --- main datasets) Group 1: GpositivePseAAC, PlantPseAAC, HumanPseAAC}{paperapp_g6a-rf-bv-g1}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.8}
+\begin{tabular}{ccc}
+\textbf{GpositivePse} & \textbf{plantPse} & \textbf{HumanPse} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/bv/jaccard.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/bv/jaccard.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/bv/jaccard.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/bv/macro_f1.pdf}\\\footnotesize macro-$f_1$ (\ref{eq:macrof1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/bv/macro_f1.pdf}\\\footnotesize macro-$f_1$ (\ref{eq:macrof1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/bv/macro_f1.pdf}\\\footnotesize macro-$f_1$ (\ref{eq:macrof1}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/bv/micro_f1.pdf}\\\footnotesize micro-$f_1$ (\ref{eq:microf1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/bv/micro_f1.pdf}\\\footnotesize micro-$f_1$ (\ref{eq:microf1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/bv/micro_f1.pdf}\\\footnotesize micro-$f_1$ (\ref{eq:microf1}) ($\uparrow$)\end{minipage} \\
+\end{tabular}
+\caption{(Table G6, new metrics --- main datasets) Average scores (in \%, $y$-axis) over $5\times 5$ cross-validation folds, plotted against the encoded number of the classifiers ($x$-axis): (PA-H-2, PA-H, PA-S-2, PA-S), (PR-H-2, PR-H, PR-S-2, PR-S), and (BR, CC, CLR) are encoded as (1, 2, 3, 4), (5, 6, 7, 8), and (9, 10, 11), respectively. Results are color-coded with respect to the noisy level $\alpha$ as follows: \textcolor[HTML]{FF0000}{$\alpha = 0.0$}, \textcolor[HTML]{0000FF}{$\alpha = 0.1$}, \textcolor[HTML]{339933}{$\alpha = 0.2$} and \textcolor[HTML]{000000}{$\alpha = 0.3$}.}
+\label{tab:paperapp_g6a_rf_bv_g1}
+\end{table}
+
+\FloatBarrier
+
+\pdfbookmark[3]{(Table G6, new metrics --- imbalanced) Group 1: CHD_49, Yeast, enron}{paperapp_g6b-rf-bv-g1}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.8}
+\begin{tabular}{ccc}
+\textbf{CHD-49} & \textbf{Yeast} & \textbf{enron} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/bv/jaccard.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/bv/jaccard.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/bv/jaccard.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/bv/macro_f1.pdf}\\\footnotesize macro-$f_1$ (\ref{eq:macrof1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/bv/macro_f1.pdf}\\\footnotesize macro-$f_1$ (\ref{eq:macrof1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/bv/macro_f1.pdf}\\\footnotesize macro-$f_1$ (\ref{eq:macrof1}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/bv/micro_f1.pdf}\\\footnotesize micro-$f_1$ (\ref{eq:microf1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/bv/micro_f1.pdf}\\\footnotesize micro-$f_1$ (\ref{eq:microf1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/bv/micro_f1.pdf}\\\footnotesize micro-$f_1$ (\ref{eq:microf1}) ($\uparrow$)\end{minipage} \\
+\end{tabular}
+\caption{(Table G6, new metrics --- imbalanced) Average scores (in \%, $y$-axis) over $5\times 5$ cross-validation folds, plotted against the encoded number of the classifiers ($x$-axis): (PA-H-2, PA-H, PA-S-2, PA-S), (PR-H-2, PR-H, PR-S-2, PR-S), and (BR, CC, CLR) are encoded as (1, 2, 3, 4), (5, 6, 7, 8), and (9, 10, 11), respectively. Results are color-coded with respect to the noisy level $\alpha$ as follows: \textcolor[HTML]{FF0000}{$\alpha = 0.0$}, \textcolor[HTML]{0000FF}{$\alpha = 0.1$}, \textcolor[HTML]{339933}{$\alpha = 0.2$} and \textcolor[HTML]{000000}{$\alpha = 0.3$}.}
+\label{tab:paperapp_g6b_rf_bv_g1}
+\end{table}
+
+\FloatBarrier
+
+\pdfbookmark[3]{(Table G6, new metrics --- balanced) Group 1: emotions, scene, Water-quality}{paperapp_g6c-rf-bv-g1}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.8}
+\begin{tabular}{ccc}
+\textbf{emotions} & \textbf{scene} & \textbf{Water-quality} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/bv/jaccard.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/bv/jaccard.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/bv/jaccard.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/bv/macro_f1.pdf}\\\footnotesize macro-$f_1$ (\ref{eq:macrof1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/bv/macro_f1.pdf}\\\footnotesize macro-$f_1$ (\ref{eq:macrof1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/bv/macro_f1.pdf}\\\footnotesize macro-$f_1$ (\ref{eq:macrof1}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/bv/micro_f1.pdf}\\\footnotesize micro-$f_1$ (\ref{eq:microf1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/bv/micro_f1.pdf}\\\footnotesize micro-$f_1$ (\ref{eq:microf1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/bv/micro_f1.pdf}\\\footnotesize micro-$f_1$ (\ref{eq:microf1}) ($\uparrow$)\end{minipage} \\
+\end{tabular}
+\caption{(Table G6, new metrics --- balanced) Average scores (in \%, $y$-axis) over $5\times 5$ cross-validation folds, plotted against the encoded number of the classifiers ($x$-axis): (PA-H-2, PA-H, PA-S-2, PA-S), (PR-H-2, PR-H, PR-S-2, PR-S), and (BR, CC, CLR) are encoded as (1, 2, 3, 4), (5, 6, 7, 8), and (9, 10, 11), respectively. Results are color-coded with respect to the noisy level $\alpha$ as follows: \textcolor[HTML]{FF0000}{$\alpha = 0.0$}, \textcolor[HTML]{0000FF}{$\alpha = 0.1$}, \textcolor[HTML]{339933}{$\alpha = 0.2$} and \textcolor[HTML]{000000}{$\alpha = 0.3$}.}
+\label{tab:paperapp_g6c_rf_bv_g1}
+\end{table}
+
+\FloatBarrier
+
+\subsection{Partial abstention (PartialAbstention)}
+
+\pdfbookmark[3]{(Table G7, new metrics --- main datasets) Group 1: GpositivePseAAC, PlantPseAAC, HumanPseAAC}{paperapp_g7a-rf-pa-g1}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.8}
+\begin{tabular}{ccc}
+\textbf{GpositivePse} & \textbf{plantPse} & \textbf{HumanPse} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/pa/jaccard_pa.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/pa/jaccard_pa.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/pa/jaccard_pa.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/pa/macro_f1_pa.pdf}\\\footnotesize macro-$f_1$ (\ref{eq:macrof1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/pa/macro_f1_pa.pdf}\\\footnotesize macro-$f_1$ (\ref{eq:macrof1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/pa/macro_f1_pa.pdf}\\\footnotesize macro-$f_1$ (\ref{eq:macrof1}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/pa/micro_f1_pa.pdf}\\\footnotesize micro-$f_1$ (\ref{eq:microf1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/pa/micro_f1_pa.pdf}\\\footnotesize micro-$f_1$ (\ref{eq:microf1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/pa/micro_f1_pa.pdf}\\\footnotesize micro-$f_1$ (\ref{eq:microf1}) ($\uparrow$)\end{minipage} \\
+\end{tabular}
+\caption{(Table G7, new metrics --- main datasets) Average scores (in \%, $y$-axis) over $5\times 5$ cross-validation folds, plotted against the encoded number of the classifiers ($x$-axis): (PA-H-2, PA-H, PA-S-2, PA-S) and (PR-H-2, PR-H, PR-S-2, PR-S) are encoded as (1, 2, 3, 4) and (5, 6, 7, 8), respectively. Results are color-coded with respect to the noisy level $\alpha$ as follows: \textcolor[HTML]{FF0000}{$\alpha = 0.0$}, \textcolor[HTML]{0000FF}{$\alpha = 0.1$}, \textcolor[HTML]{339933}{$\alpha = 0.2$} and \textcolor[HTML]{000000}{$\alpha = 0.3$}.}
+\label{tab:paperapp_g7a_rf_pa_g1}
+\end{table}
+
+\FloatBarrier
+
+\pdfbookmark[3]{(Table G7, new metrics --- imbalanced) Group 1: CHD_49, Yeast, enron}{paperapp_g7b-rf-pa-g1}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.8}
+\begin{tabular}{ccc}
+\textbf{CHD-49} & \textbf{Yeast} & \textbf{enron} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/pa/jaccard_pa.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/pa/jaccard_pa.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/pa/jaccard_pa.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/pa/macro_f1_pa.pdf}\\\footnotesize macro-$f_1$ (\ref{eq:macrof1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/pa/macro_f1_pa.pdf}\\\footnotesize macro-$f_1$ (\ref{eq:macrof1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/pa/macro_f1_pa.pdf}\\\footnotesize macro-$f_1$ (\ref{eq:macrof1}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/pa/micro_f1_pa.pdf}\\\footnotesize micro-$f_1$ (\ref{eq:microf1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/pa/micro_f1_pa.pdf}\\\footnotesize micro-$f_1$ (\ref{eq:microf1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/pa/micro_f1_pa.pdf}\\\footnotesize micro-$f_1$ (\ref{eq:microf1}) ($\uparrow$)\end{minipage} \\
+\end{tabular}
+\caption{(Table G7, new metrics --- imbalanced) Average scores (in \%, $y$-axis) over $5\times 5$ cross-validation folds, plotted against the encoded number of the classifiers ($x$-axis): (PA-H-2, PA-H, PA-S-2, PA-S) and (PR-H-2, PR-H, PR-S-2, PR-S) are encoded as (1, 2, 3, 4) and (5, 6, 7, 8), respectively. Results are color-coded with respect to the noisy level $\alpha$ as follows: \textcolor[HTML]{FF0000}{$\alpha = 0.0$}, \textcolor[HTML]{0000FF}{$\alpha = 0.1$}, \textcolor[HTML]{339933}{$\alpha = 0.2$} and \textcolor[HTML]{000000}{$\alpha = 0.3$}.}
+\label{tab:paperapp_g7b_rf_pa_g1}
+\end{table}
+
+\FloatBarrier
+
+\pdfbookmark[3]{(Table G7, new metrics --- balanced) Group 1: emotions, scene, Water-quality}{paperapp_g7c-rf-pa-g1}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.8}
+\begin{tabular}{ccc}
+\textbf{emotions} & \textbf{scene} & \textbf{Water-quality} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/pa/jaccard_pa.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/pa/jaccard_pa.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/pa/jaccard_pa.pdf}\\\footnotesize $f^{\mathrm{Jacc}}_{\mathrm{MLC}}$ (\ref{eq:jaccmlc}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/pa/macro_f1_pa.pdf}\\\footnotesize macro-$f_1$ (\ref{eq:macrof1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/pa/macro_f1_pa.pdf}\\\footnotesize macro-$f_1$ (\ref{eq:macrof1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/pa/macro_f1_pa.pdf}\\\footnotesize macro-$f_1$ (\ref{eq:macrof1}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/pa/micro_f1_pa.pdf}\\\footnotesize micro-$f_1$ (\ref{eq:microf1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/pa/micro_f1_pa.pdf}\\\footnotesize micro-$f_1$ (\ref{eq:microf1}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.32\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/pa/micro_f1_pa.pdf}\\\footnotesize micro-$f_1$ (\ref{eq:microf1}) ($\uparrow$)\end{minipage} \\
+\end{tabular}
+\caption{(Table G7, new metrics --- balanced) Average scores (in \%, $y$-axis) over $5\times 5$ cross-validation folds, plotted against the encoded number of the classifiers ($x$-axis): (PA-H-2, PA-H, PA-S-2, PA-S) and (PR-H-2, PR-H, PR-S-2, PR-S) are encoded as (1, 2, 3, 4) and (5, 6, 7, 8), respectively. Results are color-coded with respect to the noisy level $\alpha$ as follows: \textcolor[HTML]{FF0000}{$\alpha = 0.0$}, \textcolor[HTML]{0000FF}{$\alpha = 0.1$}, \textcolor[HTML]{339933}{$\alpha = 0.2$} and \textcolor[HTML]{000000}{$\alpha = 0.3$}.}
+\label{tab:paperapp_g7c_rf_pa_g1}
+\end{table}
+
+\FloatBarrier
+
+\subsection{Score-vector ranking metrics (AUROC, AUPRC, etc.) (ScoreVector)}
+
+\pdfbookmark[3]{(Table G8, new --- main datasets) Group 1: GpositivePseAAC, PlantPseAAC, HumanPseAAC}{paperapp_g8a-rf-sv-g1}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.65}
+\begin{tabular}{ccc}
+\textbf{GpositivePse} & \textbf{plantPse} & \textbf{HumanPse} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/sv/auc_macro.pdf}\\\footnotesize AUROC (macro) (\ref{eq:aurocM}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/sv/auc_macro.pdf}\\\footnotesize AUROC (macro) (\ref{eq:aurocM}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/sv/auc_macro.pdf}\\\footnotesize AUROC (macro) (\ref{eq:aurocM}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/sv/auc_micro.pdf}\\\footnotesize AUROC (micro) (\ref{eq:aurocm}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/sv/auc_micro.pdf}\\\footnotesize AUROC (micro) (\ref{eq:aurocm}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/sv/auc_micro.pdf}\\\footnotesize AUROC (micro) (\ref{eq:aurocm}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/sv/auprc_macro.pdf}\\\footnotesize AUPRC (macro) (\ref{eq:auprcM}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/sv/auprc_macro.pdf}\\\footnotesize AUPRC (macro) (\ref{eq:auprcM}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/sv/auprc_macro.pdf}\\\footnotesize AUPRC (macro) (\ref{eq:auprcM}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/sv/auprc_micro.pdf}\\\footnotesize AUPRC (micro) (\ref{eq:auprcm}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/sv/auprc_micro.pdf}\\\footnotesize AUPRC (micro) (\ref{eq:auprcm}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/sv/auprc_micro.pdf}\\\footnotesize AUPRC (micro) (\ref{eq:auprcm}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/sv/ranking_loss.pdf}\\\footnotesize Ranking loss (\ref{eq:rloss}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/sv/ranking_loss.pdf}\\\footnotesize Ranking loss (\ref{eq:rloss}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/sv/ranking_loss.pdf}\\\footnotesize Ranking loss (\ref{eq:rloss}) ($\downarrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/sv/one_error.pdf}\\\footnotesize One-error (\ref{eq:oneerr}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/sv/one_error.pdf}\\\footnotesize One-error (\ref{eq:oneerr}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/sv/one_error.pdf}\\\footnotesize One-error (\ref{eq:oneerr}) ($\downarrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/sv/coverage.pdf}\\\footnotesize Coverage (\ref{eq:cov}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/sv/coverage.pdf}\\\footnotesize Coverage (\ref{eq:cov}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/sv/coverage.pdf}\\\footnotesize Coverage (\ref{eq:cov}) ($\downarrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/GpositivePseAAC/sv/lr_ap.pdf}\\\footnotesize LR-AP (\ref{eq:lrap}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/PlantPseAAC/sv/lr_ap.pdf}\\\footnotesize LR-AP (\ref{eq:lrap}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/HumanPseAAC/sv/lr_ap.pdf}\\\footnotesize LR-AP (\ref{eq:lrap}) ($\uparrow$)\end{minipage} \\
+\end{tabular}
+\caption{(Table G8, new --- main datasets) Average scores (in \%, $y$-axis) over $5\times 5$ cross-validation folds, plotted against the encoded number of the classifiers ($x$-axis): (PA-H-2, PA-H, PA-S-2, PA-S) and (PR-H-2, PR-H, PR-S-2, PR-S) are encoded as (1, 2, 3, 4) and (5, 6, 7, 8), respectively. Results are color-coded with respect to the noisy level $\alpha$ as follows: \textcolor[HTML]{FF0000}{$\alpha = 0.0$}, \textcolor[HTML]{0000FF}{$\alpha = 0.1$}, \textcolor[HTML]{339933}{$\alpha = 0.2$} and \textcolor[HTML]{000000}{$\alpha = 0.3$}.}
+\label{tab:paperapp_g8a_rf_sv_g1}
+\end{table}
+
+\FloatBarrier
+
+\pdfbookmark[3]{(Table G8, new --- imbalanced) Group 1: CHD_49, Yeast, enron}{paperapp_g8b-rf-sv-g1}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.65}
+\begin{tabular}{ccc}
+\textbf{CHD-49} & \textbf{Yeast} & \textbf{enron} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/sv/auc_macro.pdf}\\\footnotesize AUROC (macro) (\ref{eq:aurocM}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/sv/auc_macro.pdf}\\\footnotesize AUROC (macro) (\ref{eq:aurocM}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/sv/auc_macro.pdf}\\\footnotesize AUROC (macro) (\ref{eq:aurocM}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/sv/auc_micro.pdf}\\\footnotesize AUROC (micro) (\ref{eq:aurocm}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/sv/auc_micro.pdf}\\\footnotesize AUROC (micro) (\ref{eq:aurocm}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/sv/auc_micro.pdf}\\\footnotesize AUROC (micro) (\ref{eq:aurocm}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/sv/auprc_macro.pdf}\\\footnotesize AUPRC (macro) (\ref{eq:auprcM}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/sv/auprc_macro.pdf}\\\footnotesize AUPRC (macro) (\ref{eq:auprcM}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/sv/auprc_macro.pdf}\\\footnotesize AUPRC (macro) (\ref{eq:auprcM}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/sv/auprc_micro.pdf}\\\footnotesize AUPRC (micro) (\ref{eq:auprcm}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/sv/auprc_micro.pdf}\\\footnotesize AUPRC (micro) (\ref{eq:auprcm}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/sv/auprc_micro.pdf}\\\footnotesize AUPRC (micro) (\ref{eq:auprcm}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/sv/ranking_loss.pdf}\\\footnotesize Ranking loss (\ref{eq:rloss}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/sv/ranking_loss.pdf}\\\footnotesize Ranking loss (\ref{eq:rloss}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/sv/ranking_loss.pdf}\\\footnotesize Ranking loss (\ref{eq:rloss}) ($\downarrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/sv/one_error.pdf}\\\footnotesize One-error (\ref{eq:oneerr}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/sv/one_error.pdf}\\\footnotesize One-error (\ref{eq:oneerr}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/sv/one_error.pdf}\\\footnotesize One-error (\ref{eq:oneerr}) ($\downarrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/sv/coverage.pdf}\\\footnotesize Coverage (\ref{eq:cov}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/sv/coverage.pdf}\\\footnotesize Coverage (\ref{eq:cov}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/sv/coverage.pdf}\\\footnotesize Coverage (\ref{eq:cov}) ($\downarrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/CHD_49/sv/lr_ap.pdf}\\\footnotesize LR-AP (\ref{eq:lrap}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Yeast/sv/lr_ap.pdf}\\\footnotesize LR-AP (\ref{eq:lrap}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/enron/sv/lr_ap.pdf}\\\footnotesize LR-AP (\ref{eq:lrap}) ($\uparrow$)\end{minipage} \\
+\end{tabular}
+\caption{(Table G8, new --- imbalanced) Average scores (in \%, $y$-axis) over $5\times 5$ cross-validation folds, plotted against the encoded number of the classifiers ($x$-axis): (PA-H-2, PA-H, PA-S-2, PA-S) and (PR-H-2, PR-H, PR-S-2, PR-S) are encoded as (1, 2, 3, 4) and (5, 6, 7, 8), respectively. Results are color-coded with respect to the noisy level $\alpha$ as follows: \textcolor[HTML]{FF0000}{$\alpha = 0.0$}, \textcolor[HTML]{0000FF}{$\alpha = 0.1$}, \textcolor[HTML]{339933}{$\alpha = 0.2$} and \textcolor[HTML]{000000}{$\alpha = 0.3$}.}
+\label{tab:paperapp_g8b_rf_sv_g1}
+\end{table}
+
+\FloatBarrier
+
+\pdfbookmark[3]{(Table G8, new --- balanced) Group 1: emotions, scene, Water-quality}{paperapp_g8c-rf-sv-g1}
+\begin{table}[!htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.65}
+\begin{tabular}{ccc}
+\textbf{emotions} & \textbf{scene} & \textbf{Water-quality} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/sv/auc_macro.pdf}\\\footnotesize AUROC (macro) (\ref{eq:aurocM}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/sv/auc_macro.pdf}\\\footnotesize AUROC (macro) (\ref{eq:aurocM}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/sv/auc_macro.pdf}\\\footnotesize AUROC (macro) (\ref{eq:aurocM}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/sv/auc_micro.pdf}\\\footnotesize AUROC (micro) (\ref{eq:aurocm}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/sv/auc_micro.pdf}\\\footnotesize AUROC (micro) (\ref{eq:aurocm}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/sv/auc_micro.pdf}\\\footnotesize AUROC (micro) (\ref{eq:aurocm}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/sv/auprc_macro.pdf}\\\footnotesize AUPRC (macro) (\ref{eq:auprcM}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/sv/auprc_macro.pdf}\\\footnotesize AUPRC (macro) (\ref{eq:auprcM}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/sv/auprc_macro.pdf}\\\footnotesize AUPRC (macro) (\ref{eq:auprcM}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/sv/auprc_micro.pdf}\\\footnotesize AUPRC (micro) (\ref{eq:auprcm}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/sv/auprc_micro.pdf}\\\footnotesize AUPRC (micro) (\ref{eq:auprcm}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/sv/auprc_micro.pdf}\\\footnotesize AUPRC (micro) (\ref{eq:auprcm}) ($\uparrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/sv/ranking_loss.pdf}\\\footnotesize Ranking loss (\ref{eq:rloss}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/sv/ranking_loss.pdf}\\\footnotesize Ranking loss (\ref{eq:rloss}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/sv/ranking_loss.pdf}\\\footnotesize Ranking loss (\ref{eq:rloss}) ($\downarrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/sv/one_error.pdf}\\\footnotesize One-error (\ref{eq:oneerr}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/sv/one_error.pdf}\\\footnotesize One-error (\ref{eq:oneerr}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/sv/one_error.pdf}\\\footnotesize One-error (\ref{eq:oneerr}) ($\downarrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/sv/coverage.pdf}\\\footnotesize Coverage (\ref{eq:cov}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/sv/coverage.pdf}\\\footnotesize Coverage (\ref{eq:cov}) ($\downarrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/sv/coverage.pdf}\\\footnotesize Coverage (\ref{eq:cov}) ($\downarrow$)\end{minipage} \\
+\begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/emotions/sv/lr_ap.pdf}\\\footnotesize LR-AP (\ref{eq:lrap}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/scene/sv/lr_ap.pdf}\\\footnotesize LR-AP (\ref{eq:lrap}) ($\uparrow$)\end{minipage} & \begin{minipage}{0.27\textwidth}\centering\includegraphics[width=\linewidth,trim=0 0 0 14, clip]{rf/per_dataset/Water-quality/sv/lr_ap.pdf}\\\footnotesize LR-AP (\ref{eq:lrap}) ($\uparrow$)\end{minipage} \\
+\end{tabular}
+\caption{(Table G8, new --- balanced) Average scores (in \%, $y$-axis) over $5\times 5$ cross-validation folds, plotted against the encoded number of the classifiers ($x$-axis): (PA-H-2, PA-H, PA-S-2, PA-S) and (PR-H-2, PR-H, PR-S-2, PR-S) are encoded as (1, 2, 3, 4) and (5, 6, 7, 8), respectively. Results are color-coded with respect to the noisy level $\alpha$ as follows: \textcolor[HTML]{FF0000}{$\alpha = 0.0$}, \textcolor[HTML]{0000FF}{$\alpha = 0.1$}, \textcolor[HTML]{339933}{$\alpha = 0.2$} and \textcolor[HTML]{000000}{$\alpha = 0.3$}.}
+\label{tab:paperapp_g8c_rf_sv_g1}
+\end{table}
+
+\FloatBarrier
+
+\clearpage
 
 \section{Per-dataset results (RF base learner)}
 

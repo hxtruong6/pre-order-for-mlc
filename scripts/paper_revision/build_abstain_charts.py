@@ -190,6 +190,7 @@ def render_coverage_risk(
     ax.set_title(title, fontsize=7)
     ax.tick_params(axis="both", labelsize=6)
     ax.grid(True, linestyle="-", linewidth=0.4, alpha=0.4)
+    ax.set_axisbelow(True)
     for spine in ("top", "right"):
         ax.spines[spine].set_visible(False)
     fig.tight_layout(pad=0.2)
@@ -257,6 +258,7 @@ def render_paired_bars(
         ax.tick_params(axis="y", labelsize=6)
         ax.legend(fontsize=5, loc="lower left", framealpha=0.85, borderpad=0.3)
         ax.grid(True, axis="y", linestyle="-", linewidth=0.4, alpha=0.4)
+        ax.set_axisbelow(True)
         for spine in ("top", "right"):
             ax.spines[spine].set_visible(False)
 
@@ -362,6 +364,7 @@ def render_coverage_risk_pareto(
     ax.tick_params(axis="both", labelsize=6)
     ax.legend(fontsize=5, loc="lower right", framealpha=0.85, borderpad=0.3)
     ax.grid(True, linestyle="-", linewidth=0.4, alpha=0.4)
+    ax.set_axisbelow(True)
     for spine in ("top", "right"):
         ax.spines[spine].set_visible(False)
     fig.tight_layout(pad=0.2)
@@ -448,6 +451,7 @@ def render_delta_bars(
         ax.set_title(fr"$\alpha={noise}$", fontsize=7)
         ax.tick_params(axis="y", labelsize=6)
         ax.grid(True, axis="y", linestyle="-", linewidth=0.4, alpha=0.4)
+        ax.set_axisbelow(True)
         for spine in ("top", "right"):
             ax.spines[spine].set_visible(False)
     axes[0, 0].set_ylabel(f"gain (pp): {pa_metric} - {bv_label}", fontsize=6)
@@ -504,6 +508,7 @@ def render_efficiency_quality(
     ax.tick_params(axis="both", labelsize=6)
     ax.legend(fontsize=5, loc="lower left", framealpha=0.85, borderpad=0.3)
     ax.grid(True, linestyle="-", linewidth=0.4, alpha=0.4)
+    ax.set_axisbelow(True)
     for spine in ("top", "right"):
         ax.spines[spine].set_visible(False)
     fig.tight_layout(pad=0.2)
@@ -563,6 +568,7 @@ def render_effective_f1(
     ax.legend(fontsize=4, loc="lower left", ncol=3, framealpha=0.85,
               borderpad=0.3, handletextpad=0.3, columnspacing=0.6)
     ax.grid(True, linestyle="-", linewidth=0.4, alpha=0.4)
+    ax.set_axisbelow(True)
     for spine in ("top", "right"):
         ax.spines[spine].set_visible(False)
     fig.tight_layout(pad=0.2)
@@ -634,6 +640,7 @@ def render_abstention_rate(
         ax.tick_params(axis="y", labelsize=6)
         ax.legend(fontsize=5, loc="upper left", framealpha=0.85, borderpad=0.3)
         ax.grid(True, axis="y", linestyle="-", linewidth=0.4, alpha=0.4)
+        ax.set_axisbelow(True)
         ax.set_ylim(0, max(40, float(np.nanmax(abs_vals)) * 1.15 if np.any(finite) else 40))
         for spine in ("top", "right"):
             ax.spines[spine].set_visible(False)
@@ -644,6 +651,353 @@ def render_abstention_rate(
     fig.tight_layout(pad=0.4, rect=(0.0, 0.0, 1.0, 0.96))
     out_pdf.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_pdf, format="pdf", bbox_inches="tight", pad_inches=0.02)
+    plt.close(fig)
+
+
+def render_abstain_summary(
+    df: pd.DataFrame,
+    out_pdf: Path,
+    title: str,
+    style: str,
+) -> None:
+    """Three-panel abstention summary: F1 paired | Jaccard paired | abs rates.
+
+    One figure per (learner, scope=aggregate). x-axis = 8 PA/PR methods,
+    color = noise α, hatch (////) = with-abstention bar in each std/abs pair.
+    Right panel keeps the (bar=abs, dot=aabs) layout, metric-independent.
+    """
+    palette = NOISE_COLORS_ENHANCED if style == "enhanced" else NOISE_COLORS_ORIGINAL
+    bv_color = "#9ecae1"
+    n_methods = len(PA_METHODS)
+    method_labels = [m[1] for m in PA_METHODS]
+    x = np.arange(n_methods)
+
+    fig, axes = plt.subplots(1, 3, figsize=(10.5, 3.0))
+    panel_specs = [
+        ("f1_pa",      "f1",      r"(a) $f_1$ paired bars",       axes[0]),
+        ("jaccard_pa", "jaccard", r"(b) Jaccard paired bars",     axes[1]),
+    ]
+    # 4 α values, 2 bars per α (std + abs) -> 8 bars per method group.
+    # bar width chosen so each group fits comfortably in a unit x-step.
+    group_width = 0.85
+    sub_w = group_width / (len(NOISE_LEVELS) * 2)
+
+    for pa_metric, bv_metric, panel_title, ax in panel_specs:
+        for ai, noise in enumerate(NOISE_LEVELS):
+            bv_vals = np.full(n_methods, np.nan)
+            pa_vals = np.full(n_methods, np.nan)
+            for i, (algo, _) in enumerate(PA_METHODS):
+                bv_vals[i] = _bv_value(df, algo, pa_metric, bv_metric, noise) * 100.0
+                pa_vals[i] = _aggregate_value(df, algo, pa_metric, noise) * 100.0
+            offset_std = (ai * 2 - len(NOISE_LEVELS) + 0.5) * sub_w
+            offset_abs = offset_std + sub_w
+            ax.bar(
+                x + offset_std, bv_vals, sub_w,
+                color=bv_color, edgecolor=palette[noise], linewidth=0.4,
+                label=("std MLC" if ai == 0 else None),
+            )
+            ax.bar(
+                x + offset_abs, pa_vals, sub_w,
+                color=palette[noise], edgecolor="black", linewidth=0.3,
+                hatch="////",
+                label=(fr"$\alpha={noise}$ (w/ abs)" if True else None),
+            )
+        ax.axvline(x=3.5, color="grey", linestyle="--", linewidth=0.4, alpha=0.5)
+        ax.set_xticks(x)
+        ax.set_xticklabels(method_labels, rotation=-35, ha="left", fontsize=6)
+        ax.set_title(panel_title, fontsize=8)
+        ax.set_ylabel("score (%)", fontsize=7)
+        ax.tick_params(axis="y", labelsize=6)
+        ax.grid(True, axis="y", linestyle="-", linewidth=0.4, alpha=0.4)
+        ax.set_axisbelow(True)
+        for spine in ("top", "right"):
+            ax.spines[spine].set_visible(False)
+
+    # Right panel: abstention rates (metric-independent).
+    ax = axes[2]
+    for ai, noise in enumerate(NOISE_LEVELS):
+        abs_vals = np.full(n_methods, np.nan)
+        aabs_vals = np.full(n_methods, np.nan)
+        for i, (algo, _) in enumerate(PA_METHODS):
+            abs_vals[i] = _aggregate_value(df, algo, "abs", noise) * 100.0
+            aabs_vals[i] = _aggregate_value(df, algo, "aabs", noise) * 100.0
+        offset = (ai - (len(NOISE_LEVELS) - 1) / 2) * (group_width / len(NOISE_LEVELS))
+        bar_w = group_width / len(NOISE_LEVELS) * 0.9
+        ax.bar(
+            x + offset, abs_vals, bar_w,
+            color=palette[noise], edgecolor="black", linewidth=0.3,
+            label=(fr"$\alpha={noise}$" if True else None),
+        )
+        finite = np.isfinite(aabs_vals)
+        ax.scatter(
+            x[finite] + offset, aabs_vals[finite],
+            color="black", marker="o", s=10, zorder=3,
+            edgecolors="white", linewidths=0.4,
+        )
+    ax.axvline(x=3.5, color="grey", linestyle="--", linewidth=0.4, alpha=0.5)
+    ax.set_xticks(x)
+    ax.set_xticklabels(method_labels, rotation=-35, ha="left", fontsize=6)
+    ax.set_title("(c) Abstention rates (bar=abs, dot=aabs)", fontsize=8)
+    ax.set_ylabel("rate (%)", fontsize=7)
+    ax.tick_params(axis="y", labelsize=6)
+    ax.grid(True, axis="y", linestyle="-", linewidth=0.4, alpha=0.4)
+    ax.set_axisbelow(True)
+    for spine in ("top", "right"):
+        ax.spines[spine].set_visible(False)
+
+    # Shared legend at bottom: α colors + std-vs-abs hatch key.
+    from matplotlib.patches import Patch
+    legend_handles = [
+        Patch(facecolor=bv_color, edgecolor="black", linewidth=0.3,
+              label="std MLC (no abstention)"),
+        Patch(facecolor="white", edgecolor="black", linewidth=0.3,
+              hatch="////", label="with abstention"),
+    ] + [
+        Patch(facecolor=palette[n], edgecolor="black", linewidth=0.3,
+              label=fr"$\alpha={n}$")
+        for n in NOISE_LEVELS
+    ]
+    fig.legend(
+        handles=legend_handles,
+        loc="lower center", ncol=len(legend_handles),
+        fontsize=6, frameon=False,
+        bbox_to_anchor=(0.5, -0.04),
+    )
+    fig.suptitle(title, fontsize=9)
+    fig.tight_layout(pad=0.4, rect=(0.0, 0.04, 1.0, 0.95))
+    out_pdf.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_pdf, format="pdf", bbox_inches="tight", pad_inches=0.05)
+    plt.close(fig)
+
+
+def render_abstain_summary_gain(
+    df: pd.DataFrame,
+    out_pdf: Path,
+    title: str,
+    style: str,
+) -> None:
+    """Figure 1.2: gain-only bars. Three panels, each showing (pa - bv) per α.
+
+    Bar height = score-point gain of with-abstention quality over the
+    matched standard-MLC bar of the same method (positive = abstention
+    helps). Color = α. No std bars, no hatching — the figure *is* the
+    gap, so the message reads at a glance.
+    """
+    palette = NOISE_COLORS_ENHANCED if style == "enhanced" else NOISE_COLORS_ORIGINAL
+    n_methods = len(PA_METHODS)
+    method_labels = [m[1] for m in PA_METHODS]
+    x = np.arange(n_methods)
+
+    fig, axes = plt.subplots(1, 3, figsize=(10.5, 3.0))
+    panel_specs = [
+        ("f1_pa",      "f1",      r"(a) gain on $f_1$: (with-abstention) $-$ (std MLC)",     axes[0]),
+        ("jaccard_pa", "jaccard", r"(b) gain on Jaccard: (with-abstention) $-$ (std MLC)",   axes[1]),
+    ]
+    group_width = 0.85
+    sub_w = group_width / len(NOISE_LEVELS)
+
+    max_abs_gain = 0.0
+    for pa_metric, bv_metric, panel_title, ax in panel_specs:
+        for ai, noise in enumerate(NOISE_LEVELS):
+            gains = np.full(n_methods, np.nan)
+            for i, (algo, _) in enumerate(PA_METHODS):
+                bv = _bv_value(df, algo, pa_metric, bv_metric, noise) * 100.0
+                pa = _aggregate_value(df, algo, pa_metric, noise) * 100.0
+                if np.isfinite(bv) and np.isfinite(pa):
+                    gains[i] = pa - bv
+            offset = (ai - (len(NOISE_LEVELS) - 1) / 2) * sub_w
+            ax.bar(
+                x + offset, gains, sub_w * 0.92,
+                color=palette[noise], edgecolor="black", linewidth=0.3,
+            )
+            finite = np.isfinite(gains)
+            if finite.any():
+                max_abs_gain = max(max_abs_gain, float(np.nanmax(np.abs(gains))))
+        ax.axhline(y=0, color="black", linewidth=0.5)
+        ax.axvline(x=3.5, color="grey", linestyle="--", linewidth=0.4, alpha=0.5)
+        ax.set_xticks(x)
+        ax.set_xticklabels(method_labels, rotation=-35, ha="left", fontsize=6)
+        ax.set_title(panel_title, fontsize=8)
+        ax.set_ylabel("gain (score-points)", fontsize=7)
+        ax.tick_params(axis="y", labelsize=6)
+        ax.grid(True, axis="y", linestyle="-", linewidth=0.4, alpha=0.4)
+        ax.set_axisbelow(True)
+        for spine in ("top", "right"):
+            ax.spines[spine].set_visible(False)
+
+    # Pad y-limits symmetrically for the two gain panels so they're comparable.
+    pad = max(2.0, max_abs_gain * 1.15)
+    for _, _, _, ax in panel_specs:
+        ax.set_ylim(-pad, pad)
+
+    # Right panel: abstention rates — reused logic from summary, but compact.
+    ax = axes[2]
+    for ai, noise in enumerate(NOISE_LEVELS):
+        abs_vals = np.full(n_methods, np.nan)
+        aabs_vals = np.full(n_methods, np.nan)
+        for i, (algo, _) in enumerate(PA_METHODS):
+            abs_vals[i] = _aggregate_value(df, algo, "abs", noise) * 100.0
+            aabs_vals[i] = _aggregate_value(df, algo, "aabs", noise) * 100.0
+        offset = (ai - (len(NOISE_LEVELS) - 1) / 2) * sub_w
+        ax.bar(
+            x + offset, abs_vals, sub_w * 0.92,
+            color=palette[noise], edgecolor="black", linewidth=0.3,
+        )
+        finite = np.isfinite(aabs_vals)
+        ax.scatter(
+            x[finite] + offset, aabs_vals[finite],
+            color="black", marker="o", s=10, zorder=3,
+            edgecolors="white", linewidths=0.4,
+        )
+    ax.axvline(x=3.5, color="grey", linestyle="--", linewidth=0.4, alpha=0.5)
+    ax.set_xticks(x)
+    ax.set_xticklabels(method_labels, rotation=-35, ha="left", fontsize=6)
+    ax.set_title("(c) Abstention rates (bar=abs, dot=aabs)", fontsize=8)
+    ax.set_ylabel("rate (%)", fontsize=7)
+    ax.tick_params(axis="y", labelsize=6)
+    ax.grid(True, axis="y", linestyle="-", linewidth=0.4, alpha=0.4)
+    ax.set_axisbelow(True)
+    for spine in ("top", "right"):
+        ax.spines[spine].set_visible(False)
+
+    from matplotlib.patches import Patch
+    legend_handles = [
+        Patch(facecolor=palette[n], edgecolor="black", linewidth=0.3,
+              label=fr"$\alpha={n}$")
+        for n in NOISE_LEVELS
+    ]
+    fig.legend(
+        handles=legend_handles,
+        loc="lower center", ncol=len(legend_handles),
+        fontsize=6, frameon=False,
+        bbox_to_anchor=(0.5, -0.04),
+    )
+    fig.suptitle(title, fontsize=9)
+    fig.tight_layout(pad=0.4, rect=(0.0, 0.04, 1.0, 0.95))
+    out_pdf.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_pdf, format="pdf", bbox_inches="tight", pad_inches=0.05)
+    plt.close(fig)
+
+
+def render_abstain_summary_2row(
+    df: pd.DataFrame,
+    out_pdf: Path,
+    title: str,
+    style: str,
+) -> None:
+    """Figure 1.3: 2 rows × 6 cols. Each metric is a 2×2 α sub-grid.
+
+    Layout (col indices):
+        cols 0-1: abstention rates (bar=abs, dot=aabs)
+        cols 2-3: f1 paired bars (std vs with-abstention)
+        cols 4-5: jaccard paired bars
+        rows: row 0 = low noise (α=0.0, α=0.1), row 1 = high noise (α=0.2, α=0.3)
+
+    Reuses the small-multiples idiom from the legacy abstention_rate /
+    paired_bars charts, but combines all three quantities into one figure
+    side-by-side.
+    """
+    palette = NOISE_COLORS_ENHANCED if style == "enhanced" else NOISE_COLORS_ORIGINAL
+    bv_color = "#9ecae1"
+    n_methods = len(PA_METHODS)
+    method_labels = [m[1] for m in PA_METHODS]
+    x = np.arange(n_methods)
+    # (row, col_within_group) -> α
+    noise_grid = [["0.0", "0.1"], ["0.2", "0.3"]]
+
+    fig, axes = plt.subplots(2, 6, figsize=(13.5, 5.0))
+
+    def _style_axes(ax, noise, last_in_group):
+        ax.axvline(x=3.5, color="grey", linestyle="--", linewidth=0.4, alpha=0.5)
+        ax.set_xticks(x)
+        ax.set_xticklabels(method_labels, rotation=-35, ha="left", fontsize=5)
+        ax.set_title(fr"$\alpha={noise}$", fontsize=6)
+        ax.tick_params(axis="y", labelsize=5)
+        ax.grid(True, axis="y", linestyle="-", linewidth=0.4, alpha=0.4)
+        ax.set_axisbelow(True)
+        for spine in ("top", "right"):
+            ax.spines[spine].set_visible(False)
+
+    # Groups 1 & 2: paired bars (cols 0-1 = f1, cols 2-3 = jaccard).
+    # std MLC = light blue, with-abstention = α-colored. No edges, no
+    # hatching — the color difference alone carries the std-vs-abs signal.
+    group_specs = [
+        ("f1_pa",      "f1",      (0, 1)),
+        ("jaccard_pa", "jaccard", (2, 3)),
+    ]
+    for pa_metric, bv_metric, (col_lo, col_hi) in group_specs:
+        for r in range(2):
+            for ci, c in enumerate((col_lo, col_hi)):
+                ax = axes[r, c]
+                noise = noise_grid[r][ci]
+                bv_vals = np.full(n_methods, np.nan)
+                pa_vals = np.full(n_methods, np.nan)
+                for i, (algo, _) in enumerate(PA_METHODS):
+                    bv_vals[i] = _bv_value(df, algo, pa_metric, bv_metric, noise) * 100.0
+                    pa_vals[i] = _aggregate_value(df, algo, pa_metric, noise) * 100.0
+                width = 0.4
+                ax.bar(
+                    x - width / 2, bv_vals, width,
+                    color=bv_color, linewidth=0,
+                )
+                ax.bar(
+                    x + width / 2, pa_vals, width,
+                    color=palette[noise], linewidth=0,
+                )
+                _style_axes(ax, noise, ci == 1)
+                if c == col_lo:
+                    ax.set_ylabel("score (%)", fontsize=6)
+
+    # Group 3: abstention rates (cols 4-5, last group per user request).
+    for r in range(2):
+        for ci, c in enumerate((4, 5)):
+            ax = axes[r, c]
+            noise = noise_grid[r][ci]
+            abs_vals = np.full(n_methods, np.nan)
+            aabs_vals = np.full(n_methods, np.nan)
+            for i, (algo, _) in enumerate(PA_METHODS):
+                abs_vals[i] = _aggregate_value(df, algo, "abs", noise) * 100.0
+                aabs_vals[i] = _aggregate_value(df, algo, "aabs", noise) * 100.0
+            ax.bar(
+                x, abs_vals, width=0.6,
+                color=palette[noise], linewidth=0,
+            )
+            finite = np.isfinite(aabs_vals)
+            ax.scatter(
+                x[finite], aabs_vals[finite],
+                color="black", marker="o", s=10, zorder=3,
+                edgecolors="white", linewidths=0.4,
+            )
+            _style_axes(ax, noise, ci == 1)
+            if c == 4:
+                ax.set_ylabel("rate (%)", fontsize=6)
+
+    # Column-group titles above each pair of columns.
+    fig.text(0.165, 0.965, r"(a) $f_1$ paired bars",  ha="center", fontsize=8, weight="bold")
+    fig.text(0.500, 0.965, "(b) Jaccard paired bars", ha="center", fontsize=8, weight="bold")
+    fig.text(0.835, 0.955,
+             "(c) Abstention rates\n(bar=\\texttt{abs}, dot=\\texttt{aabs})",
+             ha="center", fontsize=7, weight="bold")
+
+    from matplotlib.patches import Patch
+    legend_handles = [
+        Patch(facecolor=bv_color, label="std MLC (no abstention)"),
+        Patch(facecolor="dimgrey",
+              label=r"with abstention ($\alpha$-coloured)"),
+    ] + [
+        Patch(facecolor=palette[n], label=fr"$\alpha={n}$")
+        for n in NOISE_LEVELS
+    ]
+    fig.legend(
+        handles=legend_handles,
+        loc="lower center", ncol=len(legend_handles),
+        fontsize=6, frameon=False,
+        bbox_to_anchor=(0.5, -0.02),
+    )
+    fig.suptitle(title, fontsize=10, y=0.99)
+    fig.tight_layout(pad=0.4, rect=(0.0, 0.03, 1.0, 0.94))
+    out_pdf.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_pdf, format="pdf", bbox_inches="tight", pad_inches=0.05)
     plt.close(fig)
 
 
@@ -686,6 +1040,31 @@ def build_all(
             learner_df, "", "",
             shared_root / "aggregate" / "abstention_rate.pdf",
             f"{learner} aggregate: abstention rates", style,
+        )
+        n += 1
+        # Combined 3-panel summary (f1 paired | jaccard paired | abstain rates).
+        # Aggregate-only — per-dataset stays separate per the existing layout.
+        render_abstain_summary(
+            learner_df,
+            shared_root / "aggregate" / "summary.pdf",
+            f"{learner} averaged across all datasets: "
+            f"abstention summary",
+            style,
+        )
+        n += 1
+        render_abstain_summary_gain(
+            learner_df,
+            shared_root / "aggregate" / "summary_gain.pdf",
+            f"{learner} averaged across all datasets: abstention gain",
+            style,
+        )
+        n += 1
+        render_abstain_summary_2row(
+            learner_df,
+            shared_root / "aggregate" / "summary_2row.pdf",
+            f"{learner} averaged across all datasets: "
+            f"abstention vs.\\ standard MLC --- detailed by $\\alpha$",
+            style,
         )
         n += 1
         for ds in DATASETS:
