@@ -277,6 +277,10 @@ def section_for(learner: str, scope: str, fig_root: Path) -> list[str]:
                         headline=head,
                     )
                 )
+            # Force float queue to flush before the next dataset, so the
+            # ~27 per-dataset tables don't all get pushed to the end where
+            # they hit LaTeX's 18-float limit and get silently dropped.
+            out.append("\\FloatBarrier\n")
     return out
 
 
