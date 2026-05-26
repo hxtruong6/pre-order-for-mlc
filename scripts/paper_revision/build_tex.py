@@ -73,6 +73,7 @@ _PREAMBLE_TEMPLATE = r"""\documentclass[11pt]{article}
 \usepackage{amssymb}
 \usepackage{xcolor}
 \usepackage{caption}
+\usepackage{array}     % needed for !{...} column separators
 \usepackage{booktabs}
 \usepackage{placeins}
 \usepackage[hidelinks]{hyperref}
@@ -357,32 +358,28 @@ PAPER_APPENDIX_DATASETS = {
     "balanced":   ("emotions", "scene", "Water-quality"),
 }
 PAPER_APPENDIX_METRICS = {
-    # Original BV appendix metric set (Tables G2, G3 in the original paper).
-    "bv_orig": [
-        ("f1",               r"$f^{1}_{\mathrm{MLC}}$",            "eq:f1mlc",  r"$\uparrow$"),
-        ("hamming_accuracy", r"$f^{\mathrm{ham}}_{\mathrm{MLC}}$", "eq:fham",   r"$\uparrow$"),
-        ("subset0_1",        r"$f^{\mathrm{sub}}_{\mathrm{MLC}}$", "eq:fsub",   r"$\uparrow$"),
-        ("afrd",             r"AFRD",                              "eq:afrd",   r"$\downarrow$"),
-        ("mfrd",             r"MFRD",                              "eq:mfrd",   r"$\downarrow$"),
+    # Merged appendix metric sets: original 5 + 3 new revision metrics.
+    # Main body shows Tables 3/4/5 (compact); the appendix carries every
+    # metric selected for the revision on all 9 datasets.
+    "bv_full": [
+        ("f1",               r"$f^{1}_{\mathrm{MLC}}$",             "eq:f1mlc",   r"$\uparrow$"),
+        ("hamming_accuracy", r"$f^{\mathrm{ham}}_{\mathrm{MLC}}$",  "eq:fham",    r"$\uparrow$"),
+        ("subset0_1",        r"$f^{\mathrm{sub}}_{\mathrm{MLC}}$",  "eq:fsub",    r"$\uparrow$"),
+        ("jaccard",          r"$f^{\mathrm{Jacc}}_{\mathrm{MLC}}$", "eq:jaccmlc", r"$\uparrow$"),
+        ("macro_f1",         r"macro-$f_1$",                        "eq:macrof1", r"$\uparrow$"),
+        ("micro_f1",         r"micro-$f_1$",                        "eq:microf1", r"$\uparrow$"),
+        ("afrd",             r"AFRD",                               "eq:afrd",    r"$\downarrow$"),
+        ("mfrd",             r"MFRD",                               "eq:mfrd",    r"$\downarrow$"),
     ],
-    # Original PA appendix metric set (Tables G4, G5 in the original paper).
-    "pa_orig": [
-        ("f1_pa",               r"$f^{1}_{\mathrm{MLC}}$",            "eq:f1mlc", r"$\uparrow$"),
-        ("hamming_accuracy_pa", r"$f^{\mathrm{ham}}_{\mathrm{MLC}}$", "eq:fham",  r"$\uparrow$"),
-        ("subset0_1_pa",        r"$f^{\mathrm{sub}}_{\mathrm{MLC}}$", "eq:fsub",  r"$\uparrow$"),
-        ("aabs",                r"AABS",                              "eq:aabs",  r"$\downarrow$"),
-        ("abs",                 r"ABS",                               "eq:abs",   r"$\downarrow$"),
-    ],
-    # New metrics added in the revision — jaccard + macro/micro-F1.
-    "bv_new": [
-        ("jaccard",  r"$f^{\mathrm{Jacc}}_{\mathrm{MLC}}$", "eq:jaccmlc", r"$\uparrow$"),
-        ("macro_f1", r"macro-$f_1$",                        "eq:macrof1", r"$\uparrow$"),
-        ("micro_f1", r"micro-$f_1$",                        "eq:microf1", r"$\uparrow$"),
-    ],
-    "pa_new": [
-        ("jaccard_pa",  r"$f^{\mathrm{Jacc}}_{\mathrm{MLC}}$", "eq:jaccmlc", r"$\uparrow$"),
-        ("macro_f1_pa", r"macro-$f_1$",                        "eq:macrof1", r"$\uparrow$"),
-        ("micro_f1_pa", r"micro-$f_1$",                        "eq:microf1", r"$\uparrow$"),
+    "pa_full": [
+        ("f1_pa",               r"$f^{1}_{\mathrm{MLC}}$",             "eq:f1mlc",   r"$\uparrow$"),
+        ("hamming_accuracy_pa", r"$f^{\mathrm{ham}}_{\mathrm{MLC}}$",  "eq:fham",    r"$\uparrow$"),
+        ("subset0_1_pa",        r"$f^{\mathrm{sub}}_{\mathrm{MLC}}$",  "eq:fsub",    r"$\uparrow$"),
+        ("jaccard_pa",          r"$f^{\mathrm{Jacc}}_{\mathrm{MLC}}$", "eq:jaccmlc", r"$\uparrow$"),
+        ("macro_f1_pa",         r"macro-$f_1$",                        "eq:macrof1", r"$\uparrow$"),
+        ("micro_f1_pa",         r"micro-$f_1$",                        "eq:microf1", r"$\uparrow$"),
+        ("aabs",                r"AABS",                               "eq:aabs",    r"$\downarrow$"),
+        ("abs",                 r"ABS",                                "eq:abs",     r"$\downarrow$"),
     ],
     # Full SV metric set (revision-only; original paper had no SV table).
     "sv": [
@@ -399,20 +396,16 @@ PAPER_APPENDIX_METRICS = {
 MAIN_DATASETS = ("GpositivePseAAC", "PlantPseAAC", "HumanPseAAC")
 # Each entry: (caption_tag, panel_dir, datasets, metrics_key, label_id)
 PAPER_APPENDIX_BLOCKS = [
-    ("(Table G2)", "bv", PAPER_APPENDIX_DATASETS["imbalanced"], "bv_orig", "g2"),
-    ("(Table G3)", "bv", PAPER_APPENDIX_DATASETS["balanced"],   "bv_orig", "g3"),
-    ("(Table G4)", "pa", PAPER_APPENDIX_DATASETS["imbalanced"], "pa_orig", "g4"),
-    ("(Table G5)", "pa", PAPER_APPENDIX_DATASETS["balanced"],   "pa_orig", "g5"),
-    # G6: new BV metrics (jaccard + macro/micro-F1) across all 9 datasets.
-    ("(Table G6, new metrics --- main datasets)", "bv", MAIN_DATASETS,                                "bv_new", "g6a"),
-    ("(Table G6, new metrics --- imbalanced)",    "bv", PAPER_APPENDIX_DATASETS["imbalanced"],        "bv_new", "g6b"),
-    ("(Table G6, new metrics --- balanced)",      "bv", PAPER_APPENDIX_DATASETS["balanced"],          "bv_new", "g6c"),
-    ("(Table G7, new metrics --- main datasets)", "pa", MAIN_DATASETS,                                "pa_new", "g7a"),
-    ("(Table G7, new metrics --- imbalanced)",    "pa", PAPER_APPENDIX_DATASETS["imbalanced"],        "pa_new", "g7b"),
-    ("(Table G7, new metrics --- balanced)",      "pa", PAPER_APPENDIX_DATASETS["balanced"],          "pa_new", "g7c"),
-    # G8 (ScoreVector) removed per user request — the SV view did not
-    # surface useful information beyond what AUROC/AUPRC already convey
-    # in the per-dataset appendix.
+    # Each table shows all 8 BV (or PA) metrics on 3 datasets. Imbalanced
+    # vs. balanced split follows the original paper's appendix; main
+    # datasets (in Tables 4/5 of the main body) get their own appendix
+    # tables here so the full metric set is available for all 9 datasets.
+    ("(Table G2)", "bv", PAPER_APPENDIX_DATASETS["imbalanced"], "bv_full", "g2"),
+    ("(Table G3)", "bv", PAPER_APPENDIX_DATASETS["balanced"],   "bv_full", "g3"),
+    ("(Table G4)", "pa", PAPER_APPENDIX_DATASETS["imbalanced"], "pa_full", "g4"),
+    ("(Table G5)", "pa", PAPER_APPENDIX_DATASETS["balanced"],   "pa_full", "g5"),
+    ("(Table G6)", "bv", MAIN_DATASETS,                          "bv_full", "g6"),
+    ("(Table G7)", "pa", MAIN_DATASETS,                          "pa_full", "g7"),
 ]
 PAPER_PANEL_WIDTH = r"0.30\textwidth"
 PAPER_CELL_WIDTH = r"0.32\textwidth"
@@ -457,29 +450,29 @@ PAPER_TABLE_ORIG_TAG = {
 }
 PAPER_CAPTION_BY_PTYPE = {
     "bv": (
-        "Average scores (in \\%, $y$-axis) over $5\\times 5$ cross-validation "
-        "folds, plotted against the encoded number of the classifiers "
-        "($x$-axis): (PA-H-2, PA-H, PA-S-2, PA-S), "
-        "(PR-H-2, PR-H, PR-S-2, PR-S), and (BR, CC, CLR) are encoded as "
-        "(1, 2, 3, 4), (5, 6, 7, 8), and (9, 10, 11), respectively. "
-        "Results are color-coded with respect to the noisy level $\\alpha$ "
-        "as follows: __NOISE_LEGEND__."
+        "Average scores (in \\%, $y$-axis) over $5\\times 5$ "
+        "cross-validation folds, plotted against the classifiers "
+        "($x$-axis): partial-order predictors (PA-H-2, PA-H, PA-S-2, "
+        "PA-S), preorder predictors (PR-H-2, PR-H, PR-S-2, PR-S), and "
+        "standard MLC baselines (BR, CC, CLR). Results are color-coded "
+        "with respect to the noisy level $\\alpha$ as follows: "
+        "__NOISE_LEGEND__."
     ),
     "pa": (
-        "Average scores (in \\%, $y$-axis) over $5\\times 5$ cross-validation "
-        "folds, plotted against the encoded number of the classifiers "
-        "($x$-axis): (PA-H-2, PA-H, PA-S-2, PA-S) and "
-        "(PR-H-2, PR-H, PR-S-2, PR-S) are encoded as (1, 2, 3, 4) and "
-        "(5, 6, 7, 8), respectively. Results are color-coded with respect "
-        "to the noisy level $\\alpha$ as follows: __NOISE_LEGEND__."
+        "Average scores (in \\%, $y$-axis) over $5\\times 5$ "
+        "cross-validation folds, plotted against the classifiers "
+        "($x$-axis): partial-order predictors (PA-H-2, PA-H, PA-S-2, "
+        "PA-S) and preorder predictors (PR-H-2, PR-H, PR-S-2, PR-S). "
+        "Results are color-coded with respect to the noisy level "
+        "$\\alpha$ as follows: __NOISE_LEGEND__."
     ),
     "sv": (
-        "Average scores (in \\%, $y$-axis) over $5\\times 5$ cross-validation "
-        "folds, plotted against the encoded number of the classifiers "
-        "($x$-axis): (PA-H-2, PA-H, PA-S-2, PA-S) and "
-        "(PR-H-2, PR-H, PR-S-2, PR-S) are encoded as (1, 2, 3, 4) and "
-        "(5, 6, 7, 8), respectively. Results are color-coded with respect "
-        "to the noisy level $\\alpha$ as follows: __NOISE_LEGEND__."
+        "Average scores (in \\%, $y$-axis) over $5\\times 5$ "
+        "cross-validation folds, plotted against the classifiers "
+        "($x$-axis): partial-order predictors (PA-H-2, PA-H, PA-S-2, "
+        "PA-S) and preorder predictors (PR-H-2, PR-H, PR-S-2, PR-S). "
+        "Results are color-coded with respect to the noisy level "
+        "$\\alpha$ as follows: __NOISE_LEGEND__."
     ),
 }
 
@@ -518,29 +511,43 @@ def emit_paper_result_block(
     for metric_key, math_label, eq_ref, arrow in metrics:
         cells = []
         for ds in datasets:
-            pdf_rel = f"{learner}/per_dataset/{ds}/{ptype}/{metric_key}.pdf"
-            full = fig_root / pdf_rel
-            if full.exists():
+            # Prefer the no-title panel variant (emitted by build_panels.py
+            # alongside the regular one) so the chart itself is clean — the
+            # LaTeX caption below carries the metric label. Falls back to
+            # the title-bearing PDF + trim if the _notitle variant is
+            # missing (e.g., stale build).
+            pdf_rel_notitle = f"{learner}/per_dataset/{ds}/{ptype}/{metric_key}_notitle.pdf"
+            pdf_rel_title   = f"{learner}/per_dataset/{ds}/{ptype}/{metric_key}.pdf"
+            full_notitle = fig_root / pdf_rel_notitle
+            full_title   = fig_root / pdf_rel_title
+            if full_notitle.exists() or full_title.exists():
                 caption = (
-                    f"\\footnotesize {math_label} "
+                    f"\\scriptsize {math_label} "
                     f"(\\ref{{{eq_ref}}}) ({arrow})"
                 )
-                # trim=l b r t (bp). Crop ~14bp off the top so the
-                # per-panel matplotlib title ("f1", "jaccard", ...) is
-                # not visible — the bottom LaTeX caption already labels
-                # this panel. The appendix tables (Table 12+) reuse the
-                # uncropped PDFs and keep the title for tracking.
+                if full_notitle.exists():
+                    include_opts = "width=\\linewidth"
+                    pdf_rel = pdf_rel_notitle
+                else:
+                    include_opts = "width=\\linewidth, trim=0 0 0 18, clip"
+                    pdf_rel = pdf_rel_title
                 cells.append(
                     f"\\begin{{minipage}}{{{eff_cell_width}}}\\centering"
-                    f"\\includegraphics[width=\\linewidth,"
-                    f"trim=0 0 0 14, clip]{{{pdf_rel}}}\\\\"
+                    f"\\includegraphics[{include_opts}]{{{pdf_rel}}}\\\\"
                     f"{caption}"
                     f"\\end{{minipage}}"
                 )
             else:
                 cells.append(f"\\footnotesize (missing: {metric_key})")
-        rows.append(" & ".join(cells) + r" \\")
-    cols = "c" * 3
+        # Trailing \\[Npt] adds vertical space between rows so the caption
+        # of row N never visually touches the chart top of row N+1.
+        # Modest values are fine now that panels are emitted without a
+        # matplotlib title (no residual title whitespace at chart top).
+        row_pad = "8pt" if n_metrics >= 7 else "6pt"
+        rows.append(" & ".join(cells) + f" \\\\[{row_pad}]")
+    # Thin light vertical dividers between the 3 dataset columns.
+    sep = r"!{\color{black!25}\vrule width 0.3pt}"
+    cols = "c" + (sep + "c") * (len(datasets) - 1)
     ds_labels = ", ".join(datasets)
     bookmark_title = f"Group {group_idx}: {ds_labels}"
     bookmark_anchor = f"{label_prefix}-{learner}-{ptype}-g{group_idx}"
@@ -618,11 +625,13 @@ def emit_paper_appendix_section(
         f"({learner.upper()} base learner)}}"
         f"\\label{{sec:paperapp-{learner}}}\n",
         "Appendix counterpart of the main Paper results section. Tables "
-        "G2--G5 mirror the original paper's appendix exactly (same metric "
-        "sets, with the 6 non-main datasets split into imbalanced "
-        "vs.\\ balanced buckets following the original layout). Tables "
-        "G6--G7 are revision additions reporting the new metrics "
-        "($f^{\\mathrm{Jacc}}_{\\mathrm{MLC}}$, macro-$f_1$, micro-$f_1$).\n\n",
+        "All tables share the same 8-metric set (original 5 + 3 revision "
+        "additions: $f^{\\mathrm{Jacc}}_{\\mathrm{MLC}}$, macro-$f_1$, "
+        "micro-$f_1$). G2/G4 = imbalanced datasets, G3/G5 = balanced "
+        "datasets (split follows the original paper's appendix). G6/G7 = "
+        "main-paper datasets (GpositivePse, PlantPse, HumanPse) shown "
+        "with the full metric set; the main body only carries the "
+        "revised compact Tables 4/5.\n\n",
     ]
     # Iterate the original-paper-style appendix blocks G2..G8.
     last_panel_dir = None
@@ -836,13 +845,19 @@ def emit_abstain_overview(
     # still generated by build_abstain_charts.py for ad-hoc inspection but
     # do not appear in the final PDF.
     figure_specs = [
-        ("summary_grid.pdf", "1",
-         "table-shaped $4\\times 3$ grid: rows $=\\alpha\\in"
-         "\\{0.0, 0.1, 0.2, 0.3\\}$, columns $=$ ((a) $f_1$ paired bars, "
-         "(b) Jaccard paired bars, (c) abstention rate). Light blue $=$ "
-         "standard MLC, $\\alpha$-coloured $=$ with-abstention; in (c), "
+        ("summary_grid.pdf", "v1",
+         "(version~1) all 12 methods on the $x$-axis (PA + PR + "
+         "baselines BR/CC/CLR/ECC); baselines plot only the std-MLC bar "
+         "since they cannot abstain. Light blue $=$ standard MLC, "
+         "$\\alpha$-coloured $=$ with-abstention; in (c), "
          "bar $=$ \\texttt{abs} (instance-level), dot $=$ \\texttt{aabs} "
          "(per-cell)."),
+        ("summary_grid_v2.pdf", "v2",
+         "(version~2) only the 8 PA/PR methods that can abstain; gain "
+         "labels $+x.y$ printed above each with-abstention bar so the "
+         "score-point benefit over the std-MLC bar at the same method "
+         "is visible at a glance. Same colour / layout conventions as "
+         "version~1."),
     ]
     for learner_dir, learner_name in [("rf", "RF"), ("lgbm", "LGBM")]:
         for fname, fig_idx, caption_detail in figure_specs:
@@ -853,10 +868,12 @@ def emit_abstain_overview(
             parts.append(
                 "\\begin{figure}[!htbp]\n\\centering\n"
                 f"\\includegraphics[width=\\linewidth]{{{rel}}}\n"
-                f"\\caption{{Figure~{fig_idx}: {learner_name} "
-                f"averaged across all datasets --- {caption_detail} "
+                f"\\caption{{{learner_name} "
+                f"averaged across all datasets, $4\\times 3$ grid "
+                f"(rows $=\\alpha$, cols $=$ $f_1$ / Jaccard / "
+                f"abstention rate) --- {caption_detail} "
                 "Color = $\\alpha\\in\\{0.0, 0.1, 0.2, 0.3\\}$.}\n"
-                f"\\label{{fig:abstain_summary_{learner_dir}_{fig_idx.replace('.', '_')}}}\n"
+                f"\\label{{fig:abstain_summary_{learner_dir}_{fig_idx}}}\n"
                 "\\end{figure}\n"
             )
     parts.append("\\FloatBarrier\n\\clearpage\n")

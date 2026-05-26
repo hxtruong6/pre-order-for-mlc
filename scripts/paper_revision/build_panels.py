@@ -270,8 +270,15 @@ def render_panel(
     group_ranges = [(lo, hi) for lo, hi in group_ranges if lo <= n_methods]
     group_ranges = [(lo, min(hi, n_methods)) for lo, hi in group_ranges]
 
+    # Jitter markers per noise level on the x-axis so red/blue/green/black
+    # dots at the same method don't completely overlap.
+    jitter_step = 0.08
+    centered = (np.arange(len(NOISE_LEVELS)) - (len(NOISE_LEVELS) - 1) / 2.0)
+    noise_jitters = {n: float(centered[i] * jitter_step)
+                     for i, n in enumerate(NOISE_LEVELS)}
     for i, noise in enumerate(NOISE_LEVELS):
         y_raw = values[:, i] * scale
+        jx = noise_jitters[noise]
         # Build (x, y) sequences with NaN gaps between groups so the dotted
         # line breaks at each family boundary.
         x_segs: list[float] = []
@@ -281,7 +288,7 @@ def render_panel(
                 x_segs.append(np.nan)
                 y_segs.append(np.nan)
             for j in range(lo, hi + 1):
-                x_segs.append(float(j))
+                x_segs.append(float(j) + jx)
                 y_segs.append(float(y_raw[j - 1]))
         ax.plot(
             x_segs,
@@ -344,10 +351,9 @@ def render_panel(
         ax.set_ylim(0, 100)
     ax.tick_params(axis="y", labelsize=9)
     # Per-panel title (metric name) is needed by the per-dataset appendix
-    # tables to identify each subplot. The Paper-results section has its
-    # own richer bottom caption per panel; the small redundancy is the
-    # lesser evil vs. breaking the appendix's readability.
-    ax.set_title(metric, fontsize=8)
+    # tables to identify each subplot. Reduced from 8pt -> 7pt + tight
+    # padding so its bbox is smaller and trim is more predictable.
+    title_obj = ax.set_title(metric, fontsize=7, pad=2.0)
     ax.grid(True, which="major", linestyle="-", linewidth=0.4, alpha=0.4)
     ax.set_axisbelow(True)
     for spine in ("top", "right"):
@@ -357,6 +363,18 @@ def render_panel(
         out_path_pdf.parent.mkdir(parents=True, exist_ok=True)
         fig.savefig(
             out_path_pdf, format="pdf", bbox_inches="tight", pad_inches=0.02
+        )
+        # Also emit a no-title variant for paper-results tables, which
+        # carry their own LaTeX caption beneath each panel. The x-axis is
+        # also re-labelled with method names (PA-H-2, PR-S, BR, ...) so
+        # the reader doesn't need the table caption's encoding legend.
+        title_obj.set_visible(False)
+        method_names = [m[1] for m in methods]
+        ax.set_xticklabels(method_names, rotation=-35, ha="left", fontsize=7)
+        fig.tight_layout(pad=0.2)
+        notitle_path = out_path_pdf.with_name(out_path_pdf.stem + "_notitle.pdf")
+        fig.savefig(
+            notitle_path, format="pdf", bbox_inches="tight", pad_inches=0.02
         )
     if out_path_tikz is not None:
         _save_tikz(fig, out_path_tikz)
