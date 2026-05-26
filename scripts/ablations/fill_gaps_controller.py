@@ -72,7 +72,14 @@ CELLS = {
         "mem": "32G", "time": "12:00:00",
         "n_repeats": 1, "n_folds": 5,
         "n_jobs": 1,
-        "highs_time_limit": 5.0,
+        # n=0.3 IA1 alone exceeded 3h at HIGHS_TIME_LIMIT=5.0 (noisier probas
+        # → more HiGHS timeouts → GLPK fallback dominates wall time). Drop to
+        # 2.0s and accept 5% MIP relative gap so HiGHS itself returns a
+        # near-optimal incumbent in time instead of falling back to GLPK.
+        # n=0.0/0.1/0.2 currently running with the old setting; the new value
+        # only applies to resubmits.
+        "highs_time_limit": 2.0,
+        "highs_mip_rel_gap": 0.05,
     },
 }
 NOISES = ["0.0", "0.1", "0.2", "0.3"]
@@ -181,6 +188,7 @@ def submit_split_array(
     task_ids: list[int], results_dir: str, mem: str, time_limit: str,
     n_jobs: int | None = None,
     highs_time_limit: float | None = None,
+    highs_mip_rel_gap: float | None = None,
 ) -> str | None:
     rng = compact_ranges(task_ids)
     env = (
@@ -191,6 +199,8 @@ def submit_split_array(
         env += f",N_JOBS={n_jobs}"
     if highs_time_limit is not None:
         env += f",HIGHS_TIME_LIMIT={highs_time_limit}"
+    if highs_mip_rel_gap is not None:
+        env += f",HIGHS_MIP_REL_GAP={highs_mip_rel_gap}"
     cmd = [
         "sbatch", "--parsable",
         f"--array={rng}",
@@ -323,6 +333,7 @@ def iteration(state: dict) -> bool:
                     conf["results_dir"], conf["mem"], conf["time"],
                     n_jobs=conf.get("n_jobs"),
                     highs_time_limit=conf.get("highs_time_limit"),
+                    highs_mip_rel_gap=conf.get("highs_mip_rel_gap"),
                 )
                 if jid:
                     state["arrays"][jid] = {

@@ -45,10 +45,23 @@ def solve_milp(c, G, h, A, b, I, B):
 
 
 def _solve_glpk(c, G, h, A, b, I, B):
-    from cvxopt import matrix
+    import scipy.sparse as sp
+    from cvxopt import matrix, spmatrix
     from cvxopt.glpk import ilp
 
-    status, x = ilp(matrix(c), matrix(G), matrix(h), matrix(A), matrix(b), I, B)
+    def _to_cvxopt(M):
+        if sp.issparse(M):
+            coo = M.tocoo()
+            return spmatrix(
+                coo.data.tolist(),
+                coo.row.tolist(),
+                coo.col.tolist(),
+                coo.shape,
+                "d",
+            )
+        return matrix(M)
+
+    status, x = ilp(matrix(c), _to_cvxopt(G), matrix(h), _to_cvxopt(A), matrix(b), I, B)
     return status, np.array(x)
 
 
@@ -56,11 +69,13 @@ def _solve_highs(c, G, h, A, b, I, B):
     """HiGHS via scipy.optimize.milp (officially wraps HiGHS, stable API)."""
     from scipy.optimize import LinearConstraint, milp, Bounds
 
+    import scipy.sparse as sp
+
     # cvxopt.glpk silently uses only the first ncol(G/A) entries of c, so the
     # legacy encoders allocate c larger than the constraint matrix expects.
     # Mirror that behavior: trim c to the constraint width before solving.
-    G_cols = np.asarray(G).shape[1] if np.asarray(G).ndim >= 2 and np.asarray(G).size else 0
-    A_cols = np.asarray(A).shape[1] if np.asarray(A).ndim >= 2 and np.asarray(A).size else 0
+    G_cols = G.shape[1] if hasattr(G, "shape") and len(getattr(G, "shape", ())) >= 2 else 0
+    A_cols = A.shape[1] if hasattr(A, "shape") and len(getattr(A, "shape", ())) >= 2 else 0
     constraint_cols = max(G_cols, A_cols)
     n = constraint_cols if constraint_cols else int(np.asarray(c).shape[0])
     c_arr = np.asarray(c, dtype=np.float64).reshape(-1)[:n]
@@ -83,22 +98,31 @@ def _solve_highs(c, G, h, A, b, I, B):
             lb[i] = 0.0
             integrality[i] = 1
 
-    G_arr = np.asarray(G, dtype=np.float64)
+    if sp.issparse(G):
+        G_arr = G.astype(np.float64)
+    else:
+        G_arr = np.asarray(G, dtype=np.float64)
+        if G_arr.ndim == 1:
+            G_arr = G_arr.reshape(1, -1)
+
+    if sp.issparse(A):
+        A_arr = A.astype(np.float64)
+    else:
+        A_arr = np.asarray(A, dtype=np.float64)
+        if A_arr.ndim == 1:
+            A_arr = A_arr.reshape(1, -1)
+
     h_arr = np.asarray(h, dtype=np.float64).reshape(-1)
-    A_arr = np.asarray(A, dtype=np.float64)
     b_arr = np.asarray(b, dtype=np.float64).reshape(-1)
 
-    # scipy.milp requires 2D A and full-length lb/ub arrays per constraint.
-    if G_arr.ndim == 1:
-        G_arr = G_arr.reshape(1, -1)
-    if A_arr.ndim == 1:
-        A_arr = A_arr.reshape(1, -1)
     constraints = []
-    if G_arr.size:
+    G_nonempty = (G_arr.nnz > 0 and G_arr.shape[0] > 0) if sp.issparse(G_arr) else G_arr.size > 0
+    A_nonempty = (A_arr.nnz > 0 and A_arr.shape[0] > 0) if sp.issparse(A_arr) else A_arr.size > 0
+    if G_nonempty:
         constraints.append(
             LinearConstraint(G_arr, np.full(G_arr.shape[0], -np.inf), h_arr)
         )
-    if A_arr.size:
+    if A_nonempty:
         constraints.append(LinearConstraint(A_arr, b_arr, b_arr))
 
     _time_limit = os.environ.get("HIGHS_TIME_LIMIT")
