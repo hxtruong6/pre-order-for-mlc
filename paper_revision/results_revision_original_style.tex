@@ -49,10 +49,10 @@
         \texttt{scripts/train\_extra\_baselines.py --dataset birds
         --algorithm ecc} for both \texttt{--base\_learner rf} and
         \texttt{--base\_learner lgbm}.
-  \item \textbf{LGBM run on \texttt{enron} and the original-paper datasets.}
-        \texttt{enron} and the six original-paper datasets currently have
-        only RF results, so the LGBM aggregate panels are computed over the
-        two datasets (\texttt{medical}, \texttt{birds}) that have LGBM runs.
+  \item \textbf{LGBM run on \texttt{enron}.} Sequentially training (~2--3h
+        per task due to K=53 pairwise classifiers); will be merged into
+        \texttt{full\_enron\_split\_lgbm\_summary/} when complete and the
+        LGBM aggregate panels regenerated.
   \item \textbf{Extended PartialAbstention metrics.} The evaluator has been
         extended with 11 new PA metrics
         (\texttt{jaccard\_pa}, \texttt{\{example,macro,micro\}\_\{precision,recall,f1\}\_pa},
@@ -592,7 +592,7 @@ $x=8.5$, and $x=11.5$ separate the four method groups: PA (1--4), PR
 \mpanel{lgbm/aggregate/bv/mfrd.pdf} & \mpanel{lgbm/aggregate/bv/micro_f1.pdf} & \mpanel{lgbm/aggregate/bv/micro_precision.pdf} \\
 \mpanel{lgbm/aggregate/bv/micro_recall.pdf} & \mpanel{lgbm/aggregate/bv/subset0_1.pdf} &  \\
 \end{tabular}
-\caption{Standard MLC predictions (BinaryVector), LGBM base learner, averaged across datasets (enron / GpositivePseAAC / emotions / scene / PlantPseAAC / HumanPseAAC / Yeast: RF only). Method indices and line colors follow the encoding paragraph above.}
+\caption{Standard MLC predictions (BinaryVector), LGBM base learner, averaged across datasets (8 of 9: enron LGBM still training). Method indices and line colors follow the encoding paragraph above.}
 \label{tab:lgbm_agg_bv}
 \end{table}
 
@@ -602,11 +602,14 @@ $x=8.5$, and $x=11.5$ separate the four method groups: PA (1--4), PR
 \setlength{\tabcolsep}{2pt}
 \renewcommand{\arraystretch}{0.6}
 \begin{tabular}{ccc}
-\mpanel{lgbm/aggregate/pa/aabs.pdf} & \mpanel{lgbm/aggregate/pa/abs.pdf} & \mpanel{lgbm/aggregate/pa/arec.pdf} \\
-\mpanel{lgbm/aggregate/pa/f1_pa.pdf} & \mpanel{lgbm/aggregate/pa/hamming_accuracy_pa.pdf} & \mpanel{lgbm/aggregate/pa/rec.pdf} \\
-\mpanel{lgbm/aggregate/pa/subset0_1_pa.pdf} &  &  \\
+\mpanel{lgbm/aggregate/pa/aabs.pdf} & \mpanel{lgbm/aggregate/pa/abs.pdf} & \mpanel{lgbm/aggregate/pa/afrd_pa.pdf} \\
+\mpanel{lgbm/aggregate/pa/arec.pdf} & \mpanel{lgbm/aggregate/pa/example_precision_pa.pdf} & \mpanel{lgbm/aggregate/pa/example_recall_pa.pdf} \\
+\mpanel{lgbm/aggregate/pa/f1_pa.pdf} & \mpanel{lgbm/aggregate/pa/hamming_accuracy_pa.pdf} & \mpanel{lgbm/aggregate/pa/jaccard_pa.pdf} \\
+\mpanel{lgbm/aggregate/pa/macro_f1_pa.pdf} & \mpanel{lgbm/aggregate/pa/macro_precision_pa.pdf} & \mpanel{lgbm/aggregate/pa/macro_recall_pa.pdf} \\
+\mpanel{lgbm/aggregate/pa/mfrd_pa.pdf} & \mpanel{lgbm/aggregate/pa/micro_f1_pa.pdf} & \mpanel{lgbm/aggregate/pa/micro_precision_pa.pdf} \\
+\mpanel{lgbm/aggregate/pa/micro_recall_pa.pdf} & \mpanel{lgbm/aggregate/pa/rec.pdf} & \mpanel{lgbm/aggregate/pa/subset0_1_pa.pdf} \\
 \end{tabular}
-\caption{Partial abstention (PartialAbstention), LGBM base learner, averaged across datasets (enron / GpositivePseAAC / emotions / scene / PlantPseAAC / HumanPseAAC / Yeast: RF only). Method indices and line colors follow the encoding paragraph above.}
+\caption{Partial abstention (PartialAbstention), LGBM base learner, averaged across datasets (8 of 9: enron LGBM still training). Method indices and line colors follow the encoding paragraph above.}
 \label{tab:lgbm_agg_pa}
 \end{table}
 
@@ -620,7 +623,7 @@ $x=8.5$, and $x=11.5$ separate the four method groups: PA (1--4), PR
 \mpanel{lgbm/aggregate/sv/auprc_micro.pdf} & \mpanel{lgbm/aggregate/sv/coverage.pdf} & \mpanel{lgbm/aggregate/sv/lr_ap.pdf} \\
 \mpanel{lgbm/aggregate/sv/one_error.pdf} & \mpanel{lgbm/aggregate/sv/ranking_loss.pdf} &  \\
 \end{tabular}
-\caption{Score-vector ranking metrics (AUROC, AUPRC, etc.) (ScoreVector), LGBM base learner, averaged across datasets (enron / GpositivePseAAC / emotions / scene / PlantPseAAC / HumanPseAAC / Yeast: RF only). Method indices and line colors follow the encoding paragraph above.}
+\caption{Score-vector ranking metrics (AUROC, AUPRC, etc.) (ScoreVector), LGBM base learner, averaged across datasets (8 of 9: enron LGBM still training). Method indices and line colors follow the encoding paragraph above.}
 \label{tab:lgbm_agg_sv}
 \end{table}
 

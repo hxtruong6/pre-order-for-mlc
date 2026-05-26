@@ -228,8 +228,7 @@ def section_for(learner: str, scope: str, fig_root: Path) -> list[str]:
                 continue
             scope_word = "averaged across datasets"
             if learner == "lgbm":
-                scope_word += " (enron / GpositivePseAAC / emotions / scene / "
-                scope_word += "PlantPseAAC / HumanPseAAC / Yeast: RF only)"
+                scope_word += " (8 of 9: enron LGBM still training)"
             cap = (
                 f"{PTYPE_TITLE[ptype_key]} ({PTYPE_LABEL[ptype_key]}), "
                 f"{learner.upper()} base learner, {scope_word}. "
@@ -334,10 +333,10 @@ PENDING_TODO = r"""\section*{Pending follow-ups (to fill before final submission
         \texttt{scripts/train\_extra\_baselines.py --dataset birds
         --algorithm ecc} for both \texttt{--base\_learner rf} and
         \texttt{--base\_learner lgbm}.
-  \item \textbf{LGBM run on \texttt{enron} and the original-paper datasets.}
-        \texttt{enron} and the six original-paper datasets currently have
-        only RF results, so the LGBM aggregate panels are computed over the
-        two datasets (\texttt{medical}, \texttt{birds}) that have LGBM runs.
+  \item \textbf{LGBM run on \texttt{enron}.} Sequentially training (~2--3h
+        per task due to K=53 pairwise classifiers); will be merged into
+        \texttt{full\_enron\_split\_lgbm\_summary/} when complete and the
+        LGBM aggregate panels regenerated.
   \item \textbf{Extended PartialAbstention metrics.} The evaluator has been
         extended with 11 new PA metrics
         (\texttt{jaccard\_pa}, \texttt{\{example,macro,micro\}\_\{precision,recall,f1\}\_pa},

@@ -25,8 +25,11 @@ FILE_PATTERNS = {
     "cc": "evaluation_*_noisy_*_cc.csv",
     "clr": "evaluation_*_noisy_*_clr.csv",
     "mlknn": "evaluation_*_noisy_*_mlknn.csv",
+    "mlknn_lgbm": "evaluation_*_noisy_*_mlknn_lgbm.csv",
     "ecc": "evaluation_*_noisy_*_ecc.csv",
+    "ecc_lgbm": "evaluation_*_noisy_*_ecc_lgbm.csv",
     "lp": "evaluation_*_noisy_*_lp.csv",
+    "lp_lgbm": "evaluation_*_noisy_*_lp_lgbm.csv",
 }
 
 # Prediction types to include for bopos files (skip PreferenceOrder)
@@ -128,11 +131,11 @@ def collect_metrics(files):
                 algo = "cc"
             elif file.endswith("_clr.csv"):
                 algo = "clr"
-            elif file.endswith("_mlknn.csv"):
+            elif file.endswith("_mlknn.csv") or file.endswith("_mlknn_lgbm.csv"):
                 algo = "mlknn"
-            elif file.endswith("_ecc.csv"):
+            elif file.endswith("_ecc.csv") or file.endswith("_ecc_lgbm.csv"):
                 algo = "ecc"
-            elif file.endswith("_lp.csv"):
+            elif file.endswith("_lp.csv") or file.endswith("_lp_lgbm.csv"):
                 algo = "lp"
             else:
                 continue

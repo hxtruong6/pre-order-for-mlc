@@ -86,6 +86,14 @@ FOLDER_MAP = {
     ("PlantPseAAC", "RF"): _ORIGINAL_PAPER_FOLDER,
     ("HumanPseAAC", "RF"): _ORIGINAL_PAPER_FOLDER,
     ("Yeast", "RF"): _ORIGINAL_PAPER_FOLDER,
+    # LGBM summaries for the 6 original-paper datasets (generated locally
+    # from full_<ds>_lgbm_split/ via preorder4mlc.utils.summarize_metrics).
+    ("GpositivePseAAC", "LGBM"): "full_gpositivepseaac_lgbm_summary",
+    ("emotions", "LGBM"): "full_emotions_lgbm_summary",
+    ("scene", "LGBM"): "full_scene_lgbm_summary",
+    ("PlantPseAAC", "LGBM"): "full_plantpseaac_lgbm_summary",
+    ("HumanPseAAC", "LGBM"): "full_humanpseaac_lgbm_summary",
+    ("Yeast", "LGBM"): "full_yeast_lgbm_summary",
     # Revision-extension datasets.
     ("birds", "RF"): "full_birds_summary",
     ("birds", "LGBM"): "full_birds_lgbm_summary",
