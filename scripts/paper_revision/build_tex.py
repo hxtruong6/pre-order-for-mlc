@@ -348,6 +348,71 @@ PENDING_TODO = r"""\section*{Pending follow-ups (to fill before final submission
 """
 
 
+def emit_abstain_section(fig_root: Path) -> list[str]:
+    """Emit the abstention-benefit section (Option A + B charts).
+
+    Iterates over learners present under ``<learner>/abstain/`` and lays
+    out aggregate panels first, then per-dataset panels in a 2-column
+    table (coverage-risk | paired-bars).
+    """
+    parts: list[str] = []
+    intro = (
+        "\\section{Abstention vs standard MLC}\\label{sec:abstain_vs_mlc}\n"
+        "These panels visualise the empirical benefit of partial abstention. "
+        "\\emph{Coverage-risk}: each point is a (method, $\\alpha$) pair; "
+        "x-axis is the abstention rate, y-axis is the quality on retained "
+        "labels (\\texttt{f1\\_pa}). The dashed grey line is the best "
+        "standard-MLC baseline (BR/CC/CLR/ECC) at the same noise. "
+        "Points above the line $\\Rightarrow$ abstaining improves quality "
+        "beyond what any standard MLC method achieves without abstention. "
+        "\\emph{Paired bars}: per method, blue bar is BV \\texttt{f1} "
+        "(no abstention), red bar is PA \\texttt{f1\\_pa} (on retained "
+        "labels) at $\\alpha=0$; green ``$+x.y$'' annotates the gap.\n"
+    )
+    parts.append(intro)
+
+    for learner_dir, learner_name in [("rf", "RF"), ("lgbm", "LGBM")]:
+        agg_dir = fig_root / learner_dir / "abstain" / "aggregate"
+        if not agg_dir.exists():
+            continue
+        parts.append(
+            f"\\subsection{{{learner_name} base learner --- aggregate}}\n"
+        )
+        parts.append(
+            "\\begin{figure}[!htbp]\n\\centering\n"
+            f"\\mpanel{{{learner_dir}/abstain/aggregate/coverage_risk.pdf}}"
+            "\\hfill\n"
+            f"\\mpanel{{{learner_dir}/abstain/aggregate/paired_bars.pdf}}\n"
+            f"\\caption{{{learner_name}: coverage-risk (left) and BV-vs-PA"
+            f" paired bars (right), averaged across all datasets.}}\n"
+            f"\\label{{fig:abstain_{learner_dir}_agg}}\n"
+            "\\end{figure}\n"
+        )
+
+        per_ds_root = fig_root / learner_dir / "abstain" / "per_dataset"
+        if not per_ds_root.exists():
+            continue
+        parts.append(
+            f"\\subsection{{{learner_name} base learner --- per dataset}}\n"
+        )
+        for ds in DATASETS:
+            ds_dir = per_ds_root / ds
+            if not ds_dir.exists():
+                continue
+            parts.append(
+                "\\begin{figure}[!htbp]\n\\centering\n"
+                f"\\mpanel{{{learner_dir}/abstain/per_dataset/{ds}/coverage_risk.pdf}}"
+                "\\hfill\n"
+                f"\\mpanel{{{learner_dir}/abstain/per_dataset/{ds}/paired_bars.pdf}}\n"
+                f"\\caption{{{learner_name} on \\texttt{{{tex_escape(ds)}}}:"
+                f" coverage-risk (left) and BV-vs-PA paired bars (right).}}\n"
+                f"\\label{{fig:abstain_{learner_dir}_{ds}}}\n"
+                "\\end{figure}\n"
+            )
+        parts.append("\\clearpage\n")
+    return parts
+
+
 def build_tex(fig_root: Path, stats_path: Path, style: str) -> str:
     preamble = _make_preamble(fig_root.name, style)
     parts: list[str] = [preamble, "\\begin{document}\n\\maketitle\n"]
@@ -361,6 +426,9 @@ def build_tex(fig_root: Path, stats_path: Path, style: str) -> str:
 
     parts.append("\\section{Main results: RF base learner, aggregated}\n")
     parts.extend(section_for("rf", "aggregate", fig_root))
+
+    parts.append("\\clearpage\n")
+    parts.extend(emit_abstain_section(fig_root))
 
     parts.append("\\clearpage\n\\appendix\n")
     parts.append("\\section{Per-dataset results (RF base learner)}\n")

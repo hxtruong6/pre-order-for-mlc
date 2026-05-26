@@ -166,6 +166,175 @@ panel).
 \end{table}
 
 \clearpage
+
+\section{Abstention vs standard MLC}\label{sec:abstain_vs_mlc}
+These panels visualise the empirical benefit of partial abstention. \emph{Coverage-risk}: each point is a (method, $\alpha$) pair; x-axis is the abstention rate, y-axis is the quality on retained labels (\texttt{f1\_pa}). The dashed grey line is the best standard-MLC baseline (BR/CC/CLR/ECC) at the same noise. Points above the line $\Rightarrow$ abstaining improves quality beyond what any standard MLC method achieves without abstention. \emph{Paired bars}: per method, blue bar is BV \texttt{f1} (no abstention), red bar is PA \texttt{f1\_pa} (on retained labels) at $\alpha=0$; green ``$+x.y$'' annotates the gap.
+
+\subsection{RF base learner --- aggregate}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/aggregate/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/aggregate/paired_bars.pdf}
+\caption{RF: coverage-risk (left) and BV-vs-PA paired bars (right), averaged across all datasets.}
+\label{fig:abstain_rf_agg}
+\end{figure}
+
+\subsection{RF base learner --- per dataset}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/per_dataset/GpositivePseAAC/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/per_dataset/GpositivePseAAC/paired_bars.pdf}
+\caption{RF on \texttt{GpositivePseAAC}: coverage-risk (left) and BV-vs-PA paired bars (right).}
+\label{fig:abstain_rf_GpositivePseAAC}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/per_dataset/emotions/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/per_dataset/emotions/paired_bars.pdf}
+\caption{RF on \texttt{emotions}: coverage-risk (left) and BV-vs-PA paired bars (right).}
+\label{fig:abstain_rf_emotions}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/per_dataset/scene/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/per_dataset/scene/paired_bars.pdf}
+\caption{RF on \texttt{scene}: coverage-risk (left) and BV-vs-PA paired bars (right).}
+\label{fig:abstain_rf_scene}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/per_dataset/PlantPseAAC/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/per_dataset/PlantPseAAC/paired_bars.pdf}
+\caption{RF on \texttt{PlantPseAAC}: coverage-risk (left) and BV-vs-PA paired bars (right).}
+\label{fig:abstain_rf_PlantPseAAC}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/per_dataset/HumanPseAAC/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/per_dataset/HumanPseAAC/paired_bars.pdf}
+\caption{RF on \texttt{HumanPseAAC}: coverage-risk (left) and BV-vs-PA paired bars (right).}
+\label{fig:abstain_rf_HumanPseAAC}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/per_dataset/Yeast/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/per_dataset/Yeast/paired_bars.pdf}
+\caption{RF on \texttt{Yeast}: coverage-risk (left) and BV-vs-PA paired bars (right).}
+\label{fig:abstain_rf_Yeast}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/per_dataset/birds/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/per_dataset/birds/paired_bars.pdf}
+\caption{RF on \texttt{birds}: coverage-risk (left) and BV-vs-PA paired bars (right).}
+\label{fig:abstain_rf_birds}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/per_dataset/medical/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/per_dataset/medical/paired_bars.pdf}
+\caption{RF on \texttt{medical}: coverage-risk (left) and BV-vs-PA paired bars (right).}
+\label{fig:abstain_rf_medical}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/per_dataset/enron/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/per_dataset/enron/paired_bars.pdf}
+\caption{RF on \texttt{enron}: coverage-risk (left) and BV-vs-PA paired bars (right).}
+\label{fig:abstain_rf_enron}
+\end{figure}
+
+\clearpage
+
+\subsection{LGBM base learner --- aggregate}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/aggregate/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/aggregate/paired_bars.pdf}
+\caption{LGBM: coverage-risk (left) and BV-vs-PA paired bars (right), averaged across all datasets.}
+\label{fig:abstain_lgbm_agg}
+\end{figure}
+
+\subsection{LGBM base learner --- per dataset}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/per_dataset/GpositivePseAAC/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/per_dataset/GpositivePseAAC/paired_bars.pdf}
+\caption{LGBM on \texttt{GpositivePseAAC}: coverage-risk (left) and BV-vs-PA paired bars (right).}
+\label{fig:abstain_lgbm_GpositivePseAAC}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/per_dataset/emotions/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/per_dataset/emotions/paired_bars.pdf}
+\caption{LGBM on \texttt{emotions}: coverage-risk (left) and BV-vs-PA paired bars (right).}
+\label{fig:abstain_lgbm_emotions}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/per_dataset/scene/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/per_dataset/scene/paired_bars.pdf}
+\caption{LGBM on \texttt{scene}: coverage-risk (left) and BV-vs-PA paired bars (right).}
+\label{fig:abstain_lgbm_scene}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/per_dataset/PlantPseAAC/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/per_dataset/PlantPseAAC/paired_bars.pdf}
+\caption{LGBM on \texttt{PlantPseAAC}: coverage-risk (left) and BV-vs-PA paired bars (right).}
+\label{fig:abstain_lgbm_PlantPseAAC}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/per_dataset/HumanPseAAC/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/per_dataset/HumanPseAAC/paired_bars.pdf}
+\caption{LGBM on \texttt{HumanPseAAC}: coverage-risk (left) and BV-vs-PA paired bars (right).}
+\label{fig:abstain_lgbm_HumanPseAAC}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/per_dataset/Yeast/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/per_dataset/Yeast/paired_bars.pdf}
+\caption{LGBM on \texttt{Yeast}: coverage-risk (left) and BV-vs-PA paired bars (right).}
+\label{fig:abstain_lgbm_Yeast}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/per_dataset/birds/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/per_dataset/birds/paired_bars.pdf}
+\caption{LGBM on \texttt{birds}: coverage-risk (left) and BV-vs-PA paired bars (right).}
+\label{fig:abstain_lgbm_birds}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/per_dataset/medical/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/per_dataset/medical/paired_bars.pdf}
+\caption{LGBM on \texttt{medical}: coverage-risk (left) and BV-vs-PA paired bars (right).}
+\label{fig:abstain_lgbm_medical}
+\end{figure}
+
+\clearpage
+
+\clearpage
 \appendix
 
 \section{Per-dataset results (RF base learner)}
