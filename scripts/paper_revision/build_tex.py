@@ -859,8 +859,10 @@ def emit_abstain_overview(
          "is visible at a glance. Same colour / layout conventions as "
          "version~1."),
     ]
-    # RF-only: LGBM panels are excluded from the Overleaf sync.
-    for learner_dir, learner_name in [("rf", "RF")]:
+    # RF + LGBM: only the 4 summary_grid figures under abstain/_shared/
+    # are needed for each learner — these are kept by sync_overleaf.sh
+    # while bulkier LGBM panels (per_dataset, aggregate) are excluded.
+    for learner_dir, learner_name in [("rf", "RF"), ("lgbm", "LGBM")]:
         for fname, fig_idx, caption_detail in figure_specs:
             chart = fig_root / learner_dir / "abstain" / "_shared" / "aggregate" / fname
             if not chart.exists():

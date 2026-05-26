@@ -344,6 +344,20 @@ Appendix counterpart of the main Paper results section. Tables All tables share 
 \label{fig:abstain_summary_rf_v2}
 \end{figure}
 
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth]{lgbm/abstain/_shared/aggregate/summary_grid.pdf}
+\caption{LGBM averaged across all datasets, $4\times 3$ grid (rows $=\alpha$, cols $=$ $f_1$ / Jaccard / abstention rate) --- (version~1) all 12 methods on the $x$-axis (PA + PR + baselines BR/CC/CLR/ECC); baselines plot only the std-MLC bar since they cannot abstain. Light blue $=$ standard MLC, $\alpha$-coloured $=$ with-abstention; in (c), bar $=$ \texttt{abs} (instance-level), dot $=$ \texttt{aabs} (per-cell). Color = $\alpha\in\{0.0, 0.1, 0.2, 0.3\}$.}
+\label{fig:abstain_summary_lgbm_v1}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth]{lgbm/abstain/_shared/aggregate/summary_grid_v2.pdf}
+\caption{LGBM averaged across all datasets, $4\times 3$ grid (rows $=\alpha$, cols $=$ $f_1$ / Jaccard / abstention rate) --- (version~2) only the 8 PA/PR methods that can abstain; gain labels $+x.y$ printed above each with-abstention bar so the score-point benefit over the std-MLC bar at the same method is visible at a glance. Same colour / layout conventions as version~1. Color = $\alpha\in\{0.0, 0.1, 0.2, 0.3\}$.}
+\label{fig:abstain_summary_lgbm_v2}
+\end{figure}
+
 \FloatBarrier
 \clearpage
 
