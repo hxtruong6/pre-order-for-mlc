@@ -75,6 +75,11 @@ RSYNC_FLAGS=(
   --exclude='*.fls'
   --exclude='*.synctex.gz'
   --exclude='*.toc'
+  # LGBM panel PDFs are not referenced by Tables 4/5 or G2-G7 (paper-results
+  # is RF-only). Excluding them keeps the Overleaf project under its
+  # 2000-file limit. Local build still has them via paper_revision/.
+  --exclude='figures_original/lgbm/'
+  --exclude='figures_enhanced/lgbm/'
 )
 [[ $DRY_RUN -eq 1 ]] && RSYNC_FLAGS+=(--dry-run)
 

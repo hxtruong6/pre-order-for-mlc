@@ -859,7 +859,8 @@ def emit_abstain_overview(
          "is visible at a glance. Same colour / layout conventions as "
          "version~1."),
     ]
-    for learner_dir, learner_name in [("rf", "RF"), ("lgbm", "LGBM")]:
+    # RF-only: LGBM panels are excluded from the Overleaf sync.
+    for learner_dir, learner_name in [("rf", "RF")]:
         for fname, fig_idx, caption_detail in figure_specs:
             chart = fig_root / learner_dir / "abstain" / "_shared" / "aggregate" / fname
             if not chart.exists():
@@ -927,7 +928,9 @@ def emit_abstain_section(fig_root: Path) -> list[str]:
     )
     parts.append(intro)
 
-    for learner_dir, learner_name in [("rf", "RF"), ("lgbm", "LGBM")]:
+    # RF-only: LGBM panels are excluded from the Overleaf sync to keep
+    # the project under its 2000-file limit.
+    for learner_dir, learner_name in [("rf", "RF")]:
         learner_root = fig_root / learner_dir / "abstain"
         if not learner_root.exists():
             continue
@@ -1000,8 +1003,11 @@ def build_tex(fig_root: Path, stats_path: Path, style: str) -> str:
     parts.append("\\section{Per-dataset results (RF base learner)}\n")
     parts.extend(section_for("rf", "per_dataset", fig_root))
 
-    parts.append("\\clearpage\n\\section{LGBM aggregated results}\n")
-    parts.extend(section_for("lgbm", "aggregate", fig_root))
+    # LGBM aggregated section dropped: not used in the paper, and the
+    # underlying lgbm/ panel PDFs are excluded from the Overleaf sync
+    # to keep total file count under the 2000-file project limit.
+    # parts.append("\\clearpage\n\\section{LGBM aggregated results}\n")
+    # parts.extend(section_for("lgbm", "aggregate", fig_root))
 
     parts.append("\n\\end{document}\n")
     return "\n".join(parts)
