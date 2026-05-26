@@ -59,11 +59,15 @@ CELLS = {
         "results_dir": "results/full_enron_lgbm_split",
         # Measured: BOPOS w/ joblib n_jobs=4 peaks at 33.5G (4× amplification
         # × 1378 pairwise LightGBM classifiers per worker). N_JOBS=1 drops
-        # peak to ~8G but sequential makes 8 inference algos × 340 instances
-        # × ILP search take ~2-3 hours per task. Allow 8h headroom.
-        "mem": "16G", "time": "08:00:00",
+        # peak to ~8G but sequential. K=53 ILP without time limit takes
+        # ~1h40min per IA × 8 IAs = 13h — way over the 8h slurm cap. Cap
+        # each HiGHS solve at 5s (340 instances × 5s = ~28min per IA →
+        # ~3.7h total). Near-optimal solutions are acceptable for the
+        # paper-baseline comparison.
+        "mem": "16G", "time": "06:00:00",
         "n_repeats": 1, "n_folds": 5,
         "n_jobs": 1,
+        "highs_time_limit": 5.0,
     },
 }
 NOISES = ["0.0", "0.1", "0.2", "0.3"]
@@ -171,6 +175,7 @@ def submit_split_array(
     dataset: str, base_learner: str, noise: str, algorithm: str,
     task_ids: list[int], results_dir: str, mem: str, time_limit: str,
     n_jobs: int | None = None,
+    highs_time_limit: float | None = None,
 ) -> str | None:
     rng = compact_ranges(task_ids)
     env = (
@@ -179,6 +184,8 @@ def submit_split_array(
     )
     if n_jobs is not None:
         env += f",N_JOBS={n_jobs}"
+    if highs_time_limit is not None:
+        env += f",HIGHS_TIME_LIMIT={highs_time_limit}"
     cmd = [
         "sbatch", "--parsable",
         f"--array={rng}",
@@ -310,6 +317,7 @@ def iteration(state: dict) -> bool:
                     dataset, learner, noise, algo, ids,
                     conf["results_dir"], conf["mem"], conf["time"],
                     n_jobs=conf.get("n_jobs"),
+                    highs_time_limit=conf.get("highs_time_limit"),
                 )
                 if jid:
                     state["arrays"][jid] = {
