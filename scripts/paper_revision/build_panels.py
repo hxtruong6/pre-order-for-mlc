@@ -66,13 +66,13 @@ NOISE_COLORS_ORIGINAL = {
     "0.3": "#00FFFF",
 }
 NOISE_COLORS_ENHANCED = {
-    # ColorBrewer Reds[5] dropping the lightest shade (which was hard to
-    # distinguish from white background). Still perceptually-ordered so noise
-    # intensity maps to darker red.
-    "0.0": "#fcae91",
-    "0.1": "#fb6a4a",
-    "0.2": "#de2d26",
-    "0.3": "#a50f15",
+    # ColorBrewer YlOrRd[5] dropping the lightest shade. Wider hue spread
+    # than the all-Reds palette so adjacent noise levels are easier to
+    # distinguish, while still mapping intensity to higher noise.
+    "0.0": "#fecc5c",
+    "0.1": "#fd8d3c",
+    "0.2": "#f03b20",
+    "0.3": "#bd0026",
 }
 
 # Per-(dataset, learner) summary folder names.

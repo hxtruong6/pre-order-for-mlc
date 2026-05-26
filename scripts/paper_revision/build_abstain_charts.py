@@ -91,7 +91,7 @@ def render_coverage_risk(
             linestyle="--",
             linewidth=0.7,
             alpha=0.8,
-            label=f"best baseline {bv_metric}",
+            label=f"best standard-MLC {bv_metric} (no abstention)",
         )
 
     # PA/PR methods as scatter, colored by noise.
@@ -157,8 +157,13 @@ def render_coverage_risk(
         borderpad=0.3,
     )
 
-    ax.set_xlabel("Abstention rate (%)", fontsize=7)
-    ax.set_ylabel(f"{pa_metric} on retained (%)", fontsize=7)
+    ax.set_xlabel(
+        "Abstention rate (% labels skipped, higher = more conservative)",
+        fontsize=6,
+    )
+    ax.set_ylabel(
+        f"{pa_metric} on predicted labels (%, higher = better)", fontsize=6,
+    )
     ax.set_title(title, fontsize=7)
     ax.tick_params(axis="both", labelsize=6)
     ax.grid(True, linestyle="-", linewidth=0.4, alpha=0.4)
@@ -177,53 +182,64 @@ def render_paired_bars(
     out_pdf: Path,
     title: str,
     style: str,
-    noise: str = "0.0",
 ) -> None:
-    """Render BV-vs-PA paired bars for all 12 methods at one noise level."""
+    """Render BV-vs-PA paired bars for all 12 methods, 2x2 grid over noise."""
     palette = NOISE_COLORS_ENHANCED if style == "enhanced" else NOISE_COLORS_ORIGINAL
     bv_color = "#9ecae1"  # light blue for standard MLC
-    pa_color = palette[noise]
-
     n_methods = len(METHOD_ORDER)
-    bv_vals = np.full(n_methods, np.nan)
-    pa_vals = np.full(n_methods, np.nan)
-    for i, (algo, _) in enumerate(METHOD_ORDER):
-        bv_vals[i] = _aggregate_value(df, algo, bv_metric, noise) * 100.0
-        if i < 8:  # only order-based methods abstain
-            pa_vals[i] = _aggregate_value(df, algo, pa_metric, noise) * 100.0
 
-    fig, ax = plt.subplots(figsize=(4.4, 2.4))
-    x = np.arange(n_methods)
-    width = 0.4
-    ax.bar(x - width / 2, bv_vals, width, color=bv_color, label=f"BV {bv_metric}")
-    ax.bar(x + width / 2, pa_vals, width, color=pa_color, label=f"PA {pa_metric}")
+    fig, axes = plt.subplots(2, 2, figsize=(8.0, 4.6), sharey=True)
+    for ax, noise in zip(axes.flat, NOISE_LEVELS):
+        bv_vals = np.full(n_methods, np.nan)
+        pa_vals = np.full(n_methods, np.nan)
+        for i, (algo, _) in enumerate(METHOD_ORDER):
+            bv_vals[i] = _aggregate_value(df, algo, bv_metric, noise) * 100.0
+            if i < 8:
+                pa_vals[i] = _aggregate_value(df, algo, pa_metric, noise) * 100.0
 
-    # Annotate gap above PA bar for the 8 PA methods that have both
-    for i in range(8):
-        if np.isfinite(bv_vals[i]) and np.isfinite(pa_vals[i]):
-            gap = pa_vals[i] - bv_vals[i]
-            if gap > 0:
-                ax.annotate(
-                    f"+{gap:.1f}",
-                    xy=(x[i] + width / 2, pa_vals[i]),
-                    xytext=(0, 2),
-                    textcoords="offset points",
-                    ha="center",
-                    fontsize=5,
-                    color="darkgreen",
-                )
+        x = np.arange(n_methods)
+        width = 0.4
+        ax.bar(
+            x - width / 2, bv_vals, width,
+            color=bv_color,
+            label=f"Standard MLC ({bv_metric}, no abstention)",
+        )
+        ax.bar(
+            x + width / 2, pa_vals, width,
+            color=palette[noise],
+            label=f"With abstention ({pa_metric} on retained labels)",
+        )
+        for i in range(8):
+            if np.isfinite(bv_vals[i]) and np.isfinite(pa_vals[i]):
+                gap = pa_vals[i] - bv_vals[i]
+                if abs(gap) >= 0.05:
+                    color = "darkgreen" if gap > 0 else "firebrick"
+                    sign = "+" if gap > 0 else ""
+                    ax.annotate(
+                        f"{sign}{gap:.1f}",
+                        xy=(x[i] + width / 2, pa_vals[i]),
+                        xytext=(0, 2),
+                        textcoords="offset points",
+                        ha="center",
+                        fontsize=5,
+                        color=color,
+                    )
+        ax.axvline(x=7.5, color="grey", linestyle="--", linewidth=0.5, alpha=0.5)
+        ax.set_xticks(x)
+        ax.set_xticklabels(
+            [m[1] for m in METHOD_ORDER], rotation=-35, ha="left", fontsize=5,
+        )
+        ax.set_title(fr"$\alpha={noise}$", fontsize=7)
+        ax.tick_params(axis="y", labelsize=6)
+        ax.legend(fontsize=5, loc="lower left", framealpha=0.85, borderpad=0.3)
+        ax.grid(True, axis="y", linestyle="-", linewidth=0.4, alpha=0.4)
+        for spine in ("top", "right"):
+            ax.spines[spine].set_visible(False)
 
-    ax.axvline(x=7.5, color="grey", linestyle="--", linewidth=0.5, alpha=0.5)
-    ax.set_xticks(x)
-    ax.set_xticklabels([m[1] for m in METHOD_ORDER], rotation=-35, ha="left", fontsize=5)
-    ax.set_ylabel("score (%)", fontsize=7)
-    ax.set_title(fr"{title}  ($\alpha={noise}$)", fontsize=7)
-    ax.tick_params(axis="y", labelsize=6)
-    ax.legend(fontsize=5, loc="lower left", framealpha=0.85, borderpad=0.3)
-    ax.grid(True, axis="y", linestyle="-", linewidth=0.4, alpha=0.4)
-    for spine in ("top", "right"):
-        ax.spines[spine].set_visible(False)
-    fig.tight_layout(pad=0.2)
+    axes[0, 0].set_ylabel("score (%)", fontsize=7)
+    axes[1, 0].set_ylabel("score (%)", fontsize=7)
+    fig.suptitle(title, fontsize=8)
+    fig.tight_layout(pad=0.4, rect=(0.0, 0.0, 1.0, 0.96))
     out_pdf.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_pdf, format="pdf", bbox_inches="tight", pad_inches=0.02)
     plt.close(fig)
@@ -233,44 +249,52 @@ def build_all(
     long_df: pd.DataFrame,
     out_root: Path,
     style: str,
-    pa_metric: str,
+    pa_metrics: list[str],
     bv_metric: str,
 ) -> int:
+    """Emit charts under <out_root>/<learner>/abstain/<pa_metric>/...
+
+    One subdir per requested PA metric so multiple metrics (e.g. f1_pa and
+    jaccard_pa) can coexist for side-by-side comparison.
+    """
     n = 0
     for learner in LEARNERS:
         learner_df = long_df[long_df.base_learner == learner]
         if learner_df.empty:
             continue
-
-        # Aggregate (mean across datasets, computed by pooling all rows).
-        agg_dir = out_root / learner.lower() / "abstain" / "aggregate"
-        title = f"{learner} aggregate"
-        render_coverage_risk(
-            learner_df, pa_metric, bv_metric,
-            agg_dir / "coverage_risk.pdf", title, style,
-        )
-        render_paired_bars(
-            learner_df, pa_metric, bv_metric,
-            agg_dir / "paired_bars.pdf", title, style,
-        )
-        n += 2
-
-        # Per-dataset.
-        for ds in DATASETS:
-            ds_df = learner_df[learner_df.dataset == ds]
-            if ds_df.empty:
+        for pa_metric in pa_metrics:
+            if pa_metric not in learner_df.metric.unique():
                 continue
-            ds_dir = out_root / learner.lower() / "abstain" / "per_dataset" / ds
-            t = f"{learner} on {ds}"
+            base = out_root / learner.lower() / "abstain" / pa_metric
+            agg_dir = base / "aggregate"
             render_coverage_risk(
-                ds_df, pa_metric, bv_metric,
-                ds_dir / "coverage_risk.pdf", t, style,
+                learner_df, pa_metric, bv_metric,
+                agg_dir / "coverage_risk.pdf",
+                f"{learner} aggregate ({pa_metric})",
+                style,
             )
             render_paired_bars(
-                ds_df, pa_metric, bv_metric,
-                ds_dir / "paired_bars.pdf", t, style,
+                learner_df, pa_metric, bv_metric,
+                agg_dir / "paired_bars.pdf",
+                f"{learner} aggregate ({pa_metric})",
+                style,
             )
             n += 2
+            for ds in DATASETS:
+                ds_df = learner_df[learner_df.dataset == ds]
+                if ds_df.empty:
+                    continue
+                ds_dir = base / "per_dataset" / ds
+                t = f"{learner} on {ds} ({pa_metric})"
+                render_coverage_risk(
+                    ds_df, pa_metric, bv_metric,
+                    ds_dir / "coverage_risk.pdf", t, style,
+                )
+                render_paired_bars(
+                    ds_df, pa_metric, bv_metric,
+                    ds_dir / "paired_bars.pdf", t, style,
+                )
+                n += 2
     return n
 
 
@@ -281,12 +305,12 @@ def main() -> None:
         "--style", default="enhanced", choices=["original", "enhanced"]
     )
     parser.add_argument(
-        "--pa_metric",
-        default="f1_pa",
+        "--pa_metrics",
+        nargs="+",
+        default=["f1_pa", "jaccard_pa"],
         help=(
-            "PA-side quality metric. Default f1_pa is available in current "
-            "summaries; switch to jaccard_pa once eval is re-run with the "
-            "extended PA metric set."
+            "One or more PA-side quality metrics. Each metric becomes its "
+            "own subdirectory so multiple metrics coexist for comparison."
         ),
     )
     parser.add_argument(
@@ -300,21 +324,20 @@ def main() -> None:
     if long_df.empty:
         raise SystemExit("No data loaded. Check FOLDER_MAP.")
 
-    # Sanity check the requested metric exists somewhere.
-    if args.pa_metric not in long_df.metric.unique():
-        avail = sorted(
-            m for m in long_df.metric.unique() if m.endswith("_pa") or m in ("rec", "arec", "abs", "aabs")
-        )
-        raise SystemExit(
-            f"pa_metric {args.pa_metric!r} not found in summaries. "
-            f"Available PA metrics: {avail}"
+    avail_metrics = set(long_df.metric.unique())
+    missing = [m for m in args.pa_metrics if m not in avail_metrics]
+    if missing:
+        print(
+            f"warning: pa_metrics not in summaries (skipping): {missing}. "
+            f"Available PA-ish: "
+            f"{sorted(m for m in avail_metrics if m.endswith('_pa') or m in ('rec','arec','abs','aabs'))}"
         )
 
     out_root = Path(args.output_dir)
-    n = build_all(long_df, out_root, args.style, args.pa_metric, args.bv_metric)
+    n = build_all(long_df, out_root, args.style, args.pa_metrics, args.bv_metric)
     print(
         f"Wrote {n} abstain charts (style={args.style}, "
-        f"pa_metric={args.pa_metric}, bv_metric={args.bv_metric}) under {out_root}"
+        f"pa_metrics={args.pa_metrics}, bv_metric={args.bv_metric}) under {out_root}"
     )
 
 

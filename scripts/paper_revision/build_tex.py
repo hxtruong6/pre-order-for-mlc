@@ -148,13 +148,13 @@ $x=8.5$, and $x=11.5$ separate the four method groups: PA (1--4), PR
 """
 
 _METHOD_TAIL_ENHANCED = r"""\paragraph{Reading the panels.} Each panel plots one dotted line with
-markers per noise level. \textbf{Noise is encoded by colour intensity}
-(ColorBrewer Reds): light peach $=$ clean ($\alpha=0.0$), saturated dark
-red $=$ noisy ($\alpha=0.3$):
-\textcolor[HTML]{fcae91}{$\blacksquare$}\,$\alpha=0.0$,
-\textcolor[HTML]{fb6a4a}{$\blacksquare$}\,$\alpha=0.1$,
-\textcolor[HTML]{de2d26}{$\blacksquare$}\,$\alpha=0.2$,
-\textcolor[HTML]{a50f15}{$\blacksquare$}\,$\alpha=0.3$.
+markers per noise level. \textbf{Noise is encoded by warm-hue intensity}
+(ColorBrewer YlOrRd): yellow $=$ clean ($\alpha=0.0$), dark red $=$ noisy
+($\alpha=0.3$):
+\textcolor[HTML]{fecc5c}{$\blacksquare$}\,$\alpha=0.0$,
+\textcolor[HTML]{fd8d3c}{$\blacksquare$}\,$\alpha=0.1$,
+\textcolor[HTML]{f03b20}{$\blacksquare$}\,$\alpha=0.2$,
+\textcolor[HTML]{bd0026}{$\blacksquare$}\,$\alpha=0.3$.
 Below the numeric x-axis (1--12), a second tier prints the short method
 name so the reader can identify each classifier without referring back to
 this section. \emph{PartialAbstention} and \emph{ScoreVector} panels show
@@ -348,68 +348,105 @@ PENDING_TODO = r"""\section*{Pending follow-ups (to fill before final submission
 """
 
 
-def emit_abstain_section(fig_root: Path) -> list[str]:
-    """Emit the abstention-benefit section (Option A + B charts).
+_ABSTAIN_METRICS = ["f1_pa", "jaccard_pa"]
 
-    Iterates over learners present under ``<learner>/abstain/`` and lays
-    out aggregate panels first, then per-dataset panels in a 2-column
-    table (coverage-risk | paired-bars).
+
+def emit_abstain_section(fig_root: Path) -> list[str]:
+    """Emit the abstention-benefit section.
+
+    Iterates over learners and emits one block per (learner, pa_metric)
+    pair, where a block contains an aggregate figure plus a per-dataset
+    figure for each dataset. The abstain charts live under
+    ``<learner>/abstain/<pa_metric>/{aggregate,per_dataset/<ds>}/``.
     """
     parts: list[str] = []
     intro = (
         "\\section{Abstention vs standard MLC}\\label{sec:abstain_vs_mlc}\n"
-        "These panels visualise the empirical benefit of partial abstention. "
-        "\\emph{Coverage-risk}: each point is a (method, $\\alpha$) pair; "
-        "x-axis is the abstention rate, y-axis is the quality on retained "
-        "labels (\\texttt{f1\\_pa}). The dashed grey line is the best "
-        "standard-MLC baseline (BR/CC/CLR/ECC) at the same noise. "
-        "Points above the line $\\Rightarrow$ abstaining improves quality "
-        "beyond what any standard MLC method achieves without abstention. "
-        "\\emph{Paired bars}: per method, blue bar is BV \\texttt{f1} "
-        "(no abstention), red bar is PA \\texttt{f1\\_pa} (on retained "
-        "labels) at $\\alpha=0$; green ``$+x.y$'' annotates the gap.\n"
+        "\\paragraph{Why this section exists.} The paper's central claim is "
+        "that an order-based predictor can \\emph{abstain} on labels it is "
+        "unsure about and, on the labels it does predict, achieve higher "
+        "quality than a standard MLC method that is forced to predict every "
+        "label. The two chart families below make that claim visible.\n\n"
+        "\\paragraph{Terminology.} `\\emph{Standard MLC}' (a.k.a.\\ "
+        "\\texttt{BinaryVector} / BV) means each method outputs a 0/1 "
+        "prediction for every one of the $K$ labels. `\\emph{With "
+        "abstention}' (a.k.a.\\ \\texttt{PartialAbstention} / PA) means an "
+        "order-based predictor may return $\\bot$ (abstain) on some labels; "
+        "the PA quality metrics (\\texttt{f1\\_pa}, \\texttt{jaccard\\_pa}, "
+        "\\ldots) are computed only over the non-abstained labels. Only the "
+        "8 PA/PR methods (indices 1--8) can abstain; BR/CC/CLR/ECC cannot.\n\n"
+        "\\paragraph{Reading the coverage-risk chart.} Each point is one "
+        "(PA/PR method, noise level $\\alpha$) pair. The x-axis is the "
+        "abstention rate (fraction of labels the method skipped); the "
+        "y-axis is the quality metric on the labels that \\emph{were} "
+        "predicted (higher is better). Marker shape encodes method, "
+        "colour encodes noise level. The dashed grey line is the best "
+        "standard-MLC baseline (BR / CC / CLR / ECC) on the BV quality "
+        "metric --- it is the bar that ``no abstention'' has to clear. "
+        "\\textbf{Any point above the dashed line is direct evidence that "
+        "abstaining improved quality beyond what any standard MLC method "
+        "achieves.} Points further right traded coverage for that gain.\n\n"
+        "\\paragraph{Reading the paired-bars chart.} Same data, different "
+        "view. The four sub-panels correspond to the four noise levels. "
+        "Inside each sub-panel: 12 method positions, two bars per position "
+        "--- blue is the standard-MLC quality (\\texttt{f1}, no "
+        "abstention), warm-colour is the with-abstention quality on "
+        "retained labels. Only the 8 PA/PR methods (1--8) have a warm "
+        "bar; the standard MLC baselines (9--12) only have a blue bar by "
+        "construction. The green ``$+x.y$'' label above each warm bar is "
+        "the gain in score-points over that method's own BV bar.\n"
     )
     parts.append(intro)
 
     for learner_dir, learner_name in [("rf", "RF"), ("lgbm", "LGBM")]:
-        agg_dir = fig_root / learner_dir / "abstain" / "aggregate"
-        if not agg_dir.exists():
+        learner_root = fig_root / learner_dir / "abstain"
+        if not learner_root.exists():
             continue
-        parts.append(
-            f"\\subsection{{{learner_name} base learner --- aggregate}}\n"
-        )
-        parts.append(
-            "\\begin{figure}[!htbp]\n\\centering\n"
-            f"\\mpanel{{{learner_dir}/abstain/aggregate/coverage_risk.pdf}}"
-            "\\hfill\n"
-            f"\\mpanel{{{learner_dir}/abstain/aggregate/paired_bars.pdf}}\n"
-            f"\\caption{{{learner_name}: coverage-risk (left) and BV-vs-PA"
-            f" paired bars (right), averaged across all datasets.}}\n"
-            f"\\label{{fig:abstain_{learner_dir}_agg}}\n"
-            "\\end{figure}\n"
-        )
-
-        per_ds_root = fig_root / learner_dir / "abstain" / "per_dataset"
-        if not per_ds_root.exists():
-            continue
-        parts.append(
-            f"\\subsection{{{learner_name} base learner --- per dataset}}\n"
-        )
-        for ds in DATASETS:
-            ds_dir = per_ds_root / ds
-            if not ds_dir.exists():
+        for pa_metric in _ABSTAIN_METRICS:
+            metric_root = learner_root / pa_metric
+            if not metric_root.exists():
                 continue
+            metric_tex = pa_metric.replace("_", r"\_")
             parts.append(
-                "\\begin{figure}[!htbp]\n\\centering\n"
-                f"\\mpanel{{{learner_dir}/abstain/per_dataset/{ds}/coverage_risk.pdf}}"
-                "\\hfill\n"
-                f"\\mpanel{{{learner_dir}/abstain/per_dataset/{ds}/paired_bars.pdf}}\n"
-                f"\\caption{{{learner_name} on \\texttt{{{tex_escape(ds)}}}:"
-                f" coverage-risk (left) and BV-vs-PA paired bars (right).}}\n"
-                f"\\label{{fig:abstain_{learner_dir}_{ds}}}\n"
-                "\\end{figure}\n"
+                f"\\subsection{{{learner_name}, metric \\texttt{{{metric_tex}}}"
+                " --- aggregate}\n"
             )
-        parts.append("\\clearpage\n")
+            agg_dir = metric_root / "aggregate"
+            if (agg_dir / "coverage_risk.pdf").exists():
+                parts.append(
+                    "\\begin{figure}[!htbp]\n\\centering\n"
+                    f"\\mpanel{{{learner_dir}/abstain/{pa_metric}/aggregate/coverage_risk.pdf}}"
+                    "\\hfill\n"
+                    f"\\mpanel{{{learner_dir}/abstain/{pa_metric}/aggregate/paired_bars.pdf}}\n"
+                    f"\\caption{{{learner_name} ({metric_tex}): coverage-risk"
+                    " (left) and standard-MLC-vs-abstention paired bars"
+                    " across $\\alpha\\in\\{0.0,0.1,0.2,0.3\\}$ (right),"
+                    " averaged across all datasets.}\n"
+                    f"\\label{{fig:abstain_{learner_dir}_{pa_metric}_agg}}\n"
+                    "\\end{figure}\n"
+                )
+            per_ds_root = metric_root / "per_dataset"
+            if per_ds_root.exists():
+                parts.append(
+                    f"\\subsection{{{learner_name}, metric \\texttt{{{metric_tex}}}"
+                    " --- per dataset}\n"
+                )
+                for ds in DATASETS:
+                    ds_dir = per_ds_root / ds
+                    if not ds_dir.exists():
+                        continue
+                    parts.append(
+                        "\\begin{figure}[!htbp]\n\\centering\n"
+                        f"\\mpanel{{{learner_dir}/abstain/{pa_metric}/per_dataset/{ds}/coverage_risk.pdf}}"
+                        "\\hfill\n"
+                        f"\\mpanel{{{learner_dir}/abstain/{pa_metric}/per_dataset/{ds}/paired_bars.pdf}}\n"
+                        f"\\caption{{{learner_name} on \\texttt{{{tex_escape(ds)}}}"
+                        f" ({metric_tex}): coverage-risk (left) and"
+                        " standard-MLC-vs-abstention paired bars (right).}\n"
+                        f"\\label{{fig:abstain_{learner_dir}_{pa_metric}_{ds}}}\n"
+                        "\\end{figure}\n"
+                    )
+            parts.append("\\clearpage\n")
     return parts
 
 

@@ -136,9 +136,12 @@ $x=8.5$, and $x=11.5$ separate the four method groups: PA (1--4), PR
 \setlength{\tabcolsep}{2pt}
 \renewcommand{\arraystretch}{0.6}
 \begin{tabular}{ccc}
-\mpanel{rf/aggregate/pa/aabs.pdf} & \mpanel{rf/aggregate/pa/abs.pdf} & \mpanel{rf/aggregate/pa/arec.pdf} \\
-\mpanel{rf/aggregate/pa/f1_pa.pdf} & \mpanel{rf/aggregate/pa/hamming_accuracy_pa.pdf} & \mpanel{rf/aggregate/pa/rec.pdf} \\
-\mpanel{rf/aggregate/pa/subset0_1_pa.pdf} &  &  \\
+\mpanel{rf/aggregate/pa/aabs.pdf} & \mpanel{rf/aggregate/pa/abs.pdf} & \mpanel{rf/aggregate/pa/afrd_pa.pdf} \\
+\mpanel{rf/aggregate/pa/arec.pdf} & \mpanel{rf/aggregate/pa/example_precision_pa.pdf} & \mpanel{rf/aggregate/pa/example_recall_pa.pdf} \\
+\mpanel{rf/aggregate/pa/f1_pa.pdf} & \mpanel{rf/aggregate/pa/hamming_accuracy_pa.pdf} & \mpanel{rf/aggregate/pa/jaccard_pa.pdf} \\
+\mpanel{rf/aggregate/pa/macro_f1_pa.pdf} & \mpanel{rf/aggregate/pa/macro_precision_pa.pdf} & \mpanel{rf/aggregate/pa/macro_recall_pa.pdf} \\
+\mpanel{rf/aggregate/pa/mfrd_pa.pdf} & \mpanel{rf/aggregate/pa/micro_f1_pa.pdf} & \mpanel{rf/aggregate/pa/micro_precision_pa.pdf} \\
+\mpanel{rf/aggregate/pa/micro_recall_pa.pdf} & \mpanel{rf/aggregate/pa/rec.pdf} & \mpanel{rf/aggregate/pa/subset0_1_pa.pdf} \\
 \end{tabular}
 \caption{Partial abstention (PartialAbstention), RF base learner, averaged across datasets. Method indices and line colors follow the encoding paragraph above.}
 \label{tab:rf_agg_pa}
@@ -161,168 +164,338 @@ $x=8.5$, and $x=11.5$ separate the four method groups: PA (1--4), PR
 \clearpage
 
 \section{Abstention vs standard MLC}\label{sec:abstain_vs_mlc}
-These panels visualise the empirical benefit of partial abstention. \emph{Coverage-risk}: each point is a (method, $\alpha$) pair; x-axis is the abstention rate, y-axis is the quality on retained labels (\texttt{f1\_pa}). The dashed grey line is the best standard-MLC baseline (BR/CC/CLR/ECC) at the same noise. Points above the line $\Rightarrow$ abstaining improves quality beyond what any standard MLC method achieves without abstention. \emph{Paired bars}: per method, blue bar is BV \texttt{f1} (no abstention), red bar is PA \texttt{f1\_pa} (on retained labels) at $\alpha=0$; green ``$+x.y$'' annotates the gap.
+\paragraph{Why this section exists.} The paper's central claim is that an order-based predictor can \emph{abstain} on labels it is unsure about and, on the labels it does predict, achieve higher quality than a standard MLC method that is forced to predict every label. The two chart families below make that claim visible.
 
-\subsection{RF base learner --- aggregate}
+\paragraph{Terminology.} `\emph{Standard MLC}' (a.k.a.\ \texttt{BinaryVector} / BV) means each method outputs a 0/1 prediction for every one of the $K$ labels. `\emph{With abstention}' (a.k.a.\ \texttt{PartialAbstention} / PA) means an order-based predictor may return $\bot$ (abstain) on some labels; the PA quality metrics (\texttt{f1\_pa}, \texttt{jaccard\_pa}, \ldots) are computed only over the non-abstained labels. Only the 8 PA/PR methods (indices 1--8) can abstain; BR/CC/CLR/ECC cannot.
+
+\paragraph{Reading the coverage-risk chart.} Each point is one (PA/PR method, noise level $\alpha$) pair. The x-axis is the abstention rate (fraction of labels the method skipped); the y-axis is the quality metric on the labels that \emph{were} predicted (higher is better). Marker shape encodes method, colour encodes noise level. The dashed grey line is the best standard-MLC baseline (BR / CC / CLR / ECC) on the BV quality metric --- it is the bar that ``no abstention'' has to clear. \textbf{Any point above the dashed line is direct evidence that abstaining improved quality beyond what any standard MLC method achieves.} Points further right traded coverage for that gain.
+
+\paragraph{Reading the paired-bars chart.} Same data, different view. The four sub-panels correspond to the four noise levels. Inside each sub-panel: 12 method positions, two bars per position --- blue is the standard-MLC quality (\texttt{f1}, no abstention), warm-colour is the with-abstention quality on retained labels. Only the 8 PA/PR methods (1--8) have a warm bar; the standard MLC baselines (9--12) only have a blue bar by construction. The green ``$+x.y$'' label above each warm bar is the gain in score-points over that method's own BV bar.
+
+\subsection{RF, metric \texttt{f1\_pa} --- aggregate}
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{rf/abstain/aggregate/coverage_risk.pdf}\hfill
-\mpanel{rf/abstain/aggregate/paired_bars.pdf}
-\caption{RF: coverage-risk (left) and BV-vs-PA paired bars (right), averaged across all datasets.}
-\label{fig:abstain_rf_agg}
+\mpanel{rf/abstain/f1_pa/aggregate/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/f1_pa/aggregate/paired_bars.pdf}
+\caption{RF (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right), averaged across all datasets.}
+\label{fig:abstain_rf_f1_pa_agg}
 \end{figure}
 
-\subsection{RF base learner --- per dataset}
+\subsection{RF, metric \texttt{f1\_pa} --- per dataset}
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{rf/abstain/per_dataset/GpositivePseAAC/coverage_risk.pdf}\hfill
-\mpanel{rf/abstain/per_dataset/GpositivePseAAC/paired_bars.pdf}
-\caption{RF on \texttt{GpositivePseAAC}: coverage-risk (left) and BV-vs-PA paired bars (right).}
-\label{fig:abstain_rf_GpositivePseAAC}
-\end{figure}
-
-\begin{figure}[!htbp]
-\centering
-\mpanel{rf/abstain/per_dataset/emotions/coverage_risk.pdf}\hfill
-\mpanel{rf/abstain/per_dataset/emotions/paired_bars.pdf}
-\caption{RF on \texttt{emotions}: coverage-risk (left) and BV-vs-PA paired bars (right).}
-\label{fig:abstain_rf_emotions}
-\end{figure}
-
-\begin{figure}[!htbp]
-\centering
-\mpanel{rf/abstain/per_dataset/scene/coverage_risk.pdf}\hfill
-\mpanel{rf/abstain/per_dataset/scene/paired_bars.pdf}
-\caption{RF on \texttt{scene}: coverage-risk (left) and BV-vs-PA paired bars (right).}
-\label{fig:abstain_rf_scene}
+\mpanel{rf/abstain/f1_pa/per_dataset/GpositivePseAAC/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/f1_pa/per_dataset/GpositivePseAAC/paired_bars.pdf}
+\caption{RF on \texttt{GpositivePseAAC} (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
+\label{fig:abstain_rf_f1_pa_GpositivePseAAC}
 \end{figure}
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{rf/abstain/per_dataset/PlantPseAAC/coverage_risk.pdf}\hfill
-\mpanel{rf/abstain/per_dataset/PlantPseAAC/paired_bars.pdf}
-\caption{RF on \texttt{PlantPseAAC}: coverage-risk (left) and BV-vs-PA paired bars (right).}
-\label{fig:abstain_rf_PlantPseAAC}
+\mpanel{rf/abstain/f1_pa/per_dataset/emotions/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/f1_pa/per_dataset/emotions/paired_bars.pdf}
+\caption{RF on \texttt{emotions} (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
+\label{fig:abstain_rf_f1_pa_emotions}
 \end{figure}
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{rf/abstain/per_dataset/HumanPseAAC/coverage_risk.pdf}\hfill
-\mpanel{rf/abstain/per_dataset/HumanPseAAC/paired_bars.pdf}
-\caption{RF on \texttt{HumanPseAAC}: coverage-risk (left) and BV-vs-PA paired bars (right).}
-\label{fig:abstain_rf_HumanPseAAC}
+\mpanel{rf/abstain/f1_pa/per_dataset/scene/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/f1_pa/per_dataset/scene/paired_bars.pdf}
+\caption{RF on \texttt{scene} (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
+\label{fig:abstain_rf_f1_pa_scene}
 \end{figure}
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{rf/abstain/per_dataset/Yeast/coverage_risk.pdf}\hfill
-\mpanel{rf/abstain/per_dataset/Yeast/paired_bars.pdf}
-\caption{RF on \texttt{Yeast}: coverage-risk (left) and BV-vs-PA paired bars (right).}
-\label{fig:abstain_rf_Yeast}
+\mpanel{rf/abstain/f1_pa/per_dataset/PlantPseAAC/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/f1_pa/per_dataset/PlantPseAAC/paired_bars.pdf}
+\caption{RF on \texttt{PlantPseAAC} (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
+\label{fig:abstain_rf_f1_pa_PlantPseAAC}
 \end{figure}
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{rf/abstain/per_dataset/birds/coverage_risk.pdf}\hfill
-\mpanel{rf/abstain/per_dataset/birds/paired_bars.pdf}
-\caption{RF on \texttt{birds}: coverage-risk (left) and BV-vs-PA paired bars (right).}
-\label{fig:abstain_rf_birds}
+\mpanel{rf/abstain/f1_pa/per_dataset/HumanPseAAC/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/f1_pa/per_dataset/HumanPseAAC/paired_bars.pdf}
+\caption{RF on \texttt{HumanPseAAC} (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
+\label{fig:abstain_rf_f1_pa_HumanPseAAC}
 \end{figure}
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{rf/abstain/per_dataset/medical/coverage_risk.pdf}\hfill
-\mpanel{rf/abstain/per_dataset/medical/paired_bars.pdf}
-\caption{RF on \texttt{medical}: coverage-risk (left) and BV-vs-PA paired bars (right).}
-\label{fig:abstain_rf_medical}
+\mpanel{rf/abstain/f1_pa/per_dataset/Yeast/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/f1_pa/per_dataset/Yeast/paired_bars.pdf}
+\caption{RF on \texttt{Yeast} (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
+\label{fig:abstain_rf_f1_pa_Yeast}
 \end{figure}
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{rf/abstain/per_dataset/enron/coverage_risk.pdf}\hfill
-\mpanel{rf/abstain/per_dataset/enron/paired_bars.pdf}
-\caption{RF on \texttt{enron}: coverage-risk (left) and BV-vs-PA paired bars (right).}
-\label{fig:abstain_rf_enron}
+\mpanel{rf/abstain/f1_pa/per_dataset/birds/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/f1_pa/per_dataset/birds/paired_bars.pdf}
+\caption{RF on \texttt{birds} (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
+\label{fig:abstain_rf_f1_pa_birds}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/f1_pa/per_dataset/medical/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/f1_pa/per_dataset/medical/paired_bars.pdf}
+\caption{RF on \texttt{medical} (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
+\label{fig:abstain_rf_f1_pa_medical}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/f1_pa/per_dataset/enron/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/f1_pa/per_dataset/enron/paired_bars.pdf}
+\caption{RF on \texttt{enron} (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
+\label{fig:abstain_rf_f1_pa_enron}
 \end{figure}
 
 \clearpage
 
-\subsection{LGBM base learner --- aggregate}
+\subsection{RF, metric \texttt{jaccard\_pa} --- aggregate}
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{lgbm/abstain/aggregate/coverage_risk.pdf}\hfill
-\mpanel{lgbm/abstain/aggregate/paired_bars.pdf}
-\caption{LGBM: coverage-risk (left) and BV-vs-PA paired bars (right), averaged across all datasets.}
-\label{fig:abstain_lgbm_agg}
+\mpanel{rf/abstain/jaccard_pa/aggregate/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/jaccard_pa/aggregate/paired_bars.pdf}
+\caption{RF (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right), averaged across all datasets.}
+\label{fig:abstain_rf_jaccard_pa_agg}
 \end{figure}
 
-\subsection{LGBM base learner --- per dataset}
+\subsection{RF, metric \texttt{jaccard\_pa} --- per dataset}
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{lgbm/abstain/per_dataset/GpositivePseAAC/coverage_risk.pdf}\hfill
-\mpanel{lgbm/abstain/per_dataset/GpositivePseAAC/paired_bars.pdf}
-\caption{LGBM on \texttt{GpositivePseAAC}: coverage-risk (left) and BV-vs-PA paired bars (right).}
-\label{fig:abstain_lgbm_GpositivePseAAC}
-\end{figure}
-
-\begin{figure}[!htbp]
-\centering
-\mpanel{lgbm/abstain/per_dataset/emotions/coverage_risk.pdf}\hfill
-\mpanel{lgbm/abstain/per_dataset/emotions/paired_bars.pdf}
-\caption{LGBM on \texttt{emotions}: coverage-risk (left) and BV-vs-PA paired bars (right).}
-\label{fig:abstain_lgbm_emotions}
+\mpanel{rf/abstain/jaccard_pa/per_dataset/GpositivePseAAC/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/jaccard_pa/per_dataset/GpositivePseAAC/paired_bars.pdf}
+\caption{RF on \texttt{GpositivePseAAC} (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
+\label{fig:abstain_rf_jaccard_pa_GpositivePseAAC}
 \end{figure}
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{lgbm/abstain/per_dataset/scene/coverage_risk.pdf}\hfill
-\mpanel{lgbm/abstain/per_dataset/scene/paired_bars.pdf}
-\caption{LGBM on \texttt{scene}: coverage-risk (left) and BV-vs-PA paired bars (right).}
-\label{fig:abstain_lgbm_scene}
+\mpanel{rf/abstain/jaccard_pa/per_dataset/emotions/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/jaccard_pa/per_dataset/emotions/paired_bars.pdf}
+\caption{RF on \texttt{emotions} (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
+\label{fig:abstain_rf_jaccard_pa_emotions}
 \end{figure}
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{lgbm/abstain/per_dataset/PlantPseAAC/coverage_risk.pdf}\hfill
-\mpanel{lgbm/abstain/per_dataset/PlantPseAAC/paired_bars.pdf}
-\caption{LGBM on \texttt{PlantPseAAC}: coverage-risk (left) and BV-vs-PA paired bars (right).}
-\label{fig:abstain_lgbm_PlantPseAAC}
+\mpanel{rf/abstain/jaccard_pa/per_dataset/scene/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/jaccard_pa/per_dataset/scene/paired_bars.pdf}
+\caption{RF on \texttt{scene} (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
+\label{fig:abstain_rf_jaccard_pa_scene}
 \end{figure}
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{lgbm/abstain/per_dataset/HumanPseAAC/coverage_risk.pdf}\hfill
-\mpanel{lgbm/abstain/per_dataset/HumanPseAAC/paired_bars.pdf}
-\caption{LGBM on \texttt{HumanPseAAC}: coverage-risk (left) and BV-vs-PA paired bars (right).}
-\label{fig:abstain_lgbm_HumanPseAAC}
+\mpanel{rf/abstain/jaccard_pa/per_dataset/PlantPseAAC/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/jaccard_pa/per_dataset/PlantPseAAC/paired_bars.pdf}
+\caption{RF on \texttt{PlantPseAAC} (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
+\label{fig:abstain_rf_jaccard_pa_PlantPseAAC}
 \end{figure}
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{lgbm/abstain/per_dataset/Yeast/coverage_risk.pdf}\hfill
-\mpanel{lgbm/abstain/per_dataset/Yeast/paired_bars.pdf}
-\caption{LGBM on \texttt{Yeast}: coverage-risk (left) and BV-vs-PA paired bars (right).}
-\label{fig:abstain_lgbm_Yeast}
+\mpanel{rf/abstain/jaccard_pa/per_dataset/HumanPseAAC/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/jaccard_pa/per_dataset/HumanPseAAC/paired_bars.pdf}
+\caption{RF on \texttt{HumanPseAAC} (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
+\label{fig:abstain_rf_jaccard_pa_HumanPseAAC}
 \end{figure}
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{lgbm/abstain/per_dataset/birds/coverage_risk.pdf}\hfill
-\mpanel{lgbm/abstain/per_dataset/birds/paired_bars.pdf}
-\caption{LGBM on \texttt{birds}: coverage-risk (left) and BV-vs-PA paired bars (right).}
-\label{fig:abstain_lgbm_birds}
+\mpanel{rf/abstain/jaccard_pa/per_dataset/Yeast/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/jaccard_pa/per_dataset/Yeast/paired_bars.pdf}
+\caption{RF on \texttt{Yeast} (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
+\label{fig:abstain_rf_jaccard_pa_Yeast}
 \end{figure}
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{lgbm/abstain/per_dataset/medical/coverage_risk.pdf}\hfill
-\mpanel{lgbm/abstain/per_dataset/medical/paired_bars.pdf}
-\caption{LGBM on \texttt{medical}: coverage-risk (left) and BV-vs-PA paired bars (right).}
-\label{fig:abstain_lgbm_medical}
+\mpanel{rf/abstain/jaccard_pa/per_dataset/birds/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/jaccard_pa/per_dataset/birds/paired_bars.pdf}
+\caption{RF on \texttt{birds} (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
+\label{fig:abstain_rf_jaccard_pa_birds}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/jaccard_pa/per_dataset/medical/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/jaccard_pa/per_dataset/medical/paired_bars.pdf}
+\caption{RF on \texttt{medical} (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
+\label{fig:abstain_rf_jaccard_pa_medical}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/jaccard_pa/per_dataset/enron/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/jaccard_pa/per_dataset/enron/paired_bars.pdf}
+\caption{RF on \texttt{enron} (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
+\label{fig:abstain_rf_jaccard_pa_enron}
+\end{figure}
+
+\clearpage
+
+\subsection{LGBM, metric \texttt{f1\_pa} --- aggregate}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/f1_pa/aggregate/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/f1_pa/aggregate/paired_bars.pdf}
+\caption{LGBM (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right), averaged across all datasets.}
+\label{fig:abstain_lgbm_f1_pa_agg}
+\end{figure}
+
+\subsection{LGBM, metric \texttt{f1\_pa} --- per dataset}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/f1_pa/per_dataset/GpositivePseAAC/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/f1_pa/per_dataset/GpositivePseAAC/paired_bars.pdf}
+\caption{LGBM on \texttt{GpositivePseAAC} (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
+\label{fig:abstain_lgbm_f1_pa_GpositivePseAAC}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/f1_pa/per_dataset/emotions/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/f1_pa/per_dataset/emotions/paired_bars.pdf}
+\caption{LGBM on \texttt{emotions} (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
+\label{fig:abstain_lgbm_f1_pa_emotions}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/f1_pa/per_dataset/scene/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/f1_pa/per_dataset/scene/paired_bars.pdf}
+\caption{LGBM on \texttt{scene} (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
+\label{fig:abstain_lgbm_f1_pa_scene}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/f1_pa/per_dataset/PlantPseAAC/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/f1_pa/per_dataset/PlantPseAAC/paired_bars.pdf}
+\caption{LGBM on \texttt{PlantPseAAC} (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
+\label{fig:abstain_lgbm_f1_pa_PlantPseAAC}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/f1_pa/per_dataset/HumanPseAAC/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/f1_pa/per_dataset/HumanPseAAC/paired_bars.pdf}
+\caption{LGBM on \texttt{HumanPseAAC} (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
+\label{fig:abstain_lgbm_f1_pa_HumanPseAAC}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/f1_pa/per_dataset/Yeast/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/f1_pa/per_dataset/Yeast/paired_bars.pdf}
+\caption{LGBM on \texttt{Yeast} (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
+\label{fig:abstain_lgbm_f1_pa_Yeast}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/f1_pa/per_dataset/birds/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/f1_pa/per_dataset/birds/paired_bars.pdf}
+\caption{LGBM on \texttt{birds} (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
+\label{fig:abstain_lgbm_f1_pa_birds}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/f1_pa/per_dataset/medical/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/f1_pa/per_dataset/medical/paired_bars.pdf}
+\caption{LGBM on \texttt{medical} (f1\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
+\label{fig:abstain_lgbm_f1_pa_medical}
+\end{figure}
+
+\clearpage
+
+\subsection{LGBM, metric \texttt{jaccard\_pa} --- aggregate}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/jaccard_pa/aggregate/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/jaccard_pa/aggregate/paired_bars.pdf}
+\caption{LGBM (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right), averaged across all datasets.}
+\label{fig:abstain_lgbm_jaccard_pa_agg}
+\end{figure}
+
+\subsection{LGBM, metric \texttt{jaccard\_pa} --- per dataset}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/GpositivePseAAC/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/GpositivePseAAC/paired_bars.pdf}
+\caption{LGBM on \texttt{GpositivePseAAC} (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
+\label{fig:abstain_lgbm_jaccard_pa_GpositivePseAAC}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/emotions/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/emotions/paired_bars.pdf}
+\caption{LGBM on \texttt{emotions} (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
+\label{fig:abstain_lgbm_jaccard_pa_emotions}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/scene/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/scene/paired_bars.pdf}
+\caption{LGBM on \texttt{scene} (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
+\label{fig:abstain_lgbm_jaccard_pa_scene}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/PlantPseAAC/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/PlantPseAAC/paired_bars.pdf}
+\caption{LGBM on \texttt{PlantPseAAC} (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
+\label{fig:abstain_lgbm_jaccard_pa_PlantPseAAC}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/HumanPseAAC/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/HumanPseAAC/paired_bars.pdf}
+\caption{LGBM on \texttt{HumanPseAAC} (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
+\label{fig:abstain_lgbm_jaccard_pa_HumanPseAAC}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/Yeast/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/Yeast/paired_bars.pdf}
+\caption{LGBM on \texttt{Yeast} (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
+\label{fig:abstain_lgbm_jaccard_pa_Yeast}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/birds/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/birds/paired_bars.pdf}
+\caption{LGBM on \texttt{birds} (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
+\label{fig:abstain_lgbm_jaccard_pa_birds}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/medical/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/medical/paired_bars.pdf}
+\caption{LGBM on \texttt{medical} (jaccard\_pa): coverage-risk (left) and standard-MLC-vs-abstention paired bars (right).}
+\label{fig:abstain_lgbm_jaccard_pa_medical}
 \end{figure}
 
 \clearpage
@@ -356,9 +529,12 @@ These panels visualise the empirical benefit of partial abstention. \emph{Covera
 \setlength{\tabcolsep}{2pt}
 \renewcommand{\arraystretch}{0.6}
 \begin{tabular}{ccc}
-\mpanel{rf/per_dataset/GpositivePseAAC/pa/aabs.pdf} & \mpanel{rf/per_dataset/GpositivePseAAC/pa/abs.pdf} & \mpanel{rf/per_dataset/GpositivePseAAC/pa/arec.pdf} \\
-\mpanel{rf/per_dataset/GpositivePseAAC/pa/f1_pa.pdf} & \mpanel{rf/per_dataset/GpositivePseAAC/pa/hamming_accuracy_pa.pdf} & \mpanel{rf/per_dataset/GpositivePseAAC/pa/rec.pdf} \\
-\mpanel{rf/per_dataset/GpositivePseAAC/pa/subset0_1_pa.pdf} &  &  \\
+\mpanel{rf/per_dataset/GpositivePseAAC/pa/aabs.pdf} & \mpanel{rf/per_dataset/GpositivePseAAC/pa/abs.pdf} & \mpanel{rf/per_dataset/GpositivePseAAC/pa/afrd_pa.pdf} \\
+\mpanel{rf/per_dataset/GpositivePseAAC/pa/arec.pdf} & \mpanel{rf/per_dataset/GpositivePseAAC/pa/example_precision_pa.pdf} & \mpanel{rf/per_dataset/GpositivePseAAC/pa/example_recall_pa.pdf} \\
+\mpanel{rf/per_dataset/GpositivePseAAC/pa/f1_pa.pdf} & \mpanel{rf/per_dataset/GpositivePseAAC/pa/hamming_accuracy_pa.pdf} & \mpanel{rf/per_dataset/GpositivePseAAC/pa/jaccard_pa.pdf} \\
+\mpanel{rf/per_dataset/GpositivePseAAC/pa/macro_f1_pa.pdf} & \mpanel{rf/per_dataset/GpositivePseAAC/pa/macro_precision_pa.pdf} & \mpanel{rf/per_dataset/GpositivePseAAC/pa/macro_recall_pa.pdf} \\
+\mpanel{rf/per_dataset/GpositivePseAAC/pa/mfrd_pa.pdf} & \mpanel{rf/per_dataset/GpositivePseAAC/pa/micro_f1_pa.pdf} & \mpanel{rf/per_dataset/GpositivePseAAC/pa/micro_precision_pa.pdf} \\
+\mpanel{rf/per_dataset/GpositivePseAAC/pa/micro_recall_pa.pdf} & \mpanel{rf/per_dataset/GpositivePseAAC/pa/rec.pdf} & \mpanel{rf/per_dataset/GpositivePseAAC/pa/subset0_1_pa.pdf} \\
 \end{tabular}
 \caption{Partial abstention (PartialAbstention) on \texttt{GpositivePseAAC} (RF base learner).}
 \label{tab:rf_GpositivePseAAC_pa}
@@ -402,9 +578,12 @@ These panels visualise the empirical benefit of partial abstention. \emph{Covera
 \setlength{\tabcolsep}{2pt}
 \renewcommand{\arraystretch}{0.6}
 \begin{tabular}{ccc}
-\mpanel{rf/per_dataset/emotions/pa/aabs.pdf} & \mpanel{rf/per_dataset/emotions/pa/abs.pdf} & \mpanel{rf/per_dataset/emotions/pa/arec.pdf} \\
-\mpanel{rf/per_dataset/emotions/pa/f1_pa.pdf} & \mpanel{rf/per_dataset/emotions/pa/hamming_accuracy_pa.pdf} & \mpanel{rf/per_dataset/emotions/pa/rec.pdf} \\
-\mpanel{rf/per_dataset/emotions/pa/subset0_1_pa.pdf} &  &  \\
+\mpanel{rf/per_dataset/emotions/pa/aabs.pdf} & \mpanel{rf/per_dataset/emotions/pa/abs.pdf} & \mpanel{rf/per_dataset/emotions/pa/afrd_pa.pdf} \\
+\mpanel{rf/per_dataset/emotions/pa/arec.pdf} & \mpanel{rf/per_dataset/emotions/pa/example_precision_pa.pdf} & \mpanel{rf/per_dataset/emotions/pa/example_recall_pa.pdf} \\
+\mpanel{rf/per_dataset/emotions/pa/f1_pa.pdf} & \mpanel{rf/per_dataset/emotions/pa/hamming_accuracy_pa.pdf} & \mpanel{rf/per_dataset/emotions/pa/jaccard_pa.pdf} \\
+\mpanel{rf/per_dataset/emotions/pa/macro_f1_pa.pdf} & \mpanel{rf/per_dataset/emotions/pa/macro_precision_pa.pdf} & \mpanel{rf/per_dataset/emotions/pa/macro_recall_pa.pdf} \\
+\mpanel{rf/per_dataset/emotions/pa/mfrd_pa.pdf} & \mpanel{rf/per_dataset/emotions/pa/micro_f1_pa.pdf} & \mpanel{rf/per_dataset/emotions/pa/micro_precision_pa.pdf} \\
+\mpanel{rf/per_dataset/emotions/pa/micro_recall_pa.pdf} & \mpanel{rf/per_dataset/emotions/pa/rec.pdf} & \mpanel{rf/per_dataset/emotions/pa/subset0_1_pa.pdf} \\
 \end{tabular}
 \caption{Partial abstention (PartialAbstention) on \texttt{emotions} (RF base learner).}
 \label{tab:rf_emotions_pa}
@@ -448,9 +627,12 @@ These panels visualise the empirical benefit of partial abstention. \emph{Covera
 \setlength{\tabcolsep}{2pt}
 \renewcommand{\arraystretch}{0.6}
 \begin{tabular}{ccc}
-\mpanel{rf/per_dataset/scene/pa/aabs.pdf} & \mpanel{rf/per_dataset/scene/pa/abs.pdf} & \mpanel{rf/per_dataset/scene/pa/arec.pdf} \\
-\mpanel{rf/per_dataset/scene/pa/f1_pa.pdf} & \mpanel{rf/per_dataset/scene/pa/hamming_accuracy_pa.pdf} & \mpanel{rf/per_dataset/scene/pa/rec.pdf} \\
-\mpanel{rf/per_dataset/scene/pa/subset0_1_pa.pdf} &  &  \\
+\mpanel{rf/per_dataset/scene/pa/aabs.pdf} & \mpanel{rf/per_dataset/scene/pa/abs.pdf} & \mpanel{rf/per_dataset/scene/pa/afrd_pa.pdf} \\
+\mpanel{rf/per_dataset/scene/pa/arec.pdf} & \mpanel{rf/per_dataset/scene/pa/example_precision_pa.pdf} & \mpanel{rf/per_dataset/scene/pa/example_recall_pa.pdf} \\
+\mpanel{rf/per_dataset/scene/pa/f1_pa.pdf} & \mpanel{rf/per_dataset/scene/pa/hamming_accuracy_pa.pdf} & \mpanel{rf/per_dataset/scene/pa/jaccard_pa.pdf} \\
+\mpanel{rf/per_dataset/scene/pa/macro_f1_pa.pdf} & \mpanel{rf/per_dataset/scene/pa/macro_precision_pa.pdf} & \mpanel{rf/per_dataset/scene/pa/macro_recall_pa.pdf} \\
+\mpanel{rf/per_dataset/scene/pa/mfrd_pa.pdf} & \mpanel{rf/per_dataset/scene/pa/micro_f1_pa.pdf} & \mpanel{rf/per_dataset/scene/pa/micro_precision_pa.pdf} \\
+\mpanel{rf/per_dataset/scene/pa/micro_recall_pa.pdf} & \mpanel{rf/per_dataset/scene/pa/rec.pdf} & \mpanel{rf/per_dataset/scene/pa/subset0_1_pa.pdf} \\
 \end{tabular}
 \caption{Partial abstention (PartialAbstention) on \texttt{scene} (RF base learner).}
 \label{tab:rf_scene_pa}
@@ -494,9 +676,12 @@ These panels visualise the empirical benefit of partial abstention. \emph{Covera
 \setlength{\tabcolsep}{2pt}
 \renewcommand{\arraystretch}{0.6}
 \begin{tabular}{ccc}
-\mpanel{rf/per_dataset/PlantPseAAC/pa/aabs.pdf} & \mpanel{rf/per_dataset/PlantPseAAC/pa/abs.pdf} & \mpanel{rf/per_dataset/PlantPseAAC/pa/arec.pdf} \\
-\mpanel{rf/per_dataset/PlantPseAAC/pa/f1_pa.pdf} & \mpanel{rf/per_dataset/PlantPseAAC/pa/hamming_accuracy_pa.pdf} & \mpanel{rf/per_dataset/PlantPseAAC/pa/rec.pdf} \\
-\mpanel{rf/per_dataset/PlantPseAAC/pa/subset0_1_pa.pdf} &  &  \\
+\mpanel{rf/per_dataset/PlantPseAAC/pa/aabs.pdf} & \mpanel{rf/per_dataset/PlantPseAAC/pa/abs.pdf} & \mpanel{rf/per_dataset/PlantPseAAC/pa/afrd_pa.pdf} \\
+\mpanel{rf/per_dataset/PlantPseAAC/pa/arec.pdf} & \mpanel{rf/per_dataset/PlantPseAAC/pa/example_precision_pa.pdf} & \mpanel{rf/per_dataset/PlantPseAAC/pa/example_recall_pa.pdf} \\
+\mpanel{rf/per_dataset/PlantPseAAC/pa/f1_pa.pdf} & \mpanel{rf/per_dataset/PlantPseAAC/pa/hamming_accuracy_pa.pdf} & \mpanel{rf/per_dataset/PlantPseAAC/pa/jaccard_pa.pdf} \\
+\mpanel{rf/per_dataset/PlantPseAAC/pa/macro_f1_pa.pdf} & \mpanel{rf/per_dataset/PlantPseAAC/pa/macro_precision_pa.pdf} & \mpanel{rf/per_dataset/PlantPseAAC/pa/macro_recall_pa.pdf} \\
+\mpanel{rf/per_dataset/PlantPseAAC/pa/mfrd_pa.pdf} & \mpanel{rf/per_dataset/PlantPseAAC/pa/micro_f1_pa.pdf} & \mpanel{rf/per_dataset/PlantPseAAC/pa/micro_precision_pa.pdf} \\
+\mpanel{rf/per_dataset/PlantPseAAC/pa/micro_recall_pa.pdf} & \mpanel{rf/per_dataset/PlantPseAAC/pa/rec.pdf} & \mpanel{rf/per_dataset/PlantPseAAC/pa/subset0_1_pa.pdf} \\
 \end{tabular}
 \caption{Partial abstention (PartialAbstention) on \texttt{PlantPseAAC} (RF base learner).}
 \label{tab:rf_PlantPseAAC_pa}
@@ -540,9 +725,12 @@ These panels visualise the empirical benefit of partial abstention. \emph{Covera
 \setlength{\tabcolsep}{2pt}
 \renewcommand{\arraystretch}{0.6}
 \begin{tabular}{ccc}
-\mpanel{rf/per_dataset/HumanPseAAC/pa/aabs.pdf} & \mpanel{rf/per_dataset/HumanPseAAC/pa/abs.pdf} & \mpanel{rf/per_dataset/HumanPseAAC/pa/arec.pdf} \\
-\mpanel{rf/per_dataset/HumanPseAAC/pa/f1_pa.pdf} & \mpanel{rf/per_dataset/HumanPseAAC/pa/hamming_accuracy_pa.pdf} & \mpanel{rf/per_dataset/HumanPseAAC/pa/rec.pdf} \\
-\mpanel{rf/per_dataset/HumanPseAAC/pa/subset0_1_pa.pdf} &  &  \\
+\mpanel{rf/per_dataset/HumanPseAAC/pa/aabs.pdf} & \mpanel{rf/per_dataset/HumanPseAAC/pa/abs.pdf} & \mpanel{rf/per_dataset/HumanPseAAC/pa/afrd_pa.pdf} \\
+\mpanel{rf/per_dataset/HumanPseAAC/pa/arec.pdf} & \mpanel{rf/per_dataset/HumanPseAAC/pa/example_precision_pa.pdf} & \mpanel{rf/per_dataset/HumanPseAAC/pa/example_recall_pa.pdf} \\
+\mpanel{rf/per_dataset/HumanPseAAC/pa/f1_pa.pdf} & \mpanel{rf/per_dataset/HumanPseAAC/pa/hamming_accuracy_pa.pdf} & \mpanel{rf/per_dataset/HumanPseAAC/pa/jaccard_pa.pdf} \\
+\mpanel{rf/per_dataset/HumanPseAAC/pa/macro_f1_pa.pdf} & \mpanel{rf/per_dataset/HumanPseAAC/pa/macro_precision_pa.pdf} & \mpanel{rf/per_dataset/HumanPseAAC/pa/macro_recall_pa.pdf} \\
+\mpanel{rf/per_dataset/HumanPseAAC/pa/mfrd_pa.pdf} & \mpanel{rf/per_dataset/HumanPseAAC/pa/micro_f1_pa.pdf} & \mpanel{rf/per_dataset/HumanPseAAC/pa/micro_precision_pa.pdf} \\
+\mpanel{rf/per_dataset/HumanPseAAC/pa/micro_recall_pa.pdf} & \mpanel{rf/per_dataset/HumanPseAAC/pa/rec.pdf} & \mpanel{rf/per_dataset/HumanPseAAC/pa/subset0_1_pa.pdf} \\
 \end{tabular}
 \caption{Partial abstention (PartialAbstention) on \texttt{HumanPseAAC} (RF base learner).}
 \label{tab:rf_HumanPseAAC_pa}
@@ -586,9 +774,12 @@ These panels visualise the empirical benefit of partial abstention. \emph{Covera
 \setlength{\tabcolsep}{2pt}
 \renewcommand{\arraystretch}{0.6}
 \begin{tabular}{ccc}
-\mpanel{rf/per_dataset/Yeast/pa/aabs.pdf} & \mpanel{rf/per_dataset/Yeast/pa/abs.pdf} & \mpanel{rf/per_dataset/Yeast/pa/arec.pdf} \\
-\mpanel{rf/per_dataset/Yeast/pa/f1_pa.pdf} & \mpanel{rf/per_dataset/Yeast/pa/hamming_accuracy_pa.pdf} & \mpanel{rf/per_dataset/Yeast/pa/rec.pdf} \\
-\mpanel{rf/per_dataset/Yeast/pa/subset0_1_pa.pdf} &  &  \\
+\mpanel{rf/per_dataset/Yeast/pa/aabs.pdf} & \mpanel{rf/per_dataset/Yeast/pa/abs.pdf} & \mpanel{rf/per_dataset/Yeast/pa/afrd_pa.pdf} \\
+\mpanel{rf/per_dataset/Yeast/pa/arec.pdf} & \mpanel{rf/per_dataset/Yeast/pa/example_precision_pa.pdf} & \mpanel{rf/per_dataset/Yeast/pa/example_recall_pa.pdf} \\
+\mpanel{rf/per_dataset/Yeast/pa/f1_pa.pdf} & \mpanel{rf/per_dataset/Yeast/pa/hamming_accuracy_pa.pdf} & \mpanel{rf/per_dataset/Yeast/pa/jaccard_pa.pdf} \\
+\mpanel{rf/per_dataset/Yeast/pa/macro_f1_pa.pdf} & \mpanel{rf/per_dataset/Yeast/pa/macro_precision_pa.pdf} & \mpanel{rf/per_dataset/Yeast/pa/macro_recall_pa.pdf} \\
+\mpanel{rf/per_dataset/Yeast/pa/mfrd_pa.pdf} & \mpanel{rf/per_dataset/Yeast/pa/micro_f1_pa.pdf} & \mpanel{rf/per_dataset/Yeast/pa/micro_precision_pa.pdf} \\
+\mpanel{rf/per_dataset/Yeast/pa/micro_recall_pa.pdf} & \mpanel{rf/per_dataset/Yeast/pa/rec.pdf} & \mpanel{rf/per_dataset/Yeast/pa/subset0_1_pa.pdf} \\
 \end{tabular}
 \caption{Partial abstention (PartialAbstention) on \texttt{Yeast} (RF base learner).}
 \label{tab:rf_Yeast_pa}
@@ -632,9 +823,12 @@ These panels visualise the empirical benefit of partial abstention. \emph{Covera
 \setlength{\tabcolsep}{2pt}
 \renewcommand{\arraystretch}{0.6}
 \begin{tabular}{ccc}
-\mpanel{rf/per_dataset/birds/pa/aabs.pdf} & \mpanel{rf/per_dataset/birds/pa/abs.pdf} & \mpanel{rf/per_dataset/birds/pa/arec.pdf} \\
-\mpanel{rf/per_dataset/birds/pa/f1_pa.pdf} & \mpanel{rf/per_dataset/birds/pa/hamming_accuracy_pa.pdf} & \mpanel{rf/per_dataset/birds/pa/rec.pdf} \\
-\mpanel{rf/per_dataset/birds/pa/subset0_1_pa.pdf} &  &  \\
+\mpanel{rf/per_dataset/birds/pa/aabs.pdf} & \mpanel{rf/per_dataset/birds/pa/abs.pdf} & \mpanel{rf/per_dataset/birds/pa/afrd_pa.pdf} \\
+\mpanel{rf/per_dataset/birds/pa/arec.pdf} & \mpanel{rf/per_dataset/birds/pa/example_precision_pa.pdf} & \mpanel{rf/per_dataset/birds/pa/example_recall_pa.pdf} \\
+\mpanel{rf/per_dataset/birds/pa/f1_pa.pdf} & \mpanel{rf/per_dataset/birds/pa/hamming_accuracy_pa.pdf} & \mpanel{rf/per_dataset/birds/pa/jaccard_pa.pdf} \\
+\mpanel{rf/per_dataset/birds/pa/macro_f1_pa.pdf} & \mpanel{rf/per_dataset/birds/pa/macro_precision_pa.pdf} & \mpanel{rf/per_dataset/birds/pa/macro_recall_pa.pdf} \\
+\mpanel{rf/per_dataset/birds/pa/mfrd_pa.pdf} & \mpanel{rf/per_dataset/birds/pa/micro_f1_pa.pdf} & \mpanel{rf/per_dataset/birds/pa/micro_precision_pa.pdf} \\
+\mpanel{rf/per_dataset/birds/pa/micro_recall_pa.pdf} & \mpanel{rf/per_dataset/birds/pa/rec.pdf} & \mpanel{rf/per_dataset/birds/pa/subset0_1_pa.pdf} \\
 \end{tabular}
 \caption{Partial abstention (PartialAbstention) on \texttt{birds} (RF base learner).}
 \label{tab:rf_birds_pa}
@@ -678,9 +872,12 @@ These panels visualise the empirical benefit of partial abstention. \emph{Covera
 \setlength{\tabcolsep}{2pt}
 \renewcommand{\arraystretch}{0.6}
 \begin{tabular}{ccc}
-\mpanel{rf/per_dataset/medical/pa/aabs.pdf} & \mpanel{rf/per_dataset/medical/pa/abs.pdf} & \mpanel{rf/per_dataset/medical/pa/arec.pdf} \\
-\mpanel{rf/per_dataset/medical/pa/f1_pa.pdf} & \mpanel{rf/per_dataset/medical/pa/hamming_accuracy_pa.pdf} & \mpanel{rf/per_dataset/medical/pa/rec.pdf} \\
-\mpanel{rf/per_dataset/medical/pa/subset0_1_pa.pdf} &  &  \\
+\mpanel{rf/per_dataset/medical/pa/aabs.pdf} & \mpanel{rf/per_dataset/medical/pa/abs.pdf} & \mpanel{rf/per_dataset/medical/pa/afrd_pa.pdf} \\
+\mpanel{rf/per_dataset/medical/pa/arec.pdf} & \mpanel{rf/per_dataset/medical/pa/example_precision_pa.pdf} & \mpanel{rf/per_dataset/medical/pa/example_recall_pa.pdf} \\
+\mpanel{rf/per_dataset/medical/pa/f1_pa.pdf} & \mpanel{rf/per_dataset/medical/pa/hamming_accuracy_pa.pdf} & \mpanel{rf/per_dataset/medical/pa/jaccard_pa.pdf} \\
+\mpanel{rf/per_dataset/medical/pa/macro_f1_pa.pdf} & \mpanel{rf/per_dataset/medical/pa/macro_precision_pa.pdf} & \mpanel{rf/per_dataset/medical/pa/macro_recall_pa.pdf} \\
+\mpanel{rf/per_dataset/medical/pa/mfrd_pa.pdf} & \mpanel{rf/per_dataset/medical/pa/micro_f1_pa.pdf} & \mpanel{rf/per_dataset/medical/pa/micro_precision_pa.pdf} \\
+\mpanel{rf/per_dataset/medical/pa/micro_recall_pa.pdf} & \mpanel{rf/per_dataset/medical/pa/rec.pdf} & \mpanel{rf/per_dataset/medical/pa/subset0_1_pa.pdf} \\
 \end{tabular}
 \caption{Partial abstention (PartialAbstention) on \texttt{medical} (RF base learner).}
 \label{tab:rf_medical_pa}
@@ -724,9 +921,12 @@ These panels visualise the empirical benefit of partial abstention. \emph{Covera
 \setlength{\tabcolsep}{2pt}
 \renewcommand{\arraystretch}{0.6}
 \begin{tabular}{ccc}
-\mpanel{rf/per_dataset/enron/pa/aabs.pdf} & \mpanel{rf/per_dataset/enron/pa/abs.pdf} & \mpanel{rf/per_dataset/enron/pa/arec.pdf} \\
-\mpanel{rf/per_dataset/enron/pa/f1_pa.pdf} & \mpanel{rf/per_dataset/enron/pa/hamming_accuracy_pa.pdf} & \mpanel{rf/per_dataset/enron/pa/rec.pdf} \\
-\mpanel{rf/per_dataset/enron/pa/subset0_1_pa.pdf} &  &  \\
+\mpanel{rf/per_dataset/enron/pa/aabs.pdf} & \mpanel{rf/per_dataset/enron/pa/abs.pdf} & \mpanel{rf/per_dataset/enron/pa/afrd_pa.pdf} \\
+\mpanel{rf/per_dataset/enron/pa/arec.pdf} & \mpanel{rf/per_dataset/enron/pa/example_precision_pa.pdf} & \mpanel{rf/per_dataset/enron/pa/example_recall_pa.pdf} \\
+\mpanel{rf/per_dataset/enron/pa/f1_pa.pdf} & \mpanel{rf/per_dataset/enron/pa/hamming_accuracy_pa.pdf} & \mpanel{rf/per_dataset/enron/pa/jaccard_pa.pdf} \\
+\mpanel{rf/per_dataset/enron/pa/macro_f1_pa.pdf} & \mpanel{rf/per_dataset/enron/pa/macro_precision_pa.pdf} & \mpanel{rf/per_dataset/enron/pa/macro_recall_pa.pdf} \\
+\mpanel{rf/per_dataset/enron/pa/mfrd_pa.pdf} & \mpanel{rf/per_dataset/enron/pa/micro_f1_pa.pdf} & \mpanel{rf/per_dataset/enron/pa/micro_precision_pa.pdf} \\
+\mpanel{rf/per_dataset/enron/pa/micro_recall_pa.pdf} & \mpanel{rf/per_dataset/enron/pa/rec.pdf} & \mpanel{rf/per_dataset/enron/pa/subset0_1_pa.pdf} \\
 \end{tabular}
 \caption{Partial abstention (PartialAbstention) on \texttt{enron} (RF base learner).}
 \label{tab:rf_enron_pa}
