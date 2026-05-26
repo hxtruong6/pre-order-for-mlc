@@ -24,7 +24,13 @@ import re
 import sys
 
 
-_SUFFIXES = ["", "_clr", "_br", "_cc", "_mlknn", "_ecc", "_lp"]
+_SUFFIXES = [
+    "", "_clr", "_br", "_cc",
+    "_mlknn", "_ecc", "_lp",
+    # LightGBM-trained extras use the bl_suffix from train_extra_baselines.py
+    # (`bl_suffix = f"_{base_learner}" if base_learner != "rf" else ""`).
+    "_mlknn_lgbm", "_ecc_lgbm", "_lp_lgbm",
+]
 
 
 def _merge_one(results_dir: str, dataset_name: str, noisy_rate: float, suffix: str) -> int:
