@@ -238,6 +238,7 @@ def render_panel(
     out_path_pdf: Path | None,
     out_path_tikz: Path | None = None,
     style: str = "original",
+    emit_notitle: bool = False,
 ) -> None:
     """Render a single panel as dotted lines with markers.
 
@@ -368,14 +369,17 @@ def render_panel(
         # carry their own LaTeX caption beneath each panel. The x-axis is
         # also re-labelled with method names (PA-H-2, PR-S, BR, ...) so
         # the reader doesn't need the table caption's encoding legend.
-        title_obj.set_visible(False)
-        method_names = [m[1] for m in methods]
-        ax.set_xticklabels(method_names, rotation=-35, ha="left", fontsize=7)
-        fig.tight_layout(pad=0.2)
-        notitle_path = out_path_pdf.with_name(out_path_pdf.stem + "_notitle.pdf")
-        fig.savefig(
-            notitle_path, format="pdf", bbox_inches="tight", pad_inches=0.02
-        )
+        # Only emit for metrics referenced by paper-results / G2-G7 to
+        # keep total file count under Overleaf's 2000-file limit.
+        if emit_notitle:
+            title_obj.set_visible(False)
+            method_names = [m[1] for m in methods]
+            ax.set_xticklabels(method_names, rotation=-35, ha="left", fontsize=7)
+            fig.tight_layout(pad=0.2)
+            notitle_path = out_path_pdf.with_name(out_path_pdf.stem + "_notitle.pdf")
+            fig.savefig(
+                notitle_path, format="pdf", bbox_inches="tight", pad_inches=0.02
+            )
     if out_path_tikz is not None:
         _save_tikz(fig, out_path_tikz)
     plt.close(fig)
@@ -430,6 +434,19 @@ def build_all(
             # Per-dataset only for RF (LGBM is aggregate-only).
             if learner != "RF":
                 continue
+            # _notitle variants are only needed for metrics referenced by
+            # paper-results tables (3.x) and appendix G2-G7. Restricting
+            # keeps total file count under Overleaf's 2000-file limit.
+            paper_metrics = {
+                "BinaryVector":      {"f1", "hamming_accuracy", "subset0_1",
+                                       "jaccard", "macro_f1", "micro_f1",
+                                       "afrd", "mfrd"},
+                "PartialAbstention": {"f1_pa", "hamming_accuracy_pa",
+                                       "subset0_1_pa", "jaccard_pa",
+                                       "macro_f1_pa", "micro_f1_pa",
+                                       "aabs", "abs"},
+                "ScoreVector":       set(),
+            }
             for ds in DATASETS:
                 ds_sub = ptype_df[ptype_df.dataset == ds]
                 if ds_sub.empty:
@@ -445,7 +462,10 @@ def build_all(
                         metric,
                         formats,
                     )
-                    render_panel(values, methods, metric, pdf, tikz, style=style)
+                    render_panel(
+                        values, methods, metric, pdf, tikz, style=style,
+                        emit_notitle=metric in paper_metrics.get(ptype, set()),
+                    )
                     n_panels += 1
     return n_panels
 
