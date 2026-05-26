@@ -60,6 +60,28 @@ def _aggregate_value(df: pd.DataFrame, algo: str, metric: str, noise: str) -> fl
     return float(np.mean(vals)) if vals.size else float("nan")
 
 
+def _baseline_for(pa_metric: str, bv_metric: str) -> tuple[str, str]:
+    """Return (effective_bv_metric, baseline_label) for fair comparison.
+
+    For jaccard_pa we route the baseline to the saved ``jaccard`` BV column
+    (computed per-instance and averaged by ``evaluate.py``), rather than
+    deriving J from F1 at the aggregate level --- the F1->J identity
+    ``J = F1/(2-F1)`` holds per-instance but Jensen's inequality means
+    ``mean(J_i) >= mean(F1_i)/(2-mean(F1_i))``, so deriving would
+    under-estimate Jaccard whenever per-instance F1 has non-zero variance.
+    """
+    if pa_metric == "jaccard_pa" and bv_metric == "f1":
+        return ("jaccard", "jaccard")
+    return (bv_metric, bv_metric)
+
+
+def _bv_value(df: pd.DataFrame, algo: str, pa_metric: str, bv_metric: str,
+              noise: str) -> float:
+    """Aggregate baseline value using the per-pa_metric effective BV column."""
+    eff_metric, _ = _baseline_for(pa_metric, bv_metric)
+    return _aggregate_value(df, algo, eff_metric, noise)
+
+
 def render_coverage_risk(
     df: pd.DataFrame,
     pa_metric: str,
@@ -76,10 +98,11 @@ def render_coverage_risk(
     fig, ax = plt.subplots(figsize=(3.8, 2.6))
 
     # Track baselines (no abstention) — plot as horizontal reference lines.
+    eff_bv, bv_label = _baseline_for(pa_metric, bv_metric)
     baseline_qualities: dict[str, float] = {}
     for algo, _label in BASELINE_METHODS:
         # average across noise levels for the reference line
-        vals = df[(df.algorithm == algo) & (df.metric == bv_metric)].value.dropna()
+        vals = df[(df.algorithm == algo) & (df.metric == eff_bv)].value.dropna()
         if vals.size:
             baseline_qualities[algo] = float(vals.mean()) * 100.0
 
@@ -91,7 +114,7 @@ def render_coverage_risk(
             linestyle="--",
             linewidth=0.7,
             alpha=0.8,
-            label=f"best standard-MLC {bv_metric} (no abstention)",
+            label=f"best standard-MLC {bv_label} (no abstention)",
         )
 
     # PA/PR methods as scatter, colored by noise.
@@ -188,12 +211,13 @@ def render_paired_bars(
     bv_color = "#9ecae1"  # light blue for standard MLC
     n_methods = len(METHOD_ORDER)
 
+    _, bv_label = _baseline_for(pa_metric, bv_metric)
     fig, axes = plt.subplots(2, 2, figsize=(8.0, 4.6), sharey=True)
     for ax, noise in zip(axes.flat, NOISE_LEVELS):
         bv_vals = np.full(n_methods, np.nan)
         pa_vals = np.full(n_methods, np.nan)
         for i, (algo, _) in enumerate(METHOD_ORDER):
-            bv_vals[i] = _aggregate_value(df, algo, bv_metric, noise) * 100.0
+            bv_vals[i] = _bv_value(df, algo, pa_metric, bv_metric, noise) * 100.0
             if i < 8:
                 pa_vals[i] = _aggregate_value(df, algo, pa_metric, noise) * 100.0
 
@@ -202,7 +226,7 @@ def render_paired_bars(
         ax.bar(
             x - width / 2, bv_vals, width,
             color=bv_color,
-            label=f"Standard MLC ({bv_metric}, no abstention)",
+            label=f"Standard MLC ({bv_label}, no abstention)",
         )
         ax.bar(
             x + width / 2, pa_vals, width,
@@ -282,9 +306,10 @@ def render_coverage_risk_pareto(
     palette = NOISE_COLORS_ENHANCED if style == "enhanced" else NOISE_COLORS_ORIGINAL
     fig, ax = plt.subplots(figsize=(3.8, 2.6))
 
+    eff_bv, bv_label = _baseline_for(pa_metric, bv_metric)
     baseline_qualities: list[float] = []
     for algo, _ in BASELINE_METHODS:
-        vals = df[(df.algorithm == algo) & (df.metric == bv_metric)].value.dropna()
+        vals = df[(df.algorithm == algo) & (df.metric == eff_bv)].value.dropna()
         if vals.size:
             baseline_qualities.append(float(vals.mean()) * 100.0)
     best_baseline = max(baseline_qualities, default=float("nan"))
@@ -311,7 +336,7 @@ def render_coverage_risk_pareto(
         )
         ax.axhline(
             y=best_baseline, color="grey", linestyle="--", linewidth=0.7,
-            label=f"best standard-MLC {bv_metric}",
+            label=f"best standard-MLC {bv_label}",
         )
 
     if xs.size:
@@ -354,11 +379,12 @@ def render_gain_heatmap(
     style: str,
 ) -> None:
     """8x4 heatmap: gain = pa_metric - bv_metric, per (method, noise)."""
+    _, bv_label = _baseline_for(pa_metric, bv_metric)
     gain = np.full((len(PA_METHODS), len(NOISE_LEVELS)), np.nan)
     for i, (algo, _) in enumerate(PA_METHODS):
         for j, noise in enumerate(NOISE_LEVELS):
             pa = _aggregate_value(df, algo, pa_metric, noise)
-            bv = _aggregate_value(df, algo, bv_metric, noise)
+            bv = _bv_value(df, algo, pa_metric, bv_metric, noise)
             if np.isfinite(pa) and np.isfinite(bv):
                 gain[i, j] = (pa - bv) * 100.0
 
@@ -377,7 +403,7 @@ def render_gain_heatmap(
     ax.set_xticklabels([fr"$\alpha={n}$" for n in NOISE_LEVELS], fontsize=6)
     ax.set_yticks(np.arange(len(PA_METHODS)))
     ax.set_yticklabels([m[1] for m in PA_METHODS], fontsize=6)
-    ax.set_title(f"{title}  -- gain ({pa_metric} - {bv_metric}, percentage points)",
+    ax.set_title(f"{title}  -- gain ({pa_metric} - {bv_label}, percentage points)",
                  fontsize=7)
     cbar = fig.colorbar(im, ax=ax, fraction=0.04, pad=0.02)
     cbar.ax.tick_params(labelsize=5)
@@ -396,12 +422,13 @@ def render_delta_bars(
     style: str,
 ) -> None:
     """2x2 grid of gain bars (one bar per PA method, signed)."""
+    _, bv_label = _baseline_for(pa_metric, bv_metric)
     fig, axes = plt.subplots(2, 2, figsize=(7.5, 4.4), sharey=True)
     for ax, noise in zip(axes.flat, NOISE_LEVELS):
         gains = np.full(len(PA_METHODS), np.nan)
         for i, (algo, _) in enumerate(PA_METHODS):
             pa = _aggregate_value(df, algo, pa_metric, noise)
-            bv = _aggregate_value(df, algo, bv_metric, noise)
+            bv = _bv_value(df, algo, pa_metric, bv_metric, noise)
             if np.isfinite(pa) and np.isfinite(bv):
                 gains[i] = (pa - bv) * 100.0
         colors = ["#1a9850" if g >= 0 else "#d73027" for g in gains]
@@ -423,8 +450,8 @@ def render_delta_bars(
         ax.grid(True, axis="y", linestyle="-", linewidth=0.4, alpha=0.4)
         for spine in ("top", "right"):
             ax.spines[spine].set_visible(False)
-    axes[0, 0].set_ylabel(f"gain (pp): {pa_metric} - {bv_metric}", fontsize=6)
-    axes[1, 0].set_ylabel(f"gain (pp): {pa_metric} - {bv_metric}", fontsize=6)
+    axes[0, 0].set_ylabel(f"gain (pp): {pa_metric} - {bv_label}", fontsize=6)
+    axes[1, 0].set_ylabel(f"gain (pp): {pa_metric} - {bv_label}", fontsize=6)
     fig.suptitle(title, fontsize=8)
     fig.tight_layout(pad=0.4, rect=(0.0, 0.0, 1.0, 0.96))
     out_pdf.parent.mkdir(parents=True, exist_ok=True)
@@ -442,18 +469,20 @@ def render_efficiency_quality(
 ) -> None:
     """Scatter: x = coverage (1 - abs), y = pa_metric. Upper-right = robust."""
     palette = NOISE_COLORS_ENHANCED if style == "enhanced" else NOISE_COLORS_ORIGINAL
+    _, bv_label = _baseline_for(pa_metric, bv_metric)
     fig, ax = plt.subplots(figsize=(3.8, 2.8))
 
-    baseline_qualities = [
-        float(df[(df.algorithm == a) & (df.metric == bv_metric)].value.mean()) * 100.0
-        for a, _ in BASELINE_METHODS
-        if df[(df.algorithm == a) & (df.metric == bv_metric)].value.dropna().size
-    ]
+    eff_bv, _ = _baseline_for(pa_metric, bv_metric)
+    baseline_qualities = []
+    for a, _ in BASELINE_METHODS:
+        s = df[(df.algorithm == a) & (df.metric == eff_bv)].value.dropna()
+        if s.size:
+            baseline_qualities.append(float(s.mean()) * 100.0)
     best_baseline = max(baseline_qualities, default=float("nan"))
     if np.isfinite(best_baseline):
         ax.axhline(
             y=best_baseline, color="grey", linestyle="--", linewidth=0.7,
-            label=f"best standard-MLC {bv_metric}",
+            label=f"best standard-MLC {bv_label}",
         )
 
     marker_per_method = ["o", "s", "^", "D", "v", "P", "X", "*"]
@@ -497,6 +526,7 @@ def render_effective_f1(
     see when abstention's net effect (after penalising for skipped labels)
     still beats standard MLC.
     """
+    _, bv_label = _baseline_for(pa_metric, bv_metric)
     fig, ax = plt.subplots(figsize=(3.8, 2.6))
     xs = np.arange(len(NOISE_LEVELS))
 
@@ -511,18 +541,18 @@ def render_effective_f1(
         ax.plot(xs, ys, marker="o", markersize=3, linewidth=1.0,
                 color=cmap(i % 10), label=label)
 
-    # Best baseline reference (BV metric, per noise).
+    # Best baseline reference (BV metric, per noise; converted if needed).
     best_baseline_per_noise = []
     for noise in NOISE_LEVELS:
         vals = [
-            _aggregate_value(df, a, bv_metric, noise) * 100.0
+            _bv_value(df, a, pa_metric, bv_metric, noise) * 100.0
             for a, _ in BASELINE_METHODS
         ]
         vals = [v for v in vals if np.isfinite(v)]
         best_baseline_per_noise.append(max(vals) if vals else float("nan"))
     ax.plot(xs, best_baseline_per_noise, color="grey", linestyle="--",
             linewidth=1.0, marker="s", markersize=3,
-            label=f"best standard-MLC {bv_metric}")
+            label=f"best standard-MLC {bv_label}")
 
     ax.set_xticks(xs)
     ax.set_xticklabels([fr"$\alpha={n}$" for n in NOISE_LEVELS], fontsize=6)
@@ -541,9 +571,85 @@ def render_effective_f1(
     plt.close(fig)
 
 
+def render_abstention_rate(
+    df: pd.DataFrame,
+    pa_metric: str,
+    bv_metric: str,
+    out_pdf: Path,
+    title: str,
+    style: str,
+) -> None:
+    """2x2 grid: bar = `abs` (instance-level), dot overlay = `aabs` (label-level).
+
+    Definitions match preorder4mlc/evaluation_metric.py:
+        abs  = # instances with at least one abstained label / T
+               (instance-level "any-abstention" rate, normally larger)
+        aabs = total -1 cells / (T * K)
+               (label-level / per-cell average abstention rate)
+
+    Only the 8 PA/PR methods (baselines never abstain). Shares the noise-
+    colour palette and method ordering with render_paired_bars so the two
+    figures are reader-comparable side-by-side. Abstention rates depend
+    only on the PA decision rule, not on which quality metric we measure,
+    so this chart is metric-independent.
+    """
+    del pa_metric, bv_metric  # unused — abstention rates are metric-independent
+    palette = NOISE_COLORS_ENHANCED if style == "enhanced" else NOISE_COLORS_ORIGINAL
+    n_methods = len(PA_METHODS)
+
+    fig, axes = plt.subplots(2, 2, figsize=(8.0, 4.6), sharey=True)
+    for ax, noise in zip(axes.flat, NOISE_LEVELS):
+        abs_vals = np.full(n_methods, np.nan)
+        aabs_vals = np.full(n_methods, np.nan)
+        for i, (algo, _) in enumerate(PA_METHODS):
+            abs_vals[i] = _aggregate_value(df, algo, "abs", noise) * 100.0
+            aabs_vals[i] = _aggregate_value(df, algo, "aabs", noise) * 100.0
+
+        x = np.arange(n_methods)
+        ax.bar(
+            x, abs_vals, width=0.6,
+            color=palette[noise], edgecolor="black", linewidth=0.3,
+            label="abs (% instances with $\\geq 1$ abstain)",
+        )
+        finite = np.isfinite(aabs_vals)
+        ax.scatter(
+            x[finite], aabs_vals[finite],
+            color="black", marker="o", s=20, zorder=3,
+            edgecolors="white", linewidths=0.6,
+            label="aabs (% labels skipped, per-cell)",
+        )
+        for i in range(n_methods):
+            if np.isfinite(abs_vals[i]):
+                ax.annotate(
+                    f"{abs_vals[i]:.1f}",
+                    xy=(x[i], abs_vals[i]), xytext=(0, 2),
+                    textcoords="offset points", ha="center",
+                    fontsize=5, color="black",
+                )
+        ax.set_xticks(x)
+        ax.set_xticklabels(
+            [m[1] for m in PA_METHODS], rotation=-35, ha="left", fontsize=5,
+        )
+        ax.set_title(fr"$\alpha={noise}$", fontsize=7)
+        ax.tick_params(axis="y", labelsize=6)
+        ax.legend(fontsize=5, loc="upper left", framealpha=0.85, borderpad=0.3)
+        ax.grid(True, axis="y", linestyle="-", linewidth=0.4, alpha=0.4)
+        ax.set_ylim(0, max(40, float(np.nanmax(abs_vals)) * 1.15 if np.any(finite) else 40))
+        for spine in ("top", "right"):
+            ax.spines[spine].set_visible(False)
+
+    axes[0, 0].set_ylabel("abstention rate (%)", fontsize=7)
+    axes[1, 0].set_ylabel("abstention rate (%)", fontsize=7)
+    fig.suptitle(title, fontsize=8)
+    fig.tight_layout(pad=0.4, rect=(0.0, 0.0, 1.0, 0.96))
+    out_pdf.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_pdf, format="pdf", bbox_inches="tight", pad_inches=0.02)
+    plt.close(fig)
+
+
 def _render_scope(df: pd.DataFrame, out_dir: Path, pa_metric: str, bv_metric: str,
                   title: str, style: str) -> int:
-    """Render all 7 chart variants for one scope. Returns count."""
+    """Render all 7 metric-dependent chart variants for one scope. Returns count."""
     out_dir.mkdir(parents=True, exist_ok=True)
     render_coverage_risk(df, pa_metric, bv_metric, out_dir / "coverage_risk.pdf", title, style)
     render_coverage_risk_pareto(df, pa_metric, bv_metric, out_dir / "coverage_risk_pareto.pdf", title, style)
@@ -572,6 +678,29 @@ def build_all(
         learner_df = long_df[long_df.base_learner == learner]
         if learner_df.empty:
             continue
+        # Metric-independent abstention_rate charts (one per (learner, scope)),
+        # placed under a shared subdir parallel to the pa_metric dirs.
+        shared_root = out_root / learner.lower() / "abstain" / "_shared"
+        (shared_root / "aggregate").mkdir(parents=True, exist_ok=True)
+        render_abstention_rate(
+            learner_df, "", "",
+            shared_root / "aggregate" / "abstention_rate.pdf",
+            f"{learner} aggregate: abstention rates", style,
+        )
+        n += 1
+        for ds in DATASETS:
+            ds_df = learner_df[learner_df.dataset == ds]
+            if ds_df.empty:
+                continue
+            ds_out = shared_root / "per_dataset" / ds
+            ds_out.mkdir(parents=True, exist_ok=True)
+            render_abstention_rate(
+                ds_df, "", "",
+                ds_out / "abstention_rate.pdf",
+                f"{learner} on {ds}: abstention rates", style,
+            )
+            n += 1
+        # Per-metric charts (coverage_risk, paired_bars, ...).
         for pa_metric in pa_metrics:
             if pa_metric not in learner_df.metric.unique():
                 continue

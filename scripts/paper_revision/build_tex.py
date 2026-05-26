@@ -35,8 +35,8 @@ DATASETS = [
     "HumanPseAAC",
     "Yeast",
     # 3 revision-extension datasets.
-    "birds",
-    "medical",
+    "CHD_49",
+    "Water-quality",
     "enron",
 ]
 DATASET_DISPLAY = {
@@ -46,8 +46,8 @@ DATASET_DISPLAY = {
     "PlantPseAAC": "PlantPseAAC ($K=12$)",
     "HumanPseAAC": "HumanPseAAC ($K=14$)",
     "Yeast": "Yeast ($K=14$)",
-    "birds": "birds ($K=19$)",
-    "medical": "medical ($K=45$)",
+    "CHD_49": "CHD\\_49 ($K=6$)",
+    "Water-quality": "Water-quality ($K=14$)",
     "enron": "enron ($K=53$)",
 }
 PTYPE_LABEL = {
@@ -299,11 +299,18 @@ def emit_datasets_table(stats_path: Path) -> str:
     if not stats:
         return "% dataset_stats.json empty.\n"
 
-    order = DATASETS
+    # Sort by K, then N, then P (ascending) for the table; original
+    # DATASETS order is preserved everywhere else (figure sections, etc.).
+    order = sorted(
+        (k for k in DATASETS if k in stats),
+        key=lambda k: (
+            stats[k].get("K", 0),
+            stats[k].get("N", 0) or 0,
+            stats[k].get("P", 0) or 0,
+        ),
+    )
     body = []
     for i, key in enumerate(order, start=1):
-        if key not in stats:
-            continue
         s = stats[key]
         n_str = "?" if s.get("N") is None else f"{s['N']}"
         body.append(
@@ -332,13 +339,6 @@ def emit_datasets_table(stats_path: Path) -> str:
 
 PENDING_TODO = r"""\section*{Pending follow-ups (to fill before final submission)}
 \begin{itemize}
-  \item \textbf{ECC baseline on \texttt{birds} (RF + LGBM).} The
-        \texttt{birds} folders contain only PA/PR/BR/CC/CLR --- ECC has not
-        been run. Method slot~12 currently shows as a gap on every
-        \texttt{birds} panel. Re-run with
-        \texttt{scripts/train\_extra\_baselines.py --dataset birds
-        --algorithm ecc} for both \texttt{--base\_learner rf} and
-        \texttt{--base\_learner lgbm}.
   \item \textbf{LGBM run on \texttt{enron}.} Sequentially training (~2--3h
         per task due to K=53 pairwise classifiers); will be merged into
         \texttt{full\_enron\_split\_lgbm\_summary/} when complete and the
@@ -373,16 +373,37 @@ def _abstain_figure_block(
     if not abs_path.exists():
         return []
 
+    # Shared (metric-independent) abstention-rate chart sits next to the
+    # quality chart. Path mirrors the scope_dir but lives under _shared/.
+    shared_base = f"{learner_dir}/abstain/_shared/{scope_dir}"
+
     out: list[str] = []
-    # Figure 1: existing coverage_risk + paired_bars.
+    # Figure 1a: abstention rates (left) next to paired_bars quality (right).
     out.append(
         "\\begin{figure}[!htbp]\n\\centering\n"
-        f"\\mpanel{{{base}/coverage_risk.pdf}}\\hfill\n"
+        f"\\mpanel{{{shared_base}/abstention_rate.pdf}}\\hfill\n"
         f"\\mpanel{{{base}/paired_bars.pdf}}\n"
         f"\\caption{{{learner_name} ({metric_tex}) {scope_label}: "
-        "coverage-risk scatter (left) and standard-MLC-vs-abstention "
-        "paired bars across $\\alpha\\in\\{0.0,0.1,0.2,0.3\\}$ (right).}\n"
-        f"\\label{{fig:abstain_{learner_dir}_{pa_metric}_{label_suffix}_basic}}\n"
+        "abstention rates (left) and standard-MLC-vs-abstention paired bars "
+        "(right), across $\\alpha\\in\\{0.0,0.1,0.2,0.3\\}$. "
+        "Left: bar = \\texttt{abs} (\\% of instances with at least one "
+        "abstained label, instance-level); dot = \\texttt{aabs} (\\% of "
+        "labels skipped, per-cell label-level). These rates are independent "
+        "of the quality metric. Right: blue = standard MLC quality (no "
+        "abstention) on the matched BV metric; coloured = with-abstention "
+        "quality on retained labels.}\n"
+        f"\\label{{fig:abstain_{learner_dir}_{pa_metric}_{label_suffix}_rates_quality}}\n"
+        "\\end{figure}\n"
+    )
+    # Figure 1b: coverage-risk scatter (standalone).
+    out.append(
+        "\\begin{figure}[!htbp]\n\\centering\n"
+        f"\\mpanel{{{base}/coverage_risk.pdf}}\n"
+        f"\\caption{{{learner_name} ({metric_tex}) {scope_label}: "
+        "coverage-risk scatter. Each point is one (method, noise) pair; "
+        "x = abstention rate, y = quality on retained labels. Points above "
+        "the dashed line beat the best standard-MLC baseline.}\n"
+        f"\\label{{fig:abstain_{learner_dir}_{pa_metric}_{label_suffix}_coverage_risk}}\n"
         "\\end{figure}\n"
     )
     # Figure 2: Pareto + heatmap.
@@ -416,6 +437,50 @@ def _abstain_figure_block(
     )
     out.append("\\FloatBarrier\n")
     return out
+
+
+def emit_abstain_overview(fig_root: Path) -> list[str]:
+    """Compact overview: 4 aggregate paired_bars (RF/LGBM x f1/jaccard).
+
+    One figure per (learner, pa_metric) so the reader can scan the headline
+    trend in <1 page before opening the detailed per-method / per-dataset
+    section.
+    """
+    parts: list[str] = [
+        "\\section{Abstention overview: aggregate trends}"
+        "\\label{sec:abstain_overview}\n"
+        "\\paragraph{Purpose.} This compact section shows the headline "
+        "abstention-vs-standard-MLC trend across noise levels, averaged over "
+        "all datasets, for both base learners (RF, LGBM) and both retained "
+        "quality metrics ($f_1$, Jaccard). Use it as a quick visual summary "
+        "before diving into the detailed per-method / per-dataset figures in "
+        "Section~\\ref{sec:abstain_vs_mlc}.\n\n"
+        "\\paragraph{How to read.} In each panel: blue bar = standard MLC "
+        "(no abstention) on its native quality metric; coloured bar = "
+        "with-abstention quality on retained labels. Green ``$+x.y$'' label "
+        "= score-point gain of abstention over the standard-MLC bar of the "
+        "same method. The four sub-panels per figure correspond to "
+        "$\\alpha\\in\\{0.0, 0.1, 0.2, 0.3\\}$.\n"
+    ]
+    for learner_dir, learner_name in [("rf", "RF"), ("lgbm", "LGBM")]:
+        for pa_metric in _ABSTAIN_METRICS:
+            base = f"{learner_dir}/abstain/{pa_metric}/aggregate"
+            chart = fig_root / learner_dir / "abstain" / pa_metric / "aggregate" / "paired_bars.pdf"
+            if not chart.exists():
+                continue
+            metric_tex = pa_metric.replace("_", r"\_")
+            parts.append(
+                "\\begin{figure}[!htbp]\n\\centering\n"
+                f"\\includegraphics[width=0.95\\linewidth]{{{base}/paired_bars.pdf}}\n"
+                f"\\caption{{{learner_name} aggregate ({metric_tex}): "
+                "standard-MLC vs.\\ with-abstention quality across "
+                "$\\alpha\\in\\{0.0,0.1,0.2,0.3\\}$, averaged over all "
+                "datasets.}\n"
+                f"\\label{{fig:abstain_overview_{learner_dir}_{pa_metric}}}\n"
+                "\\end{figure}\n"
+            )
+    parts.append("\\FloatBarrier\n\\clearpage\n")
+    return parts
 
 
 def emit_abstain_section(fig_root: Path) -> list[str]:
@@ -518,6 +583,7 @@ def build_tex(fig_root: Path, stats_path: Path, style: str) -> str:
     parts.extend(section_for("rf", "aggregate", fig_root))
 
     parts.append("\\clearpage\n")
+    parts.extend(emit_abstain_overview(fig_root))
     parts.extend(emit_abstain_section(fig_root))
 
     parts.append("\\clearpage\n\\appendix\n")

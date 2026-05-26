@@ -28,13 +28,13 @@
 \# & Name & $N$ & $P$ & $K$ & MeanIR & CVIR \\
 \hline
 1 & GpositivePseAAC & 519 & 440 & 4 & 3.86 & 1.15 \\
-2 & Emotions & 593 & 72 & 6 & 1.48 & 0.16 \\
-3 & Scene & 2407 & 294 & 6 & 1.25 & 0.11 \\
-4 & PlantPseAAC & 978 & 440 & 12 & 6.69 & 0.68 \\
-5 & HumanPseAAC & 3106 & 440 & 14 & 15.29 & 1.05 \\
-6 & Yeast & 2417 & 103 & 14 & 7.20 & 1.82 \\
-7 & birds & 645 & 260 & 19 & 5.41 & 0.80 \\
-8 & medical & 978 & 1449 & 45 & 222.37 & 0.72 \\
+2 & CHD\_49 & 555 & 49 & 6 & 5.77 & 1.60 \\
+3 & Emotions & 593 & 72 & 6 & 1.48 & 0.16 \\
+4 & Scene & 2407 & 294 & 6 & 1.25 & 0.11 \\
+5 & PlantPseAAC & 978 & 440 & 12 & 6.69 & 0.68 \\
+6 & Water-quality & 1060 & 16 & 14 & 1.77 & 0.29 \\
+7 & Yeast & 2417 & 103 & 14 & 7.20 & 1.82 \\
+8 & HumanPseAAC & 3106 & 440 & 14 & 15.29 & 1.05 \\
 9 & enron & 1702 & 1001 & 53 & 10.45 & 0.80 \\
 \hline
 \end{tabular}
@@ -44,13 +44,6 @@
 
 \section*{Pending follow-ups (to fill before final submission)}
 \begin{itemize}
-  \item \textbf{ECC baseline on \texttt{birds} (RF + LGBM).} The
-        \texttt{birds} folders contain only PA/PR/BR/CC/CLR --- ECC has not
-        been run. Method slot~12 currently shows as a gap on every
-        \texttt{birds} panel. Re-run with
-        \texttt{scripts/train\_extra\_baselines.py --dataset birds
-        --algorithm ecc} for both \texttt{--base\_learner rf} and
-        \texttt{--base\_learner lgbm}.
   \item \textbf{LGBM run on \texttt{enron}.} Sequentially training (~2--3h
         per task due to K=53 pairwise classifiers); will be merged into
         \texttt{full\_enron\_split\_lgbm\_summary/} when complete and the
@@ -172,6 +165,42 @@ panel).
 
 \clearpage
 
+\section{Abstention overview: aggregate trends}\label{sec:abstain_overview}
+\paragraph{Purpose.} This compact section shows the headline abstention-vs-standard-MLC trend across noise levels, averaged over all datasets, for both base learners (RF, LGBM) and both retained quality metrics ($f_1$, Jaccard). Use it as a quick visual summary before diving into the detailed per-method / per-dataset figures in Section~\ref{sec:abstain_vs_mlc}.
+
+\paragraph{How to read.} In each panel: blue bar = standard MLC (no abstention) on its native quality metric; coloured bar = with-abstention quality on retained labels. Green ``$+x.y$'' label = score-point gain of abstention over the standard-MLC bar of the same method. The four sub-panels per figure correspond to $\alpha\in\{0.0, 0.1, 0.2, 0.3\}$.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.95\linewidth]{rf/abstain/f1_pa/aggregate/paired_bars.pdf}
+\caption{RF aggregate (f1\_pa): standard-MLC vs.\ with-abstention quality across $\alpha\in\{0.0,0.1,0.2,0.3\}$, averaged over all datasets.}
+\label{fig:abstain_overview_rf_f1_pa}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.95\linewidth]{rf/abstain/jaccard_pa/aggregate/paired_bars.pdf}
+\caption{RF aggregate (jaccard\_pa): standard-MLC vs.\ with-abstention quality across $\alpha\in\{0.0,0.1,0.2,0.3\}$, averaged over all datasets.}
+\label{fig:abstain_overview_rf_jaccard_pa}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.95\linewidth]{lgbm/abstain/f1_pa/aggregate/paired_bars.pdf}
+\caption{LGBM aggregate (f1\_pa): standard-MLC vs.\ with-abstention quality across $\alpha\in\{0.0,0.1,0.2,0.3\}$, averaged over all datasets.}
+\label{fig:abstain_overview_lgbm_f1_pa}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.95\linewidth]{lgbm/abstain/jaccard_pa/aggregate/paired_bars.pdf}
+\caption{LGBM aggregate (jaccard\_pa): standard-MLC vs.\ with-abstention quality across $\alpha\in\{0.0,0.1,0.2,0.3\}$, averaged over all datasets.}
+\label{fig:abstain_overview_lgbm_jaccard_pa}
+\end{figure}
+
+\FloatBarrier
+\clearpage
+
 \section{Abstention vs standard MLC}\label{sec:abstain_vs_mlc}
 \paragraph{Why this section exists.} The paper's central claim is that an order-based predictor can \emph{abstain} on labels it is unsure about and, on the labels it does predict, achieve higher quality than a standard MLC method that is forced to predict every label. The two chart families below make that claim visible.
 
@@ -185,10 +214,17 @@ panel).
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{rf/abstain/f1_pa/aggregate/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/_shared/aggregate/abstention_rate.pdf}\hfill
 \mpanel{rf/abstain/f1_pa/aggregate/paired_bars.pdf}
-\caption{RF (f1\_pa) averaged across all datasets: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_rf_f1_pa_agg_basic}
+\caption{RF (f1\_pa) averaged across all datasets: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_rf_f1_pa_agg_rates_quality}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/f1_pa/aggregate/coverage_risk.pdf}
+\caption{RF (f1\_pa) averaged across all datasets: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_rf_f1_pa_agg_coverage_risk}
 \end{figure}
 
 \begin{figure}[!htbp]
@@ -213,10 +249,17 @@ panel).
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{rf/abstain/f1_pa/per_dataset/GpositivePseAAC/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/_shared/per_dataset/GpositivePseAAC/abstention_rate.pdf}\hfill
 \mpanel{rf/abstain/f1_pa/per_dataset/GpositivePseAAC/paired_bars.pdf}
-\caption{RF (f1\_pa) on \texttt{GpositivePseAAC}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_rf_f1_pa_GpositivePseAAC_basic}
+\caption{RF (f1\_pa) on \texttt{GpositivePseAAC}: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_rf_f1_pa_GpositivePseAAC_rates_quality}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/f1_pa/per_dataset/GpositivePseAAC/coverage_risk.pdf}
+\caption{RF (f1\_pa) on \texttt{GpositivePseAAC}: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_rf_f1_pa_GpositivePseAAC_coverage_risk}
 \end{figure}
 
 \begin{figure}[!htbp]
@@ -239,10 +282,17 @@ panel).
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{rf/abstain/f1_pa/per_dataset/emotions/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/_shared/per_dataset/emotions/abstention_rate.pdf}\hfill
 \mpanel{rf/abstain/f1_pa/per_dataset/emotions/paired_bars.pdf}
-\caption{RF (f1\_pa) on \texttt{emotions}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_rf_f1_pa_emotions_basic}
+\caption{RF (f1\_pa) on \texttt{emotions}: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_rf_f1_pa_emotions_rates_quality}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/f1_pa/per_dataset/emotions/coverage_risk.pdf}
+\caption{RF (f1\_pa) on \texttt{emotions}: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_rf_f1_pa_emotions_coverage_risk}
 \end{figure}
 
 \begin{figure}[!htbp]
@@ -265,10 +315,17 @@ panel).
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{rf/abstain/f1_pa/per_dataset/scene/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/_shared/per_dataset/scene/abstention_rate.pdf}\hfill
 \mpanel{rf/abstain/f1_pa/per_dataset/scene/paired_bars.pdf}
-\caption{RF (f1\_pa) on \texttt{scene}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_rf_f1_pa_scene_basic}
+\caption{RF (f1\_pa) on \texttt{scene}: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_rf_f1_pa_scene_rates_quality}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/f1_pa/per_dataset/scene/coverage_risk.pdf}
+\caption{RF (f1\_pa) on \texttt{scene}: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_rf_f1_pa_scene_coverage_risk}
 \end{figure}
 
 \begin{figure}[!htbp]
@@ -291,10 +348,17 @@ panel).
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{rf/abstain/f1_pa/per_dataset/PlantPseAAC/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/_shared/per_dataset/PlantPseAAC/abstention_rate.pdf}\hfill
 \mpanel{rf/abstain/f1_pa/per_dataset/PlantPseAAC/paired_bars.pdf}
-\caption{RF (f1\_pa) on \texttt{PlantPseAAC}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_rf_f1_pa_PlantPseAAC_basic}
+\caption{RF (f1\_pa) on \texttt{PlantPseAAC}: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_rf_f1_pa_PlantPseAAC_rates_quality}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/f1_pa/per_dataset/PlantPseAAC/coverage_risk.pdf}
+\caption{RF (f1\_pa) on \texttt{PlantPseAAC}: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_rf_f1_pa_PlantPseAAC_coverage_risk}
 \end{figure}
 
 \begin{figure}[!htbp]
@@ -317,10 +381,17 @@ panel).
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{rf/abstain/f1_pa/per_dataset/HumanPseAAC/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/_shared/per_dataset/HumanPseAAC/abstention_rate.pdf}\hfill
 \mpanel{rf/abstain/f1_pa/per_dataset/HumanPseAAC/paired_bars.pdf}
-\caption{RF (f1\_pa) on \texttt{HumanPseAAC}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_rf_f1_pa_HumanPseAAC_basic}
+\caption{RF (f1\_pa) on \texttt{HumanPseAAC}: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_rf_f1_pa_HumanPseAAC_rates_quality}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/f1_pa/per_dataset/HumanPseAAC/coverage_risk.pdf}
+\caption{RF (f1\_pa) on \texttt{HumanPseAAC}: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_rf_f1_pa_HumanPseAAC_coverage_risk}
 \end{figure}
 
 \begin{figure}[!htbp]
@@ -343,10 +414,17 @@ panel).
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{rf/abstain/f1_pa/per_dataset/Yeast/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/_shared/per_dataset/Yeast/abstention_rate.pdf}\hfill
 \mpanel{rf/abstain/f1_pa/per_dataset/Yeast/paired_bars.pdf}
-\caption{RF (f1\_pa) on \texttt{Yeast}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_rf_f1_pa_Yeast_basic}
+\caption{RF (f1\_pa) on \texttt{Yeast}: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_rf_f1_pa_Yeast_rates_quality}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/f1_pa/per_dataset/Yeast/coverage_risk.pdf}
+\caption{RF (f1\_pa) on \texttt{Yeast}: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_rf_f1_pa_Yeast_coverage_risk}
 \end{figure}
 
 \begin{figure}[!htbp]
@@ -369,62 +447,83 @@ panel).
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{rf/abstain/f1_pa/per_dataset/birds/coverage_risk.pdf}\hfill
-\mpanel{rf/abstain/f1_pa/per_dataset/birds/paired_bars.pdf}
-\caption{RF (f1\_pa) on \texttt{birds}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_rf_f1_pa_birds_basic}
+\mpanel{rf/abstain/_shared/per_dataset/CHD_49/abstention_rate.pdf}\hfill
+\mpanel{rf/abstain/f1_pa/per_dataset/CHD_49/paired_bars.pdf}
+\caption{RF (f1\_pa) on \texttt{CHD\_49}: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_rf_f1_pa_CHD_49_rates_quality}
 \end{figure}
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{rf/abstain/f1_pa/per_dataset/birds/coverage_risk_pareto.pdf}\hfill
-\mpanel{rf/abstain/f1_pa/per_dataset/birds/gain_heatmap.pdf}
-\caption{RF (f1\_pa) on \texttt{birds}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{f1\_pa}-f_1)$ heatmap (right).}
-\label{fig:abstain_rf_f1_pa_birds_gain}
+\mpanel{rf/abstain/f1_pa/per_dataset/CHD_49/coverage_risk.pdf}
+\caption{RF (f1\_pa) on \texttt{CHD\_49}: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_rf_f1_pa_CHD_49_coverage_risk}
 \end{figure}
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{rf/abstain/f1_pa/per_dataset/birds/efficiency_quality.pdf}\hfill
-\mpanel{rf/abstain/f1_pa/per_dataset/birds/effective_f1.pdf}
-\caption{RF (f1\_pa) on \texttt{birds} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective f1\_pa $= (1-\text{abs}) \cdot f1\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
-\label{fig:abstain_rf_f1_pa_birds_robust}
-\end{figure}
-
-\FloatBarrier
-
-\begin{figure}[!htbp]
-\centering
-\mpanel{rf/abstain/f1_pa/per_dataset/medical/coverage_risk.pdf}\hfill
-\mpanel{rf/abstain/f1_pa/per_dataset/medical/paired_bars.pdf}
-\caption{RF (f1\_pa) on \texttt{medical}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_rf_f1_pa_medical_basic}
+\mpanel{rf/abstain/f1_pa/per_dataset/CHD_49/coverage_risk_pareto.pdf}\hfill
+\mpanel{rf/abstain/f1_pa/per_dataset/CHD_49/gain_heatmap.pdf}
+\caption{RF (f1\_pa) on \texttt{CHD\_49}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{f1\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_rf_f1_pa_CHD_49_gain}
 \end{figure}
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{rf/abstain/f1_pa/per_dataset/medical/coverage_risk_pareto.pdf}\hfill
-\mpanel{rf/abstain/f1_pa/per_dataset/medical/gain_heatmap.pdf}
-\caption{RF (f1\_pa) on \texttt{medical}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{f1\_pa}-f_1)$ heatmap (right).}
-\label{fig:abstain_rf_f1_pa_medical_gain}
-\end{figure}
-
-\begin{figure}[!htbp]
-\centering
-\mpanel{rf/abstain/f1_pa/per_dataset/medical/efficiency_quality.pdf}\hfill
-\mpanel{rf/abstain/f1_pa/per_dataset/medical/effective_f1.pdf}
-\caption{RF (f1\_pa) on \texttt{medical} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective f1\_pa $= (1-\text{abs}) \cdot f1\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
-\label{fig:abstain_rf_f1_pa_medical_robust}
+\mpanel{rf/abstain/f1_pa/per_dataset/CHD_49/efficiency_quality.pdf}\hfill
+\mpanel{rf/abstain/f1_pa/per_dataset/CHD_49/effective_f1.pdf}
+\caption{RF (f1\_pa) on \texttt{CHD\_49} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective f1\_pa $= (1-\text{abs}) \cdot f1\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_rf_f1_pa_CHD_49_robust}
 \end{figure}
 
 \FloatBarrier
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{rf/abstain/f1_pa/per_dataset/enron/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/_shared/per_dataset/Water-quality/abstention_rate.pdf}\hfill
+\mpanel{rf/abstain/f1_pa/per_dataset/Water-quality/paired_bars.pdf}
+\caption{RF (f1\_pa) on \texttt{Water-quality}: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_rf_f1_pa_Water-quality_rates_quality}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/f1_pa/per_dataset/Water-quality/coverage_risk.pdf}
+\caption{RF (f1\_pa) on \texttt{Water-quality}: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_rf_f1_pa_Water-quality_coverage_risk}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/f1_pa/per_dataset/Water-quality/coverage_risk_pareto.pdf}\hfill
+\mpanel{rf/abstain/f1_pa/per_dataset/Water-quality/gain_heatmap.pdf}
+\caption{RF (f1\_pa) on \texttt{Water-quality}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{f1\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_rf_f1_pa_Water-quality_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/f1_pa/per_dataset/Water-quality/efficiency_quality.pdf}\hfill
+\mpanel{rf/abstain/f1_pa/per_dataset/Water-quality/effective_f1.pdf}
+\caption{RF (f1\_pa) on \texttt{Water-quality} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective f1\_pa $= (1-\text{abs}) \cdot f1\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_rf_f1_pa_Water-quality_robust}
+\end{figure}
+
+\FloatBarrier
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/_shared/per_dataset/enron/abstention_rate.pdf}\hfill
 \mpanel{rf/abstain/f1_pa/per_dataset/enron/paired_bars.pdf}
-\caption{RF (f1\_pa) on \texttt{enron}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_rf_f1_pa_enron_basic}
+\caption{RF (f1\_pa) on \texttt{enron}: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_rf_f1_pa_enron_rates_quality}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/f1_pa/per_dataset/enron/coverage_risk.pdf}
+\caption{RF (f1\_pa) on \texttt{enron}: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_rf_f1_pa_enron_coverage_risk}
 \end{figure}
 
 \begin{figure}[!htbp]
@@ -451,10 +550,17 @@ panel).
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{rf/abstain/jaccard_pa/aggregate/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/_shared/aggregate/abstention_rate.pdf}\hfill
 \mpanel{rf/abstain/jaccard_pa/aggregate/paired_bars.pdf}
-\caption{RF (jaccard\_pa) averaged across all datasets: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_rf_jaccard_pa_agg_basic}
+\caption{RF (jaccard\_pa) averaged across all datasets: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_rf_jaccard_pa_agg_rates_quality}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/jaccard_pa/aggregate/coverage_risk.pdf}
+\caption{RF (jaccard\_pa) averaged across all datasets: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_rf_jaccard_pa_agg_coverage_risk}
 \end{figure}
 
 \begin{figure}[!htbp]
@@ -479,10 +585,17 @@ panel).
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{rf/abstain/jaccard_pa/per_dataset/GpositivePseAAC/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/_shared/per_dataset/GpositivePseAAC/abstention_rate.pdf}\hfill
 \mpanel{rf/abstain/jaccard_pa/per_dataset/GpositivePseAAC/paired_bars.pdf}
-\caption{RF (jaccard\_pa) on \texttt{GpositivePseAAC}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_rf_jaccard_pa_GpositivePseAAC_basic}
+\caption{RF (jaccard\_pa) on \texttt{GpositivePseAAC}: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_rf_jaccard_pa_GpositivePseAAC_rates_quality}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/jaccard_pa/per_dataset/GpositivePseAAC/coverage_risk.pdf}
+\caption{RF (jaccard\_pa) on \texttt{GpositivePseAAC}: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_rf_jaccard_pa_GpositivePseAAC_coverage_risk}
 \end{figure}
 
 \begin{figure}[!htbp]
@@ -505,10 +618,17 @@ panel).
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{rf/abstain/jaccard_pa/per_dataset/emotions/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/_shared/per_dataset/emotions/abstention_rate.pdf}\hfill
 \mpanel{rf/abstain/jaccard_pa/per_dataset/emotions/paired_bars.pdf}
-\caption{RF (jaccard\_pa) on \texttt{emotions}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_rf_jaccard_pa_emotions_basic}
+\caption{RF (jaccard\_pa) on \texttt{emotions}: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_rf_jaccard_pa_emotions_rates_quality}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/jaccard_pa/per_dataset/emotions/coverage_risk.pdf}
+\caption{RF (jaccard\_pa) on \texttt{emotions}: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_rf_jaccard_pa_emotions_coverage_risk}
 \end{figure}
 
 \begin{figure}[!htbp]
@@ -531,10 +651,17 @@ panel).
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{rf/abstain/jaccard_pa/per_dataset/scene/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/_shared/per_dataset/scene/abstention_rate.pdf}\hfill
 \mpanel{rf/abstain/jaccard_pa/per_dataset/scene/paired_bars.pdf}
-\caption{RF (jaccard\_pa) on \texttt{scene}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_rf_jaccard_pa_scene_basic}
+\caption{RF (jaccard\_pa) on \texttt{scene}: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_rf_jaccard_pa_scene_rates_quality}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/jaccard_pa/per_dataset/scene/coverage_risk.pdf}
+\caption{RF (jaccard\_pa) on \texttt{scene}: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_rf_jaccard_pa_scene_coverage_risk}
 \end{figure}
 
 \begin{figure}[!htbp]
@@ -557,10 +684,17 @@ panel).
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{rf/abstain/jaccard_pa/per_dataset/PlantPseAAC/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/_shared/per_dataset/PlantPseAAC/abstention_rate.pdf}\hfill
 \mpanel{rf/abstain/jaccard_pa/per_dataset/PlantPseAAC/paired_bars.pdf}
-\caption{RF (jaccard\_pa) on \texttt{PlantPseAAC}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_rf_jaccard_pa_PlantPseAAC_basic}
+\caption{RF (jaccard\_pa) on \texttt{PlantPseAAC}: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_rf_jaccard_pa_PlantPseAAC_rates_quality}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/jaccard_pa/per_dataset/PlantPseAAC/coverage_risk.pdf}
+\caption{RF (jaccard\_pa) on \texttt{PlantPseAAC}: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_rf_jaccard_pa_PlantPseAAC_coverage_risk}
 \end{figure}
 
 \begin{figure}[!htbp]
@@ -583,10 +717,17 @@ panel).
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{rf/abstain/jaccard_pa/per_dataset/HumanPseAAC/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/_shared/per_dataset/HumanPseAAC/abstention_rate.pdf}\hfill
 \mpanel{rf/abstain/jaccard_pa/per_dataset/HumanPseAAC/paired_bars.pdf}
-\caption{RF (jaccard\_pa) on \texttt{HumanPseAAC}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_rf_jaccard_pa_HumanPseAAC_basic}
+\caption{RF (jaccard\_pa) on \texttt{HumanPseAAC}: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_rf_jaccard_pa_HumanPseAAC_rates_quality}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/jaccard_pa/per_dataset/HumanPseAAC/coverage_risk.pdf}
+\caption{RF (jaccard\_pa) on \texttt{HumanPseAAC}: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_rf_jaccard_pa_HumanPseAAC_coverage_risk}
 \end{figure}
 
 \begin{figure}[!htbp]
@@ -609,10 +750,17 @@ panel).
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{rf/abstain/jaccard_pa/per_dataset/Yeast/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/_shared/per_dataset/Yeast/abstention_rate.pdf}\hfill
 \mpanel{rf/abstain/jaccard_pa/per_dataset/Yeast/paired_bars.pdf}
-\caption{RF (jaccard\_pa) on \texttt{Yeast}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_rf_jaccard_pa_Yeast_basic}
+\caption{RF (jaccard\_pa) on \texttt{Yeast}: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_rf_jaccard_pa_Yeast_rates_quality}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/jaccard_pa/per_dataset/Yeast/coverage_risk.pdf}
+\caption{RF (jaccard\_pa) on \texttt{Yeast}: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_rf_jaccard_pa_Yeast_coverage_risk}
 \end{figure}
 
 \begin{figure}[!htbp]
@@ -635,62 +783,83 @@ panel).
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{rf/abstain/jaccard_pa/per_dataset/birds/coverage_risk.pdf}\hfill
-\mpanel{rf/abstain/jaccard_pa/per_dataset/birds/paired_bars.pdf}
-\caption{RF (jaccard\_pa) on \texttt{birds}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_rf_jaccard_pa_birds_basic}
+\mpanel{rf/abstain/_shared/per_dataset/CHD_49/abstention_rate.pdf}\hfill
+\mpanel{rf/abstain/jaccard_pa/per_dataset/CHD_49/paired_bars.pdf}
+\caption{RF (jaccard\_pa) on \texttt{CHD\_49}: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_rf_jaccard_pa_CHD_49_rates_quality}
 \end{figure}
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{rf/abstain/jaccard_pa/per_dataset/birds/coverage_risk_pareto.pdf}\hfill
-\mpanel{rf/abstain/jaccard_pa/per_dataset/birds/gain_heatmap.pdf}
-\caption{RF (jaccard\_pa) on \texttt{birds}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{jaccard\_pa}-f_1)$ heatmap (right).}
-\label{fig:abstain_rf_jaccard_pa_birds_gain}
+\mpanel{rf/abstain/jaccard_pa/per_dataset/CHD_49/coverage_risk.pdf}
+\caption{RF (jaccard\_pa) on \texttt{CHD\_49}: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_rf_jaccard_pa_CHD_49_coverage_risk}
 \end{figure}
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{rf/abstain/jaccard_pa/per_dataset/birds/efficiency_quality.pdf}\hfill
-\mpanel{rf/abstain/jaccard_pa/per_dataset/birds/effective_f1.pdf}
-\caption{RF (jaccard\_pa) on \texttt{birds} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective jaccard\_pa $= (1-\text{abs}) \cdot jaccard\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
-\label{fig:abstain_rf_jaccard_pa_birds_robust}
-\end{figure}
-
-\FloatBarrier
-
-\begin{figure}[!htbp]
-\centering
-\mpanel{rf/abstain/jaccard_pa/per_dataset/medical/coverage_risk.pdf}\hfill
-\mpanel{rf/abstain/jaccard_pa/per_dataset/medical/paired_bars.pdf}
-\caption{RF (jaccard\_pa) on \texttt{medical}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_rf_jaccard_pa_medical_basic}
+\mpanel{rf/abstain/jaccard_pa/per_dataset/CHD_49/coverage_risk_pareto.pdf}\hfill
+\mpanel{rf/abstain/jaccard_pa/per_dataset/CHD_49/gain_heatmap.pdf}
+\caption{RF (jaccard\_pa) on \texttt{CHD\_49}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{jaccard\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_rf_jaccard_pa_CHD_49_gain}
 \end{figure}
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{rf/abstain/jaccard_pa/per_dataset/medical/coverage_risk_pareto.pdf}\hfill
-\mpanel{rf/abstain/jaccard_pa/per_dataset/medical/gain_heatmap.pdf}
-\caption{RF (jaccard\_pa) on \texttt{medical}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{jaccard\_pa}-f_1)$ heatmap (right).}
-\label{fig:abstain_rf_jaccard_pa_medical_gain}
-\end{figure}
-
-\begin{figure}[!htbp]
-\centering
-\mpanel{rf/abstain/jaccard_pa/per_dataset/medical/efficiency_quality.pdf}\hfill
-\mpanel{rf/abstain/jaccard_pa/per_dataset/medical/effective_f1.pdf}
-\caption{RF (jaccard\_pa) on \texttt{medical} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective jaccard\_pa $= (1-\text{abs}) \cdot jaccard\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
-\label{fig:abstain_rf_jaccard_pa_medical_robust}
+\mpanel{rf/abstain/jaccard_pa/per_dataset/CHD_49/efficiency_quality.pdf}\hfill
+\mpanel{rf/abstain/jaccard_pa/per_dataset/CHD_49/effective_f1.pdf}
+\caption{RF (jaccard\_pa) on \texttt{CHD\_49} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective jaccard\_pa $= (1-\text{abs}) \cdot jaccard\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_rf_jaccard_pa_CHD_49_robust}
 \end{figure}
 
 \FloatBarrier
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{rf/abstain/jaccard_pa/per_dataset/enron/coverage_risk.pdf}\hfill
+\mpanel{rf/abstain/_shared/per_dataset/Water-quality/abstention_rate.pdf}\hfill
+\mpanel{rf/abstain/jaccard_pa/per_dataset/Water-quality/paired_bars.pdf}
+\caption{RF (jaccard\_pa) on \texttt{Water-quality}: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_rf_jaccard_pa_Water-quality_rates_quality}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/jaccard_pa/per_dataset/Water-quality/coverage_risk.pdf}
+\caption{RF (jaccard\_pa) on \texttt{Water-quality}: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_rf_jaccard_pa_Water-quality_coverage_risk}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/jaccard_pa/per_dataset/Water-quality/coverage_risk_pareto.pdf}\hfill
+\mpanel{rf/abstain/jaccard_pa/per_dataset/Water-quality/gain_heatmap.pdf}
+\caption{RF (jaccard\_pa) on \texttt{Water-quality}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{jaccard\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_rf_jaccard_pa_Water-quality_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/jaccard_pa/per_dataset/Water-quality/efficiency_quality.pdf}\hfill
+\mpanel{rf/abstain/jaccard_pa/per_dataset/Water-quality/effective_f1.pdf}
+\caption{RF (jaccard\_pa) on \texttt{Water-quality} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective jaccard\_pa $= (1-\text{abs}) \cdot jaccard\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_rf_jaccard_pa_Water-quality_robust}
+\end{figure}
+
+\FloatBarrier
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/_shared/per_dataset/enron/abstention_rate.pdf}\hfill
 \mpanel{rf/abstain/jaccard_pa/per_dataset/enron/paired_bars.pdf}
-\caption{RF (jaccard\_pa) on \texttt{enron}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_rf_jaccard_pa_enron_basic}
+\caption{RF (jaccard\_pa) on \texttt{enron}: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_rf_jaccard_pa_enron_rates_quality}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{rf/abstain/jaccard_pa/per_dataset/enron/coverage_risk.pdf}
+\caption{RF (jaccard\_pa) on \texttt{enron}: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_rf_jaccard_pa_enron_coverage_risk}
 \end{figure}
 
 \begin{figure}[!htbp]
@@ -717,10 +886,17 @@ panel).
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{lgbm/abstain/f1_pa/aggregate/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/_shared/aggregate/abstention_rate.pdf}\hfill
 \mpanel{lgbm/abstain/f1_pa/aggregate/paired_bars.pdf}
-\caption{LGBM (f1\_pa) averaged across all datasets: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_lgbm_f1_pa_agg_basic}
+\caption{LGBM (f1\_pa) averaged across all datasets: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_lgbm_f1_pa_agg_rates_quality}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/f1_pa/aggregate/coverage_risk.pdf}
+\caption{LGBM (f1\_pa) averaged across all datasets: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_lgbm_f1_pa_agg_coverage_risk}
 \end{figure}
 
 \begin{figure}[!htbp]
@@ -745,10 +921,17 @@ panel).
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{lgbm/abstain/f1_pa/per_dataset/GpositivePseAAC/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/_shared/per_dataset/GpositivePseAAC/abstention_rate.pdf}\hfill
 \mpanel{lgbm/abstain/f1_pa/per_dataset/GpositivePseAAC/paired_bars.pdf}
-\caption{LGBM (f1\_pa) on \texttt{GpositivePseAAC}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_lgbm_f1_pa_GpositivePseAAC_basic}
+\caption{LGBM (f1\_pa) on \texttt{GpositivePseAAC}: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_lgbm_f1_pa_GpositivePseAAC_rates_quality}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/f1_pa/per_dataset/GpositivePseAAC/coverage_risk.pdf}
+\caption{LGBM (f1\_pa) on \texttt{GpositivePseAAC}: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_lgbm_f1_pa_GpositivePseAAC_coverage_risk}
 \end{figure}
 
 \begin{figure}[!htbp]
@@ -771,10 +954,17 @@ panel).
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{lgbm/abstain/f1_pa/per_dataset/emotions/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/_shared/per_dataset/emotions/abstention_rate.pdf}\hfill
 \mpanel{lgbm/abstain/f1_pa/per_dataset/emotions/paired_bars.pdf}
-\caption{LGBM (f1\_pa) on \texttt{emotions}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_lgbm_f1_pa_emotions_basic}
+\caption{LGBM (f1\_pa) on \texttt{emotions}: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_lgbm_f1_pa_emotions_rates_quality}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/f1_pa/per_dataset/emotions/coverage_risk.pdf}
+\caption{LGBM (f1\_pa) on \texttt{emotions}: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_lgbm_f1_pa_emotions_coverage_risk}
 \end{figure}
 
 \begin{figure}[!htbp]
@@ -797,10 +987,17 @@ panel).
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{lgbm/abstain/f1_pa/per_dataset/scene/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/_shared/per_dataset/scene/abstention_rate.pdf}\hfill
 \mpanel{lgbm/abstain/f1_pa/per_dataset/scene/paired_bars.pdf}
-\caption{LGBM (f1\_pa) on \texttt{scene}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_lgbm_f1_pa_scene_basic}
+\caption{LGBM (f1\_pa) on \texttt{scene}: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_lgbm_f1_pa_scene_rates_quality}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/f1_pa/per_dataset/scene/coverage_risk.pdf}
+\caption{LGBM (f1\_pa) on \texttt{scene}: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_lgbm_f1_pa_scene_coverage_risk}
 \end{figure}
 
 \begin{figure}[!htbp]
@@ -823,10 +1020,17 @@ panel).
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{lgbm/abstain/f1_pa/per_dataset/PlantPseAAC/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/_shared/per_dataset/PlantPseAAC/abstention_rate.pdf}\hfill
 \mpanel{lgbm/abstain/f1_pa/per_dataset/PlantPseAAC/paired_bars.pdf}
-\caption{LGBM (f1\_pa) on \texttt{PlantPseAAC}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_lgbm_f1_pa_PlantPseAAC_basic}
+\caption{LGBM (f1\_pa) on \texttt{PlantPseAAC}: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_lgbm_f1_pa_PlantPseAAC_rates_quality}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/f1_pa/per_dataset/PlantPseAAC/coverage_risk.pdf}
+\caption{LGBM (f1\_pa) on \texttt{PlantPseAAC}: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_lgbm_f1_pa_PlantPseAAC_coverage_risk}
 \end{figure}
 
 \begin{figure}[!htbp]
@@ -849,10 +1053,17 @@ panel).
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{lgbm/abstain/f1_pa/per_dataset/HumanPseAAC/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/_shared/per_dataset/HumanPseAAC/abstention_rate.pdf}\hfill
 \mpanel{lgbm/abstain/f1_pa/per_dataset/HumanPseAAC/paired_bars.pdf}
-\caption{LGBM (f1\_pa) on \texttt{HumanPseAAC}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_lgbm_f1_pa_HumanPseAAC_basic}
+\caption{LGBM (f1\_pa) on \texttt{HumanPseAAC}: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_lgbm_f1_pa_HumanPseAAC_rates_quality}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/f1_pa/per_dataset/HumanPseAAC/coverage_risk.pdf}
+\caption{LGBM (f1\_pa) on \texttt{HumanPseAAC}: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_lgbm_f1_pa_HumanPseAAC_coverage_risk}
 \end{figure}
 
 \begin{figure}[!htbp]
@@ -875,10 +1086,17 @@ panel).
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{lgbm/abstain/f1_pa/per_dataset/Yeast/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/_shared/per_dataset/Yeast/abstention_rate.pdf}\hfill
 \mpanel{lgbm/abstain/f1_pa/per_dataset/Yeast/paired_bars.pdf}
-\caption{LGBM (f1\_pa) on \texttt{Yeast}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_lgbm_f1_pa_Yeast_basic}
+\caption{LGBM (f1\_pa) on \texttt{Yeast}: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_lgbm_f1_pa_Yeast_rates_quality}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/f1_pa/per_dataset/Yeast/coverage_risk.pdf}
+\caption{LGBM (f1\_pa) on \texttt{Yeast}: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_lgbm_f1_pa_Yeast_coverage_risk}
 \end{figure}
 
 \begin{figure}[!htbp]
@@ -901,52 +1119,66 @@ panel).
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{lgbm/abstain/f1_pa/per_dataset/birds/coverage_risk.pdf}\hfill
-\mpanel{lgbm/abstain/f1_pa/per_dataset/birds/paired_bars.pdf}
-\caption{LGBM (f1\_pa) on \texttt{birds}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_lgbm_f1_pa_birds_basic}
+\mpanel{lgbm/abstain/_shared/per_dataset/CHD_49/abstention_rate.pdf}\hfill
+\mpanel{lgbm/abstain/f1_pa/per_dataset/CHD_49/paired_bars.pdf}
+\caption{LGBM (f1\_pa) on \texttt{CHD\_49}: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_lgbm_f1_pa_CHD_49_rates_quality}
 \end{figure}
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{lgbm/abstain/f1_pa/per_dataset/birds/coverage_risk_pareto.pdf}\hfill
-\mpanel{lgbm/abstain/f1_pa/per_dataset/birds/gain_heatmap.pdf}
-\caption{LGBM (f1\_pa) on \texttt{birds}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{f1\_pa}-f_1)$ heatmap (right).}
-\label{fig:abstain_lgbm_f1_pa_birds_gain}
+\mpanel{lgbm/abstain/f1_pa/per_dataset/CHD_49/coverage_risk.pdf}
+\caption{LGBM (f1\_pa) on \texttt{CHD\_49}: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_lgbm_f1_pa_CHD_49_coverage_risk}
 \end{figure}
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{lgbm/abstain/f1_pa/per_dataset/birds/efficiency_quality.pdf}\hfill
-\mpanel{lgbm/abstain/f1_pa/per_dataset/birds/effective_f1.pdf}
-\caption{LGBM (f1\_pa) on \texttt{birds} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective f1\_pa $= (1-\text{abs}) \cdot f1\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
-\label{fig:abstain_lgbm_f1_pa_birds_robust}
+\mpanel{lgbm/abstain/f1_pa/per_dataset/CHD_49/coverage_risk_pareto.pdf}\hfill
+\mpanel{lgbm/abstain/f1_pa/per_dataset/CHD_49/gain_heatmap.pdf}
+\caption{LGBM (f1\_pa) on \texttt{CHD\_49}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{f1\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_lgbm_f1_pa_CHD_49_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/f1_pa/per_dataset/CHD_49/efficiency_quality.pdf}\hfill
+\mpanel{lgbm/abstain/f1_pa/per_dataset/CHD_49/effective_f1.pdf}
+\caption{LGBM (f1\_pa) on \texttt{CHD\_49} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective f1\_pa $= (1-\text{abs}) \cdot f1\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_lgbm_f1_pa_CHD_49_robust}
 \end{figure}
 
 \FloatBarrier
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{lgbm/abstain/f1_pa/per_dataset/medical/coverage_risk.pdf}\hfill
-\mpanel{lgbm/abstain/f1_pa/per_dataset/medical/paired_bars.pdf}
-\caption{LGBM (f1\_pa) on \texttt{medical}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_lgbm_f1_pa_medical_basic}
+\mpanel{lgbm/abstain/_shared/per_dataset/Water-quality/abstention_rate.pdf}\hfill
+\mpanel{lgbm/abstain/f1_pa/per_dataset/Water-quality/paired_bars.pdf}
+\caption{LGBM (f1\_pa) on \texttt{Water-quality}: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_lgbm_f1_pa_Water-quality_rates_quality}
 \end{figure}
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{lgbm/abstain/f1_pa/per_dataset/medical/coverage_risk_pareto.pdf}\hfill
-\mpanel{lgbm/abstain/f1_pa/per_dataset/medical/gain_heatmap.pdf}
-\caption{LGBM (f1\_pa) on \texttt{medical}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{f1\_pa}-f_1)$ heatmap (right).}
-\label{fig:abstain_lgbm_f1_pa_medical_gain}
+\mpanel{lgbm/abstain/f1_pa/per_dataset/Water-quality/coverage_risk.pdf}
+\caption{LGBM (f1\_pa) on \texttt{Water-quality}: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_lgbm_f1_pa_Water-quality_coverage_risk}
 \end{figure}
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{lgbm/abstain/f1_pa/per_dataset/medical/efficiency_quality.pdf}\hfill
-\mpanel{lgbm/abstain/f1_pa/per_dataset/medical/effective_f1.pdf}
-\caption{LGBM (f1\_pa) on \texttt{medical} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective f1\_pa $= (1-\text{abs}) \cdot f1\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
-\label{fig:abstain_lgbm_f1_pa_medical_robust}
+\mpanel{lgbm/abstain/f1_pa/per_dataset/Water-quality/coverage_risk_pareto.pdf}\hfill
+\mpanel{lgbm/abstain/f1_pa/per_dataset/Water-quality/gain_heatmap.pdf}
+\caption{LGBM (f1\_pa) on \texttt{Water-quality}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{f1\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_lgbm_f1_pa_Water-quality_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/f1_pa/per_dataset/Water-quality/efficiency_quality.pdf}\hfill
+\mpanel{lgbm/abstain/f1_pa/per_dataset/Water-quality/effective_f1.pdf}
+\caption{LGBM (f1\_pa) on \texttt{Water-quality} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective f1\_pa $= (1-\text{abs}) \cdot f1\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_lgbm_f1_pa_Water-quality_robust}
 \end{figure}
 
 \FloatBarrier
@@ -957,10 +1189,17 @@ panel).
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{lgbm/abstain/jaccard_pa/aggregate/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/_shared/aggregate/abstention_rate.pdf}\hfill
 \mpanel{lgbm/abstain/jaccard_pa/aggregate/paired_bars.pdf}
-\caption{LGBM (jaccard\_pa) averaged across all datasets: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_lgbm_jaccard_pa_agg_basic}
+\caption{LGBM (jaccard\_pa) averaged across all datasets: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_lgbm_jaccard_pa_agg_rates_quality}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/jaccard_pa/aggregate/coverage_risk.pdf}
+\caption{LGBM (jaccard\_pa) averaged across all datasets: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_lgbm_jaccard_pa_agg_coverage_risk}
 \end{figure}
 
 \begin{figure}[!htbp]
@@ -985,10 +1224,17 @@ panel).
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{lgbm/abstain/jaccard_pa/per_dataset/GpositivePseAAC/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/_shared/per_dataset/GpositivePseAAC/abstention_rate.pdf}\hfill
 \mpanel{lgbm/abstain/jaccard_pa/per_dataset/GpositivePseAAC/paired_bars.pdf}
-\caption{LGBM (jaccard\_pa) on \texttt{GpositivePseAAC}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_lgbm_jaccard_pa_GpositivePseAAC_basic}
+\caption{LGBM (jaccard\_pa) on \texttt{GpositivePseAAC}: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_lgbm_jaccard_pa_GpositivePseAAC_rates_quality}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/GpositivePseAAC/coverage_risk.pdf}
+\caption{LGBM (jaccard\_pa) on \texttt{GpositivePseAAC}: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_lgbm_jaccard_pa_GpositivePseAAC_coverage_risk}
 \end{figure}
 
 \begin{figure}[!htbp]
@@ -1011,10 +1257,17 @@ panel).
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{lgbm/abstain/jaccard_pa/per_dataset/emotions/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/_shared/per_dataset/emotions/abstention_rate.pdf}\hfill
 \mpanel{lgbm/abstain/jaccard_pa/per_dataset/emotions/paired_bars.pdf}
-\caption{LGBM (jaccard\_pa) on \texttt{emotions}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_lgbm_jaccard_pa_emotions_basic}
+\caption{LGBM (jaccard\_pa) on \texttt{emotions}: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_lgbm_jaccard_pa_emotions_rates_quality}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/emotions/coverage_risk.pdf}
+\caption{LGBM (jaccard\_pa) on \texttt{emotions}: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_lgbm_jaccard_pa_emotions_coverage_risk}
 \end{figure}
 
 \begin{figure}[!htbp]
@@ -1037,10 +1290,17 @@ panel).
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{lgbm/abstain/jaccard_pa/per_dataset/scene/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/_shared/per_dataset/scene/abstention_rate.pdf}\hfill
 \mpanel{lgbm/abstain/jaccard_pa/per_dataset/scene/paired_bars.pdf}
-\caption{LGBM (jaccard\_pa) on \texttt{scene}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_lgbm_jaccard_pa_scene_basic}
+\caption{LGBM (jaccard\_pa) on \texttt{scene}: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_lgbm_jaccard_pa_scene_rates_quality}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/scene/coverage_risk.pdf}
+\caption{LGBM (jaccard\_pa) on \texttt{scene}: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_lgbm_jaccard_pa_scene_coverage_risk}
 \end{figure}
 
 \begin{figure}[!htbp]
@@ -1063,10 +1323,17 @@ panel).
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{lgbm/abstain/jaccard_pa/per_dataset/PlantPseAAC/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/_shared/per_dataset/PlantPseAAC/abstention_rate.pdf}\hfill
 \mpanel{lgbm/abstain/jaccard_pa/per_dataset/PlantPseAAC/paired_bars.pdf}
-\caption{LGBM (jaccard\_pa) on \texttt{PlantPseAAC}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_lgbm_jaccard_pa_PlantPseAAC_basic}
+\caption{LGBM (jaccard\_pa) on \texttt{PlantPseAAC}: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_lgbm_jaccard_pa_PlantPseAAC_rates_quality}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/PlantPseAAC/coverage_risk.pdf}
+\caption{LGBM (jaccard\_pa) on \texttt{PlantPseAAC}: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_lgbm_jaccard_pa_PlantPseAAC_coverage_risk}
 \end{figure}
 
 \begin{figure}[!htbp]
@@ -1089,10 +1356,17 @@ panel).
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{lgbm/abstain/jaccard_pa/per_dataset/HumanPseAAC/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/_shared/per_dataset/HumanPseAAC/abstention_rate.pdf}\hfill
 \mpanel{lgbm/abstain/jaccard_pa/per_dataset/HumanPseAAC/paired_bars.pdf}
-\caption{LGBM (jaccard\_pa) on \texttt{HumanPseAAC}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_lgbm_jaccard_pa_HumanPseAAC_basic}
+\caption{LGBM (jaccard\_pa) on \texttt{HumanPseAAC}: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_lgbm_jaccard_pa_HumanPseAAC_rates_quality}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/HumanPseAAC/coverage_risk.pdf}
+\caption{LGBM (jaccard\_pa) on \texttt{HumanPseAAC}: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_lgbm_jaccard_pa_HumanPseAAC_coverage_risk}
 \end{figure}
 
 \begin{figure}[!htbp]
@@ -1115,10 +1389,17 @@ panel).
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{lgbm/abstain/jaccard_pa/per_dataset/Yeast/coverage_risk.pdf}\hfill
+\mpanel{lgbm/abstain/_shared/per_dataset/Yeast/abstention_rate.pdf}\hfill
 \mpanel{lgbm/abstain/jaccard_pa/per_dataset/Yeast/paired_bars.pdf}
-\caption{LGBM (jaccard\_pa) on \texttt{Yeast}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_lgbm_jaccard_pa_Yeast_basic}
+\caption{LGBM (jaccard\_pa) on \texttt{Yeast}: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_lgbm_jaccard_pa_Yeast_rates_quality}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/Yeast/coverage_risk.pdf}
+\caption{LGBM (jaccard\_pa) on \texttt{Yeast}: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_lgbm_jaccard_pa_Yeast_coverage_risk}
 \end{figure}
 
 \begin{figure}[!htbp]
@@ -1141,52 +1422,66 @@ panel).
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{lgbm/abstain/jaccard_pa/per_dataset/birds/coverage_risk.pdf}\hfill
-\mpanel{lgbm/abstain/jaccard_pa/per_dataset/birds/paired_bars.pdf}
-\caption{LGBM (jaccard\_pa) on \texttt{birds}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_lgbm_jaccard_pa_birds_basic}
+\mpanel{lgbm/abstain/_shared/per_dataset/CHD_49/abstention_rate.pdf}\hfill
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/CHD_49/paired_bars.pdf}
+\caption{LGBM (jaccard\_pa) on \texttt{CHD\_49}: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_lgbm_jaccard_pa_CHD_49_rates_quality}
 \end{figure}
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{lgbm/abstain/jaccard_pa/per_dataset/birds/coverage_risk_pareto.pdf}\hfill
-\mpanel{lgbm/abstain/jaccard_pa/per_dataset/birds/gain_heatmap.pdf}
-\caption{LGBM (jaccard\_pa) on \texttt{birds}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{jaccard\_pa}-f_1)$ heatmap (right).}
-\label{fig:abstain_lgbm_jaccard_pa_birds_gain}
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/CHD_49/coverage_risk.pdf}
+\caption{LGBM (jaccard\_pa) on \texttt{CHD\_49}: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_lgbm_jaccard_pa_CHD_49_coverage_risk}
 \end{figure}
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{lgbm/abstain/jaccard_pa/per_dataset/birds/efficiency_quality.pdf}\hfill
-\mpanel{lgbm/abstain/jaccard_pa/per_dataset/birds/effective_f1.pdf}
-\caption{LGBM (jaccard\_pa) on \texttt{birds} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective jaccard\_pa $= (1-\text{abs}) \cdot jaccard\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
-\label{fig:abstain_lgbm_jaccard_pa_birds_robust}
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/CHD_49/coverage_risk_pareto.pdf}\hfill
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/CHD_49/gain_heatmap.pdf}
+\caption{LGBM (jaccard\_pa) on \texttt{CHD\_49}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{jaccard\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_lgbm_jaccard_pa_CHD_49_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/CHD_49/efficiency_quality.pdf}\hfill
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/CHD_49/effective_f1.pdf}
+\caption{LGBM (jaccard\_pa) on \texttt{CHD\_49} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective jaccard\_pa $= (1-\text{abs}) \cdot jaccard\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_lgbm_jaccard_pa_CHD_49_robust}
 \end{figure}
 
 \FloatBarrier
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{lgbm/abstain/jaccard_pa/per_dataset/medical/coverage_risk.pdf}\hfill
-\mpanel{lgbm/abstain/jaccard_pa/per_dataset/medical/paired_bars.pdf}
-\caption{LGBM (jaccard\_pa) on \texttt{medical}: coverage-risk scatter (left) and standard-MLC-vs-abstention paired bars across $\alpha\in\{0.0,0.1,0.2,0.3\}$ (right).}
-\label{fig:abstain_lgbm_jaccard_pa_medical_basic}
+\mpanel{lgbm/abstain/_shared/per_dataset/Water-quality/abstention_rate.pdf}\hfill
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/Water-quality/paired_bars.pdf}
+\caption{LGBM (jaccard\_pa) on \texttt{Water-quality}: abstention rates (left) and standard-MLC-vs-abstention paired bars (right), across $\alpha\in\{0.0,0.1,0.2,0.3\}$. Left: bar = \texttt{abs} (\% of instances with at least one abstained label, instance-level); dot = \texttt{aabs} (\% of labels skipped, per-cell label-level). These rates are independent of the quality metric. Right: blue = standard MLC quality (no abstention) on the matched BV metric; coloured = with-abstention quality on retained labels.}
+\label{fig:abstain_lgbm_jaccard_pa_Water-quality_rates_quality}
 \end{figure}
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{lgbm/abstain/jaccard_pa/per_dataset/medical/coverage_risk_pareto.pdf}\hfill
-\mpanel{lgbm/abstain/jaccard_pa/per_dataset/medical/gain_heatmap.pdf}
-\caption{LGBM (jaccard\_pa) on \texttt{medical}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{jaccard\_pa}-f_1)$ heatmap (right).}
-\label{fig:abstain_lgbm_jaccard_pa_medical_gain}
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/Water-quality/coverage_risk.pdf}
+\caption{LGBM (jaccard\_pa) on \texttt{Water-quality}: coverage-risk scatter. Each point is one (method, noise) pair; x = abstention rate, y = quality on retained labels. Points above the dashed line beat the best standard-MLC baseline.}
+\label{fig:abstain_lgbm_jaccard_pa_Water-quality_coverage_risk}
 \end{figure}
 
 \begin{figure}[!htbp]
 \centering
-\mpanel{lgbm/abstain/jaccard_pa/per_dataset/medical/efficiency_quality.pdf}\hfill
-\mpanel{lgbm/abstain/jaccard_pa/per_dataset/medical/effective_f1.pdf}
-\caption{LGBM (jaccard\_pa) on \texttt{medical} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective jaccard\_pa $= (1-\text{abs}) \cdot jaccard\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
-\label{fig:abstain_lgbm_jaccard_pa_medical_robust}
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/Water-quality/coverage_risk_pareto.pdf}\hfill
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/Water-quality/gain_heatmap.pdf}
+\caption{LGBM (jaccard\_pa) on \texttt{Water-quality}: Pareto frontier of (abstention, retained quality) with the win-region shaded green (left); per-method per-noise gain $(\text{jaccard\_pa}-f_1)$ heatmap (right).}
+\label{fig:abstain_lgbm_jaccard_pa_Water-quality_gain}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/Water-quality/efficiency_quality.pdf}\hfill
+\mpanel{lgbm/abstain/jaccard_pa/per_dataset/Water-quality/effective_f1.pdf}
+\caption{LGBM (jaccard\_pa) on \texttt{Water-quality} --- robustness view. Left: efficiency-quality scatter (x = coverage $= 1-\text{abs}$); upper-right is robust (predicts many labels and keeps quality high). Right: effective jaccard\_pa $= (1-\text{abs}) \cdot jaccard\_pa$, i.e.\ retained quality penalised by skipped coverage. A method whose effective curve stays above the dashed standard-MLC baseline at every $\alpha$ is robust to noise, not just selectively abstaining on hard labels.}
+\label{fig:abstain_lgbm_jaccard_pa_Water-quality_robust}
 \end{figure}
 
 \FloatBarrier
@@ -1504,104 +1799,104 @@ panel).
 
 \FloatBarrier
 
-\subsection{birds ($K=19$)}
+\subsection{CHD\_49 ($K=6$)}
 
-\subsubsection*{RF $\bullet$ \texttt{birds} $\bullet$ BinaryVector --- Standard MLC predictions}
+\subsubsection*{RF $\bullet$ \texttt{CHD\_49} $\bullet$ BinaryVector --- Standard MLC predictions}
 \begin{table}[!htbp]
 \centering
 \setlength{\tabcolsep}{2pt}
 \renewcommand{\arraystretch}{0.6}
 \begin{tabular}{ccc}
-\mpanel{rf/per_dataset/birds/bv/afrd.pdf} & \mpanel{rf/per_dataset/birds/bv/example_precision.pdf} & \mpanel{rf/per_dataset/birds/bv/example_recall.pdf} \\
-\mpanel{rf/per_dataset/birds/bv/f1.pdf} & \mpanel{rf/per_dataset/birds/bv/hamming_accuracy.pdf} & \mpanel{rf/per_dataset/birds/bv/jaccard.pdf} \\
-\mpanel{rf/per_dataset/birds/bv/macro_f1.pdf} & \mpanel{rf/per_dataset/birds/bv/macro_precision.pdf} & \mpanel{rf/per_dataset/birds/bv/macro_recall.pdf} \\
-\mpanel{rf/per_dataset/birds/bv/mfrd.pdf} & \mpanel{rf/per_dataset/birds/bv/micro_f1.pdf} & \mpanel{rf/per_dataset/birds/bv/micro_precision.pdf} \\
-\mpanel{rf/per_dataset/birds/bv/micro_recall.pdf} & \mpanel{rf/per_dataset/birds/bv/subset0_1.pdf} &  \\
+\mpanel{rf/per_dataset/CHD_49/bv/afrd.pdf} & \mpanel{rf/per_dataset/CHD_49/bv/example_precision.pdf} & \mpanel{rf/per_dataset/CHD_49/bv/example_recall.pdf} \\
+\mpanel{rf/per_dataset/CHD_49/bv/f1.pdf} & \mpanel{rf/per_dataset/CHD_49/bv/hamming_accuracy.pdf} & \mpanel{rf/per_dataset/CHD_49/bv/jaccard.pdf} \\
+\mpanel{rf/per_dataset/CHD_49/bv/macro_f1.pdf} & \mpanel{rf/per_dataset/CHD_49/bv/macro_precision.pdf} & \mpanel{rf/per_dataset/CHD_49/bv/macro_recall.pdf} \\
+\mpanel{rf/per_dataset/CHD_49/bv/mfrd.pdf} & \mpanel{rf/per_dataset/CHD_49/bv/micro_f1.pdf} & \mpanel{rf/per_dataset/CHD_49/bv/micro_precision.pdf} \\
+\mpanel{rf/per_dataset/CHD_49/bv/micro_recall.pdf} & \mpanel{rf/per_dataset/CHD_49/bv/subset0_1.pdf} &  \\
 \end{tabular}
-\caption{Standard MLC predictions (BinaryVector) on \texttt{birds} (RF base learner).}
-\label{tab:rf_birds_bv}
+\caption{Standard MLC predictions (BinaryVector) on \texttt{CHD\_49} (RF base learner).}
+\label{tab:rf_CHD_49_bv}
 \end{table}
 
-\subsubsection*{RF $\bullet$ \texttt{birds} $\bullet$ PartialAbstention --- Partial abstention}
+\subsubsection*{RF $\bullet$ \texttt{CHD\_49} $\bullet$ PartialAbstention --- Partial abstention}
 \begin{table}[!htbp]
 \centering
 \setlength{\tabcolsep}{2pt}
 \renewcommand{\arraystretch}{0.6}
 \begin{tabular}{ccc}
-\mpanel{rf/per_dataset/birds/pa/aabs.pdf} & \mpanel{rf/per_dataset/birds/pa/abs.pdf} & \mpanel{rf/per_dataset/birds/pa/afrd_pa.pdf} \\
-\mpanel{rf/per_dataset/birds/pa/arec.pdf} & \mpanel{rf/per_dataset/birds/pa/example_precision_pa.pdf} & \mpanel{rf/per_dataset/birds/pa/example_recall_pa.pdf} \\
-\mpanel{rf/per_dataset/birds/pa/f1_pa.pdf} & \mpanel{rf/per_dataset/birds/pa/hamming_accuracy_pa.pdf} & \mpanel{rf/per_dataset/birds/pa/jaccard_pa.pdf} \\
-\mpanel{rf/per_dataset/birds/pa/macro_f1_pa.pdf} & \mpanel{rf/per_dataset/birds/pa/macro_precision_pa.pdf} & \mpanel{rf/per_dataset/birds/pa/macro_recall_pa.pdf} \\
-\mpanel{rf/per_dataset/birds/pa/mfrd_pa.pdf} & \mpanel{rf/per_dataset/birds/pa/micro_f1_pa.pdf} & \mpanel{rf/per_dataset/birds/pa/micro_precision_pa.pdf} \\
-\mpanel{rf/per_dataset/birds/pa/micro_recall_pa.pdf} & \mpanel{rf/per_dataset/birds/pa/rec.pdf} & \mpanel{rf/per_dataset/birds/pa/subset0_1_pa.pdf} \\
+\mpanel{rf/per_dataset/CHD_49/pa/aabs.pdf} & \mpanel{rf/per_dataset/CHD_49/pa/abs.pdf} & \mpanel{rf/per_dataset/CHD_49/pa/afrd_pa.pdf} \\
+\mpanel{rf/per_dataset/CHD_49/pa/arec.pdf} & \mpanel{rf/per_dataset/CHD_49/pa/example_precision_pa.pdf} & \mpanel{rf/per_dataset/CHD_49/pa/example_recall_pa.pdf} \\
+\mpanel{rf/per_dataset/CHD_49/pa/f1_pa.pdf} & \mpanel{rf/per_dataset/CHD_49/pa/hamming_accuracy_pa.pdf} & \mpanel{rf/per_dataset/CHD_49/pa/jaccard_pa.pdf} \\
+\mpanel{rf/per_dataset/CHD_49/pa/macro_f1_pa.pdf} & \mpanel{rf/per_dataset/CHD_49/pa/macro_precision_pa.pdf} & \mpanel{rf/per_dataset/CHD_49/pa/macro_recall_pa.pdf} \\
+\mpanel{rf/per_dataset/CHD_49/pa/mfrd_pa.pdf} & \mpanel{rf/per_dataset/CHD_49/pa/micro_f1_pa.pdf} & \mpanel{rf/per_dataset/CHD_49/pa/micro_precision_pa.pdf} \\
+\mpanel{rf/per_dataset/CHD_49/pa/micro_recall_pa.pdf} & \mpanel{rf/per_dataset/CHD_49/pa/rec.pdf} & \mpanel{rf/per_dataset/CHD_49/pa/subset0_1_pa.pdf} \\
 \end{tabular}
-\caption{Partial abstention (PartialAbstention) on \texttt{birds} (RF base learner).}
-\label{tab:rf_birds_pa}
+\caption{Partial abstention (PartialAbstention) on \texttt{CHD\_49} (RF base learner).}
+\label{tab:rf_CHD_49_pa}
 \end{table}
 
-\subsubsection*{RF $\bullet$ \texttt{birds} $\bullet$ ScoreVector --- Score-vector ranking metrics (AUROC, AUPRC, etc.)}
+\subsubsection*{RF $\bullet$ \texttt{CHD\_49} $\bullet$ ScoreVector --- Score-vector ranking metrics (AUROC, AUPRC, etc.)}
 \begin{table}[!htbp]
 \centering
 \setlength{\tabcolsep}{2pt}
 \renewcommand{\arraystretch}{0.6}
 \begin{tabular}{ccc}
-\mpanel{rf/per_dataset/birds/sv/auc_macro.pdf} & \mpanel{rf/per_dataset/birds/sv/auc_micro.pdf} & \mpanel{rf/per_dataset/birds/sv/auprc_macro.pdf} \\
-\mpanel{rf/per_dataset/birds/sv/auprc_micro.pdf} & \mpanel{rf/per_dataset/birds/sv/coverage.pdf} & \mpanel{rf/per_dataset/birds/sv/lr_ap.pdf} \\
-\mpanel{rf/per_dataset/birds/sv/one_error.pdf} & \mpanel{rf/per_dataset/birds/sv/ranking_loss.pdf} &  \\
+\mpanel{rf/per_dataset/CHD_49/sv/auc_macro.pdf} & \mpanel{rf/per_dataset/CHD_49/sv/auc_micro.pdf} & \mpanel{rf/per_dataset/CHD_49/sv/auprc_macro.pdf} \\
+\mpanel{rf/per_dataset/CHD_49/sv/auprc_micro.pdf} & \mpanel{rf/per_dataset/CHD_49/sv/coverage.pdf} & \mpanel{rf/per_dataset/CHD_49/sv/lr_ap.pdf} \\
+\mpanel{rf/per_dataset/CHD_49/sv/one_error.pdf} & \mpanel{rf/per_dataset/CHD_49/sv/ranking_loss.pdf} &  \\
 \end{tabular}
-\caption{Score-vector ranking metrics (AUROC, AUPRC, etc.) (ScoreVector) on \texttt{birds} (RF base learner).}
-\label{tab:rf_birds_sv}
+\caption{Score-vector ranking metrics (AUROC, AUPRC, etc.) (ScoreVector) on \texttt{CHD\_49} (RF base learner).}
+\label{tab:rf_CHD_49_sv}
 \end{table}
 
 \FloatBarrier
 
-\subsection{medical ($K=45$)}
+\subsection{Water-quality ($K=14$)}
 
-\subsubsection*{RF $\bullet$ \texttt{medical} $\bullet$ BinaryVector --- Standard MLC predictions}
+\subsubsection*{RF $\bullet$ \texttt{Water-quality} $\bullet$ BinaryVector --- Standard MLC predictions}
 \begin{table}[!htbp]
 \centering
 \setlength{\tabcolsep}{2pt}
 \renewcommand{\arraystretch}{0.6}
 \begin{tabular}{ccc}
-\mpanel{rf/per_dataset/medical/bv/afrd.pdf} & \mpanel{rf/per_dataset/medical/bv/example_precision.pdf} & \mpanel{rf/per_dataset/medical/bv/example_recall.pdf} \\
-\mpanel{rf/per_dataset/medical/bv/f1.pdf} & \mpanel{rf/per_dataset/medical/bv/hamming_accuracy.pdf} & \mpanel{rf/per_dataset/medical/bv/jaccard.pdf} \\
-\mpanel{rf/per_dataset/medical/bv/macro_f1.pdf} & \mpanel{rf/per_dataset/medical/bv/macro_precision.pdf} & \mpanel{rf/per_dataset/medical/bv/macro_recall.pdf} \\
-\mpanel{rf/per_dataset/medical/bv/mfrd.pdf} & \mpanel{rf/per_dataset/medical/bv/micro_f1.pdf} & \mpanel{rf/per_dataset/medical/bv/micro_precision.pdf} \\
-\mpanel{rf/per_dataset/medical/bv/micro_recall.pdf} & \mpanel{rf/per_dataset/medical/bv/subset0_1.pdf} &  \\
+\mpanel{rf/per_dataset/Water-quality/bv/afrd.pdf} & \mpanel{rf/per_dataset/Water-quality/bv/example_precision.pdf} & \mpanel{rf/per_dataset/Water-quality/bv/example_recall.pdf} \\
+\mpanel{rf/per_dataset/Water-quality/bv/f1.pdf} & \mpanel{rf/per_dataset/Water-quality/bv/hamming_accuracy.pdf} & \mpanel{rf/per_dataset/Water-quality/bv/jaccard.pdf} \\
+\mpanel{rf/per_dataset/Water-quality/bv/macro_f1.pdf} & \mpanel{rf/per_dataset/Water-quality/bv/macro_precision.pdf} & \mpanel{rf/per_dataset/Water-quality/bv/macro_recall.pdf} \\
+\mpanel{rf/per_dataset/Water-quality/bv/mfrd.pdf} & \mpanel{rf/per_dataset/Water-quality/bv/micro_f1.pdf} & \mpanel{rf/per_dataset/Water-quality/bv/micro_precision.pdf} \\
+\mpanel{rf/per_dataset/Water-quality/bv/micro_recall.pdf} & \mpanel{rf/per_dataset/Water-quality/bv/subset0_1.pdf} &  \\
 \end{tabular}
-\caption{Standard MLC predictions (BinaryVector) on \texttt{medical} (RF base learner).}
-\label{tab:rf_medical_bv}
+\caption{Standard MLC predictions (BinaryVector) on \texttt{Water-quality} (RF base learner).}
+\label{tab:rf_Water-quality_bv}
 \end{table}
 
-\subsubsection*{RF $\bullet$ \texttt{medical} $\bullet$ PartialAbstention --- Partial abstention}
+\subsubsection*{RF $\bullet$ \texttt{Water-quality} $\bullet$ PartialAbstention --- Partial abstention}
 \begin{table}[!htbp]
 \centering
 \setlength{\tabcolsep}{2pt}
 \renewcommand{\arraystretch}{0.6}
 \begin{tabular}{ccc}
-\mpanel{rf/per_dataset/medical/pa/aabs.pdf} & \mpanel{rf/per_dataset/medical/pa/abs.pdf} & \mpanel{rf/per_dataset/medical/pa/afrd_pa.pdf} \\
-\mpanel{rf/per_dataset/medical/pa/arec.pdf} & \mpanel{rf/per_dataset/medical/pa/example_precision_pa.pdf} & \mpanel{rf/per_dataset/medical/pa/example_recall_pa.pdf} \\
-\mpanel{rf/per_dataset/medical/pa/f1_pa.pdf} & \mpanel{rf/per_dataset/medical/pa/hamming_accuracy_pa.pdf} & \mpanel{rf/per_dataset/medical/pa/jaccard_pa.pdf} \\
-\mpanel{rf/per_dataset/medical/pa/macro_f1_pa.pdf} & \mpanel{rf/per_dataset/medical/pa/macro_precision_pa.pdf} & \mpanel{rf/per_dataset/medical/pa/macro_recall_pa.pdf} \\
-\mpanel{rf/per_dataset/medical/pa/mfrd_pa.pdf} & \mpanel{rf/per_dataset/medical/pa/micro_f1_pa.pdf} & \mpanel{rf/per_dataset/medical/pa/micro_precision_pa.pdf} \\
-\mpanel{rf/per_dataset/medical/pa/micro_recall_pa.pdf} & \mpanel{rf/per_dataset/medical/pa/rec.pdf} & \mpanel{rf/per_dataset/medical/pa/subset0_1_pa.pdf} \\
+\mpanel{rf/per_dataset/Water-quality/pa/aabs.pdf} & \mpanel{rf/per_dataset/Water-quality/pa/abs.pdf} & \mpanel{rf/per_dataset/Water-quality/pa/afrd_pa.pdf} \\
+\mpanel{rf/per_dataset/Water-quality/pa/arec.pdf} & \mpanel{rf/per_dataset/Water-quality/pa/example_precision_pa.pdf} & \mpanel{rf/per_dataset/Water-quality/pa/example_recall_pa.pdf} \\
+\mpanel{rf/per_dataset/Water-quality/pa/f1_pa.pdf} & \mpanel{rf/per_dataset/Water-quality/pa/hamming_accuracy_pa.pdf} & \mpanel{rf/per_dataset/Water-quality/pa/jaccard_pa.pdf} \\
+\mpanel{rf/per_dataset/Water-quality/pa/macro_f1_pa.pdf} & \mpanel{rf/per_dataset/Water-quality/pa/macro_precision_pa.pdf} & \mpanel{rf/per_dataset/Water-quality/pa/macro_recall_pa.pdf} \\
+\mpanel{rf/per_dataset/Water-quality/pa/mfrd_pa.pdf} & \mpanel{rf/per_dataset/Water-quality/pa/micro_f1_pa.pdf} & \mpanel{rf/per_dataset/Water-quality/pa/micro_precision_pa.pdf} \\
+\mpanel{rf/per_dataset/Water-quality/pa/micro_recall_pa.pdf} & \mpanel{rf/per_dataset/Water-quality/pa/rec.pdf} & \mpanel{rf/per_dataset/Water-quality/pa/subset0_1_pa.pdf} \\
 \end{tabular}
-\caption{Partial abstention (PartialAbstention) on \texttt{medical} (RF base learner).}
-\label{tab:rf_medical_pa}
+\caption{Partial abstention (PartialAbstention) on \texttt{Water-quality} (RF base learner).}
+\label{tab:rf_Water-quality_pa}
 \end{table}
 
-\subsubsection*{RF $\bullet$ \texttt{medical} $\bullet$ ScoreVector --- Score-vector ranking metrics (AUROC, AUPRC, etc.)}
+\subsubsection*{RF $\bullet$ \texttt{Water-quality} $\bullet$ ScoreVector --- Score-vector ranking metrics (AUROC, AUPRC, etc.)}
 \begin{table}[!htbp]
 \centering
 \setlength{\tabcolsep}{2pt}
 \renewcommand{\arraystretch}{0.6}
 \begin{tabular}{ccc}
-\mpanel{rf/per_dataset/medical/sv/auc_macro.pdf} & \mpanel{rf/per_dataset/medical/sv/auc_micro.pdf} & \mpanel{rf/per_dataset/medical/sv/auprc_macro.pdf} \\
-\mpanel{rf/per_dataset/medical/sv/auprc_micro.pdf} & \mpanel{rf/per_dataset/medical/sv/coverage.pdf} & \mpanel{rf/per_dataset/medical/sv/lr_ap.pdf} \\
-\mpanel{rf/per_dataset/medical/sv/one_error.pdf} & \mpanel{rf/per_dataset/medical/sv/ranking_loss.pdf} &  \\
+\mpanel{rf/per_dataset/Water-quality/sv/auc_macro.pdf} & \mpanel{rf/per_dataset/Water-quality/sv/auc_micro.pdf} & \mpanel{rf/per_dataset/Water-quality/sv/auprc_macro.pdf} \\
+\mpanel{rf/per_dataset/Water-quality/sv/auprc_micro.pdf} & \mpanel{rf/per_dataset/Water-quality/sv/coverage.pdf} & \mpanel{rf/per_dataset/Water-quality/sv/lr_ap.pdf} \\
+\mpanel{rf/per_dataset/Water-quality/sv/one_error.pdf} & \mpanel{rf/per_dataset/Water-quality/sv/ranking_loss.pdf} &  \\
 \end{tabular}
-\caption{Score-vector ranking metrics (AUROC, AUPRC, etc.) (ScoreVector) on \texttt{medical} (RF base learner).}
-\label{tab:rf_medical_sv}
+\caption{Score-vector ranking metrics (AUROC, AUPRC, etc.) (ScoreVector) on \texttt{Water-quality} (RF base learner).}
+\label{tab:rf_Water-quality_sv}
 \end{table}
 
 \FloatBarrier

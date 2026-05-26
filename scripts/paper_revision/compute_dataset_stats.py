@@ -34,8 +34,8 @@ DATASETS = [
     ("HumanPseAAC", "HumanPseAAC", "HumanPseAAC.arff", 14),
     ("Yeast", "Yeast", "Yeast.arff", 14),
     # 3 revision-extension datasets.
-    ("birds", "birds", "birds.arff", 19),
-    ("medical", "medical", "medical.arff", 45),
+    ("CHD_49", "CHD_49", "CHD_49.arff", 6),
+    ("Water-quality", "Water-quality", "Water-quality.arff", 14),
     ("enron", "enron", "enron.arff", 53),
 ]
 

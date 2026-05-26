@@ -53,22 +53,22 @@
     "CVIR": 1.82,
     "source": "computed (full dataset)"
   },
-  "birds": {
-    "display": "birds",
-    "N": 645,
-    "P": 260,
-    "K": 19,
-    "MeanIR": 5.41,
-    "CVIR": 0.8,
+  "CHD_49": {
+    "display": "CHD_49",
+    "N": 555,
+    "P": 49,
+    "K": 6,
+    "MeanIR": 5.77,
+    "CVIR": 1.6,
     "source": "computed (full dataset)"
   },
-  "medical": {
-    "display": "medical",
-    "N": 978,
-    "P": 1449,
-    "K": 45,
-    "MeanIR": 222.37,
-    "CVIR": 0.72,
+  "Water-quality": {
+    "display": "Water-quality",
+    "N": 1060,
+    "P": 16,
+    "K": 14,
+    "MeanIR": 1.77,
+    "CVIR": 0.29,
     "source": "computed (full dataset)"
   },
   "enron": {

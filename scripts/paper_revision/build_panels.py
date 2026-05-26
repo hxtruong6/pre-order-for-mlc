@@ -46,8 +46,8 @@ DATASETS = [
     "HumanPseAAC",
     "Yeast",
     # 3 revision-extension datasets.
-    "birds",
-    "medical",
+    "CHD_49",
+    "Water-quality",
     "enron",
 ]
 LEARNERS = ["RF", "LGBM"]
@@ -95,11 +95,11 @@ FOLDER_MAP = {
     ("HumanPseAAC", "LGBM"): "full_humanpseaac_lgbm_summary",
     ("Yeast", "LGBM"): "full_yeast_lgbm_summary",
     # Revision-extension datasets.
-    ("birds", "RF"): "full_birds_summary",
-    ("birds", "LGBM"): "full_birds_lgbm_summary",
+    ("CHD_49", "RF"): _ORIGINAL_PAPER_FOLDER,
+    ("CHD_49", "LGBM"): "full_chd_49_lgbm_summary",
+    ("Water-quality", "RF"): _ORIGINAL_PAPER_FOLDER,
+    ("Water-quality", "LGBM"): "full_water_quality_lgbm_summary",
     ("enron", "RF"): "full_enron_split_summary",
-    ("medical", "RF"): "full_medical_summary",
-    ("medical", "LGBM"): "full_medical_lgbm_summary",
 }
 
 # Method encoding (1-indexed). PartialAbstention / ScoreVector use the first 8.
