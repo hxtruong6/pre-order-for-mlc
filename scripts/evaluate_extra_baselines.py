@@ -1,11 +1,11 @@
-"""Evaluate MLkNN / ECC / LP baseline pickles into a CSV matching the
-existing baseline (br/cc/clr) CSV schema.
+"""Evaluate ECC baseline pickles into a CSV matching the existing
+baseline (br/cc/clr) CSV schema.
 
 CLI:
-    python evaluate_extra_baselines.py --dataset <key> --results_dir <dir> --algorithm <mlknn|ecc|lp>
+    python scripts/evaluate_extra_baselines.py --dataset <key> --results_dir <dir> --algorithm ecc
 
-Reads:    results/<dir>/dataset_<name>_noisy_<rate>_<algo>.pkl
-Writes:   results/<dir>/evaluation_<name>_noisy_<rate>_<algo>.csv (+ .xlsx)
+Reads:    results/<dir>/dataset_<name>_noisy_<rate>_ecc.pkl
+Writes:   results/<dir>/evaluation_<name>_noisy_<rate>_ecc.csv (+ .xlsx)
 """
 
 import argparse
@@ -204,7 +204,7 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("--dataset", required=True)
     p.add_argument("--results_dir", required=True)
-    p.add_argument("--algorithm", required=True, choices=["mlknn", "ecc", "lp"])
+    p.add_argument("--algorithm", required=True, choices=["ecc"])
     args = p.parse_args()
     run(args.dataset, args.results_dir, args.algorithm)
 

@@ -870,9 +870,7 @@ def main():
         AlgorithmType.BR,
         AlgorithmType.CC,
         AlgorithmType.CLR,
-        AlgorithmType.MLKNN,
         AlgorithmType.ECC,
-        AlgorithmType.MLKNN_LGBM,
         AlgorithmType.ECC_LGBM,
     ]
 

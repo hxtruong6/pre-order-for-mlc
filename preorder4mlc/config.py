@@ -19,9 +19,7 @@ class AlgorithmType(Enum):
     CLR = "clr"
     BR = "br"
     CC = "cc"
-    MLKNN = "mlknn"
     ECC = "ecc"
-    MLKNN_LGBM = "mlknn_lgbm"
     ECC_LGBM = "ecc_lgbm"
 
 
@@ -53,34 +51,14 @@ class ConfigManager:
         "chd_49": DatasetConfig("CHD_49", "CHD_49.arff", 6),
         "emotions": DatasetConfig("emotions", "emotions.arff", 6),
         "scene": DatasetConfig("scene", "scene.arff", 6),
-        "viruspseaac": DatasetConfig("VirusPseAAC", "VirusPseAAC.arff", 6),
         "yeast": DatasetConfig("Yeast", "Yeast.arff", 14),
         "water_quality": DatasetConfig("Water-quality", "Water-quality.arff", 14),
         "humanpseaac": DatasetConfig("HumanPseAAC", "HumanPseAAC.arff", 14),
         "gpositivepseaac": DatasetConfig("GpositivePseAAC", "GpositivePseAAC.arff", 4),
         "plantpseaac": DatasetConfig("PlantPseAAC", "PlantPseAAC.arff", 12),
-        # Medium-K datasets (K=19-53). Fit on commodity RAM; bridge the
-        # K-scaling story between paper datasets (K<=14) and large-K
-        # (K=101+). Source: cometa.ujaen.es (see data/README_LARGE_K.md).
-        "birds": DatasetConfig("birds", "birds.arff", 19),
-        "medical": DatasetConfig("medical", "medical.arff", 45),
+        # enron (K=53). ARFF is NOT bundled — download from COMETA / MULAN
+        # and place at ./data/enron.arff. See REPRODUCE.md.
         "enron": DatasetConfig("enron", "enron.arff", 53),
-        # NIH ChestX-ray14: 8 of the 14 pathology labels retained (matches
-        # Wang et al. baseline); features are 512/1024-d pretrained CNN
-        # backbones extracted by the sibling inference_probabilistic_mlc repo.
-        # Symlinks under data/ point at the canonical .npy artifacts.
-        "chestxray_densenet": DatasetConfig(
-            "chestxray_densenet", "chestxray_densenet_features.npy", 8
-        ),
-        "chestxray_resnet": DatasetConfig(
-            "chestxray_resnet", "chestxray_resnet_features.npy", 8
-        ),
-        # Large-K datasets (added for the algorithm-improvement study).
-        # ARFF files are NOT in the repo — download from COMETA / MULAN and
-        # place under ./data/. See data/README_LARGE_K.md.
-        "cal500": DatasetConfig("CAL500", "CAL500.arff", 174),
-        "mediamill": DatasetConfig("mediamill", "mediamill.arff", 101),
-        "bibtex": DatasetConfig("bibtex", "bibtex.arff", 159),
     }
 
     @staticmethod
@@ -108,10 +86,8 @@ class ConfigManager:
                 0.2,
                 0.3,
             ]
-        # Default is RF (paper-equivalent). LightGBM is opt-in: pass
-        # --base_learner LightGBM on the CLI or call ConfigManager directly
-        # with a different list. See scripts/ablations/ablation_base_learner.py for
-        # the A/B/C/D comparison we use to decide whether to adopt LightGBM.
+        # Default is RF (paper-equivalent). Pass --base_learner LightGBM on
+        # the CLI to switch to LightGBM (paper also reports LGBM results).
         BASE_LEARNERS = [BaseLearnerName.RF]
         bl_override = getattr(args, "base_learner", None)
         if bl_override:

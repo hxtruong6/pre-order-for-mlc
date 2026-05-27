@@ -24,12 +24,8 @@ FILE_PATTERNS = {
     "br": "evaluation_*_noisy_*_br.csv",
     "cc": "evaluation_*_noisy_*_cc.csv",
     "clr": "evaluation_*_noisy_*_clr.csv",
-    "mlknn": "evaluation_*_noisy_*_mlknn.csv",
-    "mlknn_lgbm": "evaluation_*_noisy_*_mlknn_lgbm.csv",
     "ecc": "evaluation_*_noisy_*_ecc.csv",
     "ecc_lgbm": "evaluation_*_noisy_*_ecc_lgbm.csv",
-    "lp": "evaluation_*_noisy_*_lp.csv",
-    "lp_lgbm": "evaluation_*_noisy_*_lp_lgbm.csv",
 }
 
 # Prediction types to include for bopos files (skip PreferenceOrder)
@@ -124,19 +120,15 @@ def collect_metrics(files):
                 print(f"    Added: {prediction_type} - {algo} - {metric} - {noise}: {mean}±{std}")
 
         else:
-            # Handle br, cc, clr, mlknn, ecc, lp files - all prediction types included
+            # Handle br, cc, clr, ecc files - all prediction types included
             if file.endswith("_br.csv"):
                 algo = "br"
             elif file.endswith("_cc.csv"):
                 algo = "cc"
             elif file.endswith("_clr.csv"):
                 algo = "clr"
-            elif file.endswith("_mlknn.csv") or file.endswith("_mlknn_lgbm.csv"):
-                algo = "mlknn"
             elif file.endswith("_ecc.csv") or file.endswith("_ecc_lgbm.csv"):
                 algo = "ecc"
-            elif file.endswith("_lp.csv") or file.endswith("_lp_lgbm.csv"):
-                algo = "lp"
             else:
                 continue
 

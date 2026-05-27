@@ -1,14 +1,14 @@
-"""Train MLkNN, ECC, and LP baselines.
+"""Train the ECC (Ensemble of Classifier Chains) baseline.
 
 Standalone, additive script. Loads datasets via Datasets4Experiments using the
-same splits / seed as main.py so the new baseline results are directly
+same splits / seed as scripts/train.py so the ECC results are directly
 comparable to existing BR/CC/CLR/BOPOs pickles.
 
 CLI:
-    python extra_baselines.py --dataset <key> --results_dir <dir> --algorithm <mlknn|ecc|lp>
+    python scripts/train_extra_baselines.py --dataset <key> --results_dir <dir> --algorithm ecc
 
 Output:
-    results/<dir>/dataset_<name>_noisy_<rate>_<algo>.pkl
+    results/<dir>/dataset_<name>_noisy_<rate>_ecc[_lgbm].pkl
 """
 
 import argparse
@@ -20,17 +20,12 @@ from pathlib import Path
 
 import numpy as np
 import scipy.sparse as sparse
-
-# Monkey-patch MLkNN._compute_cond for the modern sklearn API used in env.
-import skmultilearn.adapt.mlknn as _mlknn_mod
 from lightgbm import LGBMClassifier
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.neighbors import NearestNeighbors
-from skmultilearn.utils import get_matrix_in_format
 
 
 def _make_base_learner(name: str, random_state=None, is_unbalance: bool = True):
-    """Return a fresh base-learner instance for ECC / LP wrappers.
+    """Return a fresh base-learner instance for the ECC wrapper.
 
     Choices:
         - 'rf'   : RandomForestClassifier with paper-equivalent defaults.
@@ -64,47 +59,11 @@ def _make_base_learner(name: str, random_state=None, is_unbalance: bool = True):
     raise ValueError(f"Unknown base_learner: {name!r} (choose 'rf' or 'lgbm')")
 
 
-def _patched_compute_cond(self, X, y):
-    self.knn_ = NearestNeighbors(n_neighbors=self.k).fit(X)
-    c = sparse.lil_matrix((self._num_labels, self.k + 1), dtype="i8")
-    cn = sparse.lil_matrix((self._num_labels, self.k + 1), dtype="i8")
-    label_info = get_matrix_in_format(y, "dok")
-    neighbors = [
-        a[self.ignore_first_neighbours :]
-        for a in self.knn_.kneighbors(
-            X, self.k + self.ignore_first_neighbours, return_distance=False
-        )
-    ]
-    for instance in range(self._num_instances):
-        deltas = label_info[neighbors[instance], :].sum(axis=0)
-        for label in range(self._num_labels):
-            if label_info[instance, label] == 1:
-                c[label, deltas[0, label]] += 1
-            else:
-                cn[label, deltas[0, label]] += 1
-    c_sum = c.sum(axis=1)
-    cn_sum = cn.sum(axis=1)
-    cond_prob_true = sparse.lil_matrix((self._num_labels, self.k + 1), dtype="float")
-    cond_prob_false = sparse.lil_matrix((self._num_labels, self.k + 1), dtype="float")
-    for label in range(self._num_labels):
-        for neighbor in range(self.k + 1):
-            cond_prob_true[label, neighbor] = (self.s + c[label, neighbor]) / (
-                self.s * (self.k + 1) + c_sum[label, 0]
-            )
-            cond_prob_false[label, neighbor] = (self.s + cn[label, neighbor]) / (
-                self.s * (self.k + 1) + cn_sum[label, 0]
-            )
-    return cond_prob_true, cond_prob_false
+from skmultilearn.problem_transform import ClassifierChain
 
-
-_mlknn_mod.MLkNN._compute_cond = _patched_compute_cond
-
-from skmultilearn.adapt import MLkNN  # noqa: E402
-from skmultilearn.problem_transform import ClassifierChain, LabelPowerset  # noqa: E402
-
-from preorder4mlc.config import ConfigManager  # noqa: E402
-from preorder4mlc.constants import RANDOM_STATE  # noqa: E402
-from preorder4mlc.datasets4experiments import Datasets4Experiments  # noqa: E402
+from preorder4mlc.config import ConfigManager
+from preorder4mlc.constants import RANDOM_STATE
+from preorder4mlc.datasets4experiments import Datasets4Experiments
 
 NOISY_RATES = [0.0, 0.1, 0.2, 0.3]
 N_REPEAT = 5
@@ -178,52 +137,6 @@ def _ecc_predict(
     return Y_pred, Y_proba
 
 
-def _lp_marginal_proba(clf: "LabelPowerset", X: np.ndarray, n_labels: int) -> np.ndarray:
-    """Per-label marginal probabilities from a LabelPowerset.
-
-    skmultilearn (0.2.x) returns *per-label* marginals directly from
-    LabelPowerset.predict_proba (shape (n, n_labels)) -- it internally
-    aggregates the meta-class probabilities for us. We just densify and
-    clip to [0, 1].
-
-    Returns (n, n_labels) float. Returns None on unexpected shapes so the
-    caller can fall back to Y_pred.astype(float).
-    """
-    proba = clf.predict_proba(X)
-    if sparse.issparse(proba):
-        proba = proba.toarray()
-    proba = np.asarray(proba, dtype=float)
-
-    if proba.ndim != 2 or proba.shape[1] != n_labels:
-        # If the underlying skmultilearn returns meta-class probabilities
-        # instead of per-label marginals, fall back to a manual aggregation
-        # using reverse_combinations_ (a list-of-lists of positive label
-        # indices, one entry per meta-class).
-        reverse = getattr(clf, "reverse_combinations_", None)
-        if reverse is None:
-            return None  # type: ignore[return-value]
-        n_meta = proba.shape[1]
-        if len(reverse) != n_meta:
-            return None  # type: ignore[return-value]
-        bit_mat = np.zeros((n_meta, n_labels), dtype=float)
-        for m, pos_indices in enumerate(reverse):
-            for k in pos_indices:
-                if 0 <= k < n_labels:
-                    bit_mat[m, k] = 1.0
-                else:
-                    return None  # type: ignore[return-value]
-        proba = proba @ bit_mat
-
-    return np.clip(proba, 0.0, 1.0)
-
-
-import os
-
-# At K above this, LabelPowerset explodes combinatorially (2^K meta-classes).
-# Override via env if you really want to try.
-MAX_K_LP = int(os.environ.get("PREORDER_MAX_K_LP", "30"))
-
-
 def train_one(
     algo: str,
     X_train: np.ndarray,
@@ -232,53 +145,11 @@ def train_one(
     base_learner: str = "rf",
     is_unbalance: bool = True,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Train one baseline and return (Y_pred, Y_proba).
+    """Train ECC and return (Y_pred, Y_proba).
 
     Y_pred is (n_test, n_labels) int array; Y_proba is (n_test, n_labels)
     float array in [0, 1] giving per-label marginal probability.
     """
-    n_labels = Y_train.shape[1]
-
-    if algo == "lp" and n_labels > MAX_K_LP:
-        raise ValueError(
-            f"LabelPowerset skipped: K={n_labels} exceeds PREORDER_MAX_K_LP={MAX_K_LP}. "
-            "Set PREORDER_MAX_K_LP=999 to force-run."
-        )
-
-    if algo == "mlknn":
-        clf = MLkNN(k=10)
-        clf.fit(X_train, Y_train)
-        Y_pred = _to_dense_int(clf.predict(X_test))
-        try:
-            proba = clf.predict_proba(X_test)
-            if sparse.issparse(proba):
-                proba = proba.toarray()
-            Y_proba = np.clip(np.asarray(proba, dtype=float), 0.0, 1.0)
-        except Exception as e:
-            logging.warning("MLkNN predict_proba failed: %s", e)
-            Y_proba = Y_pred.astype(float)
-        return Y_pred, Y_proba
-
-    if algo == "lp":
-        clf = LabelPowerset(
-            classifier=_make_base_learner(base_learner, random_state=RANDOM_STATE, is_unbalance=is_unbalance),
-            require_dense=[True, True],
-        )
-        clf.fit(X_train, Y_train)
-        Y_pred = _to_dense_int(clf.predict(X_test))
-        try:
-            Y_proba = _lp_marginal_proba(clf, X_test, n_labels)
-        except Exception as e:
-            logging.warning("LP marginal proba failed: %s", e)
-            Y_proba = None
-        if Y_proba is None:
-            logging.warning(
-                "LabelPowerset.unique_combinations_ unavailable or malformed; "
-                "falling back to Y_pred as degenerate proba."
-            )
-            Y_proba = Y_pred.astype(float)
-        return Y_pred, Y_proba
-
     if algo == "ecc":
         return _ecc_predict(X_train, Y_train, X_test, n_ensembles=10, base_learner=base_learner, is_unbalance=is_unbalance)
 
@@ -393,14 +264,13 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("--dataset", required=True)
     p.add_argument("--results_dir", required=True)
-    p.add_argument("--algorithm", required=True, choices=["mlknn", "ecc", "lp"])
+    p.add_argument("--algorithm", required=True, choices=["ecc"])
     p.add_argument(
         "--base_learner",
         choices=["rf", "lgbm"],
         default="rf",
-        help="Base learner for ECC / LP wrappers. Default 'rf' reproduces "
-        "the original paper baseline; use 'lgbm' for a fair comparison "
-        "against PA/PR with PREORDER_CALIBRATE=1.",
+        help="Base learner for the ECC chains. Default 'rf' reproduces "
+        "the original paper baseline; use 'lgbm' for the LGBM variant.",
     )
     p.add_argument(
         "--noisy_rate", "--noise_rate", dest="noisy_rate", type=float, default=None,
