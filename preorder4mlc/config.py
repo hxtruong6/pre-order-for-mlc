@@ -20,7 +20,6 @@ class AlgorithmType(Enum):
     BR = "br"
     CC = "cc"
     ECC = "ecc"
-    ECC_LGBM = "ecc_lgbm"
 
 
 @dataclass

@@ -119,6 +119,7 @@ class ExperimentResults:
         dataset_name,
         noisy_rate,
         algorithm_type: AlgorithmType = AlgorithmType.BOPOS,
+        base_learner: str = "rf",
     ):
         """
         Loads results from pickle file.
@@ -137,17 +138,18 @@ class ExperimentResults:
         dataset_name = dataset_name.lower().replace(" ", "_")
 
         # Determine suffix based on method type
-        suffix = ""  # default is BOPOs
-        if algorithm_type == AlgorithmType.CLR:
-            suffix = "_clr"
-        elif algorithm_type == AlgorithmType.BR:
-            suffix = "_br"
-        elif algorithm_type == AlgorithmType.CC:
-            suffix = "_cc"
-        elif algorithm_type == AlgorithmType.ECC:
-            suffix = "_ecc"
-        elif algorithm_type == AlgorithmType.ECC_LGBM:
-            suffix = "_ecc_lgbm"
+        suffix_map = {
+            AlgorithmType.BOPOS: "",
+            AlgorithmType.CLR: "_clr",
+            AlgorithmType.BR: "_br",
+            AlgorithmType.CC: "_cc",
+            AlgorithmType.ECC: "_ecc",
+        }
+        suffix = suffix_map[algorithm_type]
+        # ECC is parameterised by its base learner; non-RF runs get an extra
+        # tag so the RF and LGBM pickles don't collide.
+        if algorithm_type == AlgorithmType.ECC and base_learner != "rf":
+            suffix += f"_{base_learner}"
 
         filename = f"{path}/dataset_{dataset_name}_noisy_{noisy_rate}{suffix}.pkl"
 

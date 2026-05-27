@@ -143,6 +143,7 @@ class EvaluationFramework:
         dataset_name: str,
         noisy_rate: float,
         algorithm_type: AlgorithmType = AlgorithmType.BOPOS,
+        base_learner: str = "rf",
     ):
         """Load results from file"""
         try:
@@ -151,6 +152,7 @@ class EvaluationFramework:
                 dataset_name,
                 noisy_rate,
                 algorithm_type=algorithm_type,
+                base_learner=base_learner,
             )
         except Exception as e:
             log(ERROR, f"Failed to load results: {str(e)}")
@@ -865,13 +867,15 @@ def main():
     evaluator = EvaluationFramework(results_dir)
     # Algorithm types
 
-    algorithm_types = [
-        AlgorithmType.BOPOS,
-        AlgorithmType.BR,
-        AlgorithmType.CC,
-        AlgorithmType.CLR,
-        AlgorithmType.ECC,
-        AlgorithmType.ECC_LGBM,
+    # (algorithm, base_learner) pairs. Only ECC varies its base learner;
+    # everything else is RF-only in this paper.
+    algorithm_runs: list[tuple[AlgorithmType, str]] = [
+        (AlgorithmType.BOPOS, "rf"),
+        (AlgorithmType.BR, "rf"),
+        (AlgorithmType.CC, "rf"),
+        (AlgorithmType.CLR, "rf"),
+        (AlgorithmType.ECC, "rf"),
+        (AlgorithmType.ECC, "lgbm"),
     ]
 
     # Process each noise rate
@@ -885,16 +889,21 @@ def main():
                 f"{results_dir}/evaluation_{dataset_name}_noisy_{noisy_rate}_dataset_level"
             )
 
-            for algorithm_type in algorithm_types:
-                log(INFO, f"\n-----Start for algorithm: {algorithm_type.value}:")
+            for algorithm_type, base_learner in algorithm_runs:
+                tag = algorithm_type.value + (
+                    f"_{base_learner}"
+                    if algorithm_type == AlgorithmType.ECC and base_learner != "rf"
+                    else ""
+                )
+                log(INFO, f"\n-----Start for algorithm: {tag}:")
                 try:
-                    evaluator.load_results(dataset_name, noisy_rate, algorithm_type)
+                    evaluator.load_results(dataset_name, noisy_rate, algorithm_type, base_learner)
                     evaluator.evaluate_dataset(dataset_name, noisy_rate, algorithm_type)
                     evaluator.save_results(
-                        f"{results_dir}/evaluation_{dataset_name}_noisy_{noisy_rate}_{algorithm_type.value}"
+                        f"{results_dir}/evaluation_{dataset_name}_noisy_{noisy_rate}_{tag}"
                     )
                 except FileNotFoundError:
-                    log(INFO, f"Skipping {algorithm_type.value} (pkl not found)")
+                    log(INFO, f"Skipping {tag} (pkl not found)")
 
             log(INFO, f"Evaluation completed successfully for {dataset_name}")
 
