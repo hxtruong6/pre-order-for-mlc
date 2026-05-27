@@ -1,3 +1,0 @@
-Base_Learner,Algorithm,Metric,Mean,Std
-LightGBM,Dataset,mean_ir,inf,0.0
-LightGBM,Dataset,cv_ir,,0.0
