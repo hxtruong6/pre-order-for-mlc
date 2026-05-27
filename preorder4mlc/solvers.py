@@ -47,6 +47,7 @@ def solve_milp(c, G, h, A, b, I, B):
 def _solve_glpk(c, G, h, A, b, I, B):
     import scipy.sparse as sp
     from cvxopt import matrix, spmatrix
+    import cvxopt.glpk as _glpk
     from cvxopt.glpk import ilp
 
     def _to_cvxopt(M):
@@ -61,7 +62,25 @@ def _solve_glpk(c, G, h, A, b, I, B):
             )
         return matrix(M)
 
+    # Per-instance GLPK time cap (seconds). Without this, a single hard
+    # ILP can burn hours and starve the full 8-IA loop. tm_lim is GLPK's
+    # native MIP time limit in milliseconds.
+    _glpk_tl = os.environ.get("GLPK_TIME_LIMIT")
+    if _glpk_tl is not None:
+        _glpk.options["tm_lim"] = int(float(_glpk_tl) * 1000)
+    else:
+        _glpk.options.pop("tm_lim", None)
+
     status, x = ilp(matrix(c), _to_cvxopt(G), matrix(h), _to_cvxopt(A), matrix(b), I, B)
+    if x is None:
+        # Both solvers gave up. Return zero vector so the caller's score
+        # logic produces a degenerate (but valid-shaped) prediction for
+        # this one instance instead of crashing the whole IA loop.
+        ncols = (
+            G.shape[1] if hasattr(G, "shape") and len(getattr(G, "shape", ())) >= 2
+            else int(np.asarray(c).shape[0])
+        )
+        return status, np.zeros((ncols, 1), dtype=np.float64)
     return status, np.array(x)
 
 

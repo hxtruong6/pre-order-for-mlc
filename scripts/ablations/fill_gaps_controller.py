@@ -78,8 +78,15 @@ CELLS = {
         # near-optimal incumbent in time instead of falling back to GLPK.
         # n=0.0/0.1/0.2 currently running with the old setting; the new value
         # only applies to resubmits.
-        "highs_time_limit": 2.0,
-        "highs_mip_rel_gap": 0.05,
+        # Tuned 2026-05-27: bump HiGHS budget to 10s + 10% gap so HiGHS
+        # itself solves most instances (k=53 needs >2s to find feasibility),
+        # and add a 60s GLPK cap so a single pathological instance can't
+        # burn hours on the fallback path. n_test≈340; worst case
+        # 340×60s = 5.7h per IA × 8 IAs only if EVERY instance falls back,
+        # but typical fallback rate at these settings is ~10-20%.
+        "highs_time_limit": 10.0,
+        "highs_mip_rel_gap": 0.10,
+        "glpk_time_limit": 60.0,
     },
 }
 NOISES = ["0.0", "0.1", "0.2", "0.3"]
@@ -189,6 +196,7 @@ def submit_split_array(
     n_jobs: int | None = None,
     highs_time_limit: float | None = None,
     highs_mip_rel_gap: float | None = None,
+    glpk_time_limit: float | None = None,
 ) -> str | None:
     rng = compact_ranges(task_ids)
     env = (
@@ -201,6 +209,8 @@ def submit_split_array(
         env += f",HIGHS_TIME_LIMIT={highs_time_limit}"
     if highs_mip_rel_gap is not None:
         env += f",HIGHS_MIP_REL_GAP={highs_mip_rel_gap}"
+    if glpk_time_limit is not None:
+        env += f",GLPK_TIME_LIMIT={glpk_time_limit}"
     cmd = [
         "sbatch", "--parsable",
         f"--array={rng}",
@@ -334,6 +344,7 @@ def iteration(state: dict) -> bool:
                     n_jobs=conf.get("n_jobs"),
                     highs_time_limit=conf.get("highs_time_limit"),
                     highs_mip_rel_gap=conf.get("highs_mip_rel_gap"),
+                    glpk_time_limit=conf.get("glpk_time_limit"),
                 )
                 if jid:
                     state["arrays"][jid] = {
