@@ -18,10 +18,10 @@ of labels, a probabilistic pairwise classifier is trained; an integer
 linear program then searches per instance for the preference order
 (either a pre-order or a partial-order) that minimises an expected loss
 (Hamming or Subset 0/1). The search admits an optional height
-constraint, yielding eight inference algorithms IA1–IA8 plus three
-prediction types — `BinaryVector`, `PreferenceOrder`, and
-`PartialAbstention` — evaluated against six published baselines
-(CLR, BR, CC, MLkNN, ECC, LP).
+constraint, yielding eight inference algorithms (PA-{H,S}-{2,∅} and
+PR-{H,S}-{2,∅}) plus three prediction types — `BinaryVector`,
+`PreferenceOrder`, and `PartialAbstention` — evaluated against four
+published baselines (BR, CC, CLR, ECC).
 
 ## Method at a glance
 
@@ -58,7 +58,7 @@ probabilities used for the ranking metrics (`ranking_loss`, `one_error`,
 │   ├── datasets4experiments.py         # ARFF loading, k-fold splits, label-noise
 │   ├── estimator.py                    # Uniform interface over RF / ETC / XGBoost / LightGBM
 │   ├── base_classifiers.py             # Pairwise / calibrated classifier factory
-│   ├── inference_models.py             # PredictBOPOs (BOPOs + CLR / BR / CC baselines)
+│   ├── inference_models.py             # PredictBOPOs (BOPOs + BR / CC / CLR baselines)
 │   ├── searching_algorithms.py         # ILP search for pre- and partial-orders
 │   ├── training_orchestrator.py        # Training loop over learners × folds × algorithms
 │   ├── evaluation_metric.py            # Example-, label-, ranking-, abstention-metrics
@@ -71,12 +71,11 @@ probabilities used for the ranking metrics (`ranking_loss`, `one_error`,
 ├── scripts/                            # CLI entry points
 │   ├── train.py                        # Train BOPOs + CLR / BR / CC
 │   ├── evaluate.py                     # Evaluate BOPOs / CLR / BR / CC pickles
-│   ├── train_extra_baselines.py        # Train MLkNN / ECC / LP
-│   ├── evaluate_extra_baselines.py     # Evaluate MLkNN / ECC / LP pickles
+│   ├── train_ecc.py                    # Train the ECC baseline
+│   ├── evaluate_ecc.py                 # Evaluate the ECC pickle
 │   └── smoke_predict_bopos.py          # Behavior-preservation smoke test
-├── data/                               # 9 ARFF datasets (see REPRODUCE.md §2)
+├── data/                               # 8 ARFF datasets bundled (enron is downloaded; see REPRODUCE.md §2)
 ├── results/                            # Per-fold CSVs + aggregated tables (gitignored except CSV/XLSX)
-├── docs/                               # Long-form notes
 ├── run.sh                              # End-to-end reproduction driver
 ├── REPRODUCE.md                        # Step-by-step reproduction recipe
 ├── CITATION.cff                        # How to cite this work
@@ -114,11 +113,15 @@ times, and the file layout produced by each step.
 
 ## Datasets
 
-Nine multi-label datasets are tracked under `data/` so the pipeline can
-run end-to-end after `pip install`:
+Nine multi-label datasets are used in the paper:
 
 `chd_49`, `emotions`, `scene`, `yeast`, `water_quality`,
-`viruspseaac`, `humanpseaac`, `gpositivepseaac`, `plantpseaac`.
+`humanpseaac`, `gpositivepseaac`, `plantpseaac`, `enron`.
+
+The first eight ARFFs are bundled under `data/` so the pipeline can run
+end-to-end after `pip install`. `enron.arff` (K=53) is downloaded
+separately from COMETA / MULAN and placed at `data/enron.arff`; see
+[REPRODUCE.md](REPRODUCE.md) §2.
 
 CLI keys match `preorder4mlc.config::ConfigManager.DATASET_CONFIGS`.
 

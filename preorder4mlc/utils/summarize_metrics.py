@@ -1,7 +1,7 @@
 """Aggregate per-fold evaluation CSVs into per-dataset summary tables.
 
 Reads ``evaluation_<DatasetName>_noisy_<rate>_<algo>.csv`` files written
-by :mod:`evaluation_test` and :mod:`evaluate_extra_baselines`, then
+by :mod:`scripts.evaluate` and :mod:`scripts.evaluate_ecc`, then
 emits one ``<DatasetName>_<PredictionType>_summary.csv`` per dataset
 containing ``mean +/- std`` cells across folds and repeats. These are
 the tables consumed downstream by :mod:`utils.statistical_tests` and

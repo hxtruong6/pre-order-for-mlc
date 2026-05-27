@@ -2,7 +2,7 @@
 baseline (br/cc/clr) CSV schema.
 
 CLI:
-    python scripts/evaluate_extra_baselines.py --dataset <key> --results_dir <dir> --algorithm ecc
+    python scripts/evaluate_ecc.py --dataset <key> --results_dir <dir> --algorithm ecc
 
 Reads:    results/<dir>/dataset_<name>_noisy_<rate>_ecc.pkl
 Writes:   results/<dir>/evaluation_<name>_noisy_<rate>_ecc.csv (+ .xlsx)

@@ -5,7 +5,7 @@ same splits / seed as scripts/train.py so the ECC results are directly
 comparable to existing BR/CC/CLR/BOPOs pickles.
 
 CLI:
-    python scripts/train_extra_baselines.py --dataset <key> --results_dir <dir> --algorithm ecc
+    python scripts/train_ecc.py --dataset <key> --results_dir <dir> --algorithm ecc
 
 Output:
     results/<dir>/dataset_<name>_noisy_<rate>_ecc[_lgbm].pkl
