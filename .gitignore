@@ -8,11 +8,13 @@ results/**
 !results/**/evaluation_*.xlsx
 !results/**/*_summary.csv
 !results/**/*_summary.xlsx
+!results/all_summary/combined_*
 !results/final_20260514_v2_summary/figures/**/*
 !results/final_20260514_v2_summary/stats/**/*
 
 # Logs (per-dataset stdout/stderr from run.sh)
 logs/
+slurm_logs/
 
 # Pickle artefacts (training/eval intermediates)
 *.pkl
@@ -28,6 +30,29 @@ CLAUDE.md
 
 # code-review-graph index
 .code-review-graph/
+
+# Medium- and large-K ARFFs (downloaded from COMETA — see data/README_LARGE_K.md)
+data/birds.arff
+data/medical.arff
+data/enron.arff
+data/CAL500.arff
+data/mediamill.arff
+data/bibtex.arff
+
+# Untracked working paper draft
+paper.tex
+
+# Overleaf clone (synced separately via its own git remote)
+overleaf/
+
+# LaTeX build artefacts under paper_revision/
+paper_revision/*.aux
+paper_revision/*.log
+paper_revision/*.out
+paper_revision/*.fdb_latexmk
+paper_revision/*.fls
+paper_revision/*.synctex.gz
+paper_revision/*.toc
 
 # --- Python ---------------------------------------------------------------
 

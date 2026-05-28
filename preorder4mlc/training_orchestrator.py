@@ -65,6 +65,11 @@ class TrainingOrchestrator:
                 repeat_times = 1
 
             for repeat_time in range(repeat_times):
+                if (
+                    self.config.repeat_idx_filter is not None
+                    and repeat_time != self.config.repeat_idx_filter
+                ):
+                    continue
                 log(INFO, f"Dataset: {dataset_index}, Repeat time: {repeat_time}")
 
                 for fold, (X_train, Y_train, X_test, Y_test) in enumerate(
@@ -75,6 +80,11 @@ class TrainingOrchestrator:
                         random_state=RANDOM_STATE,
                     )
                 ):
+                    if (
+                        self.config.fold_idx_filter is not None
+                        and fold != self.config.fold_idx_filter
+                    ):
+                        continue
                     X_test.shape[0]
                     Y_test.shape[1]
                     log(
@@ -459,4 +469,6 @@ class TrainingOrchestrator:
             is_clr=is_clr,
             is_br=is_br,
             is_cc=is_cc,
+            repeat_idx=self.config.repeat_idx_filter,
+            fold_idx=self.config.fold_idx_filter,
         )

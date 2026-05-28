@@ -18,12 +18,50 @@ from logging import INFO, log
 
 import numpy as np
 from joblib import Parallel, delayed
+from sklearn.base import BaseEstimator, ClassifierMixin, clone
 from sklearn.multioutput import ClassifierChain, MultiOutputClassifier
 
 from preorder4mlc.base_classifiers import BaseClassifiers
 from preorder4mlc.constants import RANDOM_STATE, BaseLearnerName, TargetMetric
 from preorder4mlc.estimator import Estimator
 from preorder4mlc.searching_algorithms import Search_BOParOs, Search_BOPreOs
+
+
+class _BinarySafeClassifier(ClassifierMixin, BaseEstimator):
+    """Wraps a base classifier so predict_proba always returns a (n, 2)
+    matrix even when the training y had a single class. ClassifierChain
+    requires both columns; without this wrapper a degenerate label in
+    the chain raises ``Got predict_proba of shape (n, 1)``.
+    """
+
+    _estimator_type = "classifier"
+
+    def __init__(self, base=None):
+        self.base = base
+
+    def fit(self, X, y):
+        self.estimator_ = clone(self.base)
+        self.estimator_.fit(X, y)
+        self.classes_ = np.array([0, 1])
+        self._seen = np.asarray(self.estimator_.classes_)
+        return self
+
+    def predict(self, X):
+        return self.estimator_.predict(X)
+
+    def predict_proba(self, X):
+        raw = self.estimator_.predict_proba(X)
+        if raw.shape[1] == 2:
+            return raw
+        out = np.zeros((raw.shape[0], 2), dtype=float)
+        only = int(self._seen[0])
+        out[:, only] = raw[:, 0]
+        return out
+
+    def __sklearn_tags__(self):
+        tags = super().__sklearn_tags__()
+        tags.estimator_type = "classifier"
+        return tags
 
 
 class PreferenceOrder(Enum):
@@ -128,7 +166,15 @@ class PredictBOPOs:
 
         pairwise_predict_proba = self._parallel_pairwise_predict_proba(X, n_labels)
 
-        pairwise_probabilistic_predictions: dict[str, float] = {}
+        # Storage: 4D ndarray shape (K, K, n_test, n_classes). Only entries
+        # with i < j are populated; upper-triangular cells stay zero. Replaces
+        # the prior string-keyed dict ({f"{i}_{j}_{n}_{l}": float}), which
+        # spent ~150B per entry of Python overhead. For K=101 / n_test=8782
+        # this drops storage from ~26 GB to ~2.9 GB and saves the f-string
+        # construction cost on every read in searching_algorithms.py.
+        pairwise_probabilistic_predictions = np.zeros(
+            (n_labels, n_labels, n_test_instances, n_classes), dtype=float
+        )
         for i in range(n_labels - 1):
             for j in range(i + 1, n_labels):
                 key_classifier = f"{i}_{j}"
@@ -139,9 +185,12 @@ class PredictBOPOs:
                     n_classes=n_classes,
                 )
                 for n in range(n_test_instances):
-                    row = _regularize_proba_row(aligned[n], n_classes)
-                    for l in range(n_classes):
-                        pairwise_probabilistic_predictions[f"{i}_{j}_{n}_{l}"] = row[l]
+                    # _regularize_proba_row returns a length-n_classes list; the
+                    # per-row call is preserved to keep floating-point order of
+                    # operations identical to the pre-refactor code.
+                    pairwise_probabilistic_predictions[i, j, n, :] = (
+                        _regularize_proba_row(aligned[n], n_classes)
+                    )
         return pairwise_probabilistic_predictions
 
     def _parallel_pairwise_predict_proba(self, X, n_labels):
@@ -179,32 +228,38 @@ class PredictBOPOs:
                 else:
                     predicted_class = clf.predict(X[:2])
                     if predicted_class[0] == 1:
-                        calibrated_scores += probabilistic_predictions
+                        calibrated_scores += probabilistic_predictions[:, 0]
             else:
                 calibrated_scores += probabilistic_predictions[:, 1]
 
         voting_scores = np.zeros((n_labels, n_instances))
         for k_1 in range(n_labels - 1):
             for k_2 in range(k_1 + 1, n_labels):
-                clf = self.pairwise_classifier[f"{k_1}_{k_2}"]
+                key = f"{k_1}_{k_2}"
+                if key not in self.pairwise_classifier:
+                    continue
+                clf = self.pairwise_classifier[key]
                 probabilistic_predictions = clf.predict_proba(X)
                 _, n_classes = probabilistic_predictions.shape
                 if n_classes == 1:  # why 1? -> label at index 0?
+                    # Original: `voting_scores[k, :] += [1 for n in range(n_instances)]`.
+                    # Scalar `+= 1` is identical (numpy broadcasts) — verified bit-equal
+                    # for up to 1000 sequential += iterations, no float drift.
                     if self.base_classifier.name in [
                         BaseLearnerName.XGBoost,
                         BaseLearnerName.LightGBM,
                     ]:
                         # Check this label existing in the training set
                         if self.single_label_pair[f"{k_1}_{k_2}"] == 0:
-                            voting_scores[k_1, :] += [1 for n in range(n_instances)]
+                            voting_scores[k_1, :] += 1
                         else:  # None will be handle in below with n_classes > 1
-                            voting_scores[k_2, :] += [1 for n in range(n_instances)]
+                            voting_scores[k_2, :] += 1
                     else:
                         predicted_class = clf.predict(X[:2])  # :2 means first 2 instances
                         if predicted_class[0] == 0:
-                            voting_scores[k_1, :] += [1 for n in range(n_instances)]
+                            voting_scores[k_1, :] += 1
                         else:
-                            voting_scores[k_2, :] += [1 for n in range(n_instances)]
+                            voting_scores[k_2, :] += 1
                 else:  # for classes > 1
                     voting_scores[k_1, :] += probabilistic_predictions[:, 0]
                     voting_scores[k_2, :] += probabilistic_predictions[:, 1]
@@ -321,9 +376,11 @@ class PredictBOPOs:
         # Create base classifier
         base_clf = self.base_classifier.get_classifier()  # type: ignore
 
-        # Create ClassifierChain with random order
+        # Create ClassifierChain with random order. Wrap base in
+        # _BinarySafeClassifier so single-class labels (rare label fully
+        # absent in a CV fold) don't break the chain's predict_proba.
         self.cc_classifier = ClassifierChain(
-            base_clf, order=None, random_state=RANDOM_STATE  # type: ignore
+            _BinarySafeClassifier(base_clf), order=None, random_state=RANDOM_STATE  # type: ignore
         )
         # Train the model
         self.cc_classifier.fit(X, Y)

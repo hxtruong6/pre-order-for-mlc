@@ -61,6 +61,8 @@ class ExperimentResults:
         is_clr=False,
         is_br=False,
         is_cc=False,
+        repeat_idx=None,
+        fold_idx=None,
     ):
         """
         Saves the results dictionary to both pickle and CSV formats.
@@ -73,6 +75,8 @@ class ExperimentResults:
             is_clr: Whether results are from CLR
             is_br: Whether results are from Binary Relevance
             is_cc: Whether results are from Classifier Chain
+            repeat_idx: If set, suffix filename with _r<repeat_idx>
+            fold_idx: If set, suffix filename with _f<fold_idx>
         """
         # Create results directory if it doesn't exist
         Path(results_dir).mkdir(parents=True, exist_ok=True)
@@ -89,7 +93,15 @@ class ExperimentResults:
         elif is_cc:
             suffix = "_cc"
 
-        base_filename = f"{results_dir}/dataset_{dataset_name}_noisy_{noisy_rate}{suffix}"
+        split_suffix = ""
+        if repeat_idx is not None:
+            split_suffix += f"_r{repeat_idx}"
+        if fold_idx is not None:
+            split_suffix += f"_f{fold_idx}"
+
+        base_filename = (
+            f"{results_dir}/dataset_{dataset_name}_noisy_{noisy_rate}{suffix}{split_suffix}"
+        )
 
         # Save as pickle for exact Python object preservation
         with open(f"{base_filename}.pkl", "wb") as f:
@@ -132,6 +144,14 @@ class ExperimentResults:
             suffix = "_br"
         elif algorithm_type == AlgorithmType.CC:
             suffix = "_cc"
+        elif algorithm_type == AlgorithmType.MLKNN:
+            suffix = "_mlknn"
+        elif algorithm_type == AlgorithmType.ECC:
+            suffix = "_ecc"
+        elif algorithm_type == AlgorithmType.MLKNN_LGBM:
+            suffix = "_mlknn_lgbm"
+        elif algorithm_type == AlgorithmType.ECC_LGBM:
+            suffix = "_ecc_lgbm"
 
         filename = f"{path}/dataset_{dataset_name}_noisy_{noisy_rate}{suffix}.pkl"
 

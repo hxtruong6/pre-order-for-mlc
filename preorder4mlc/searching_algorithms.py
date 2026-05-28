@@ -9,13 +9,24 @@ binary vector and partial-abstention prediction. The two classes expose
 inference algorithms IA1-IA8 reported in the paper.
 """
 
+import os
+
 import numpy as np
-from cvxopt import matrix
-from cvxopt.glpk import ilp
+import scipy.sparse as sp
+from joblib import Parallel, delayed
 from numpy import array
 
 from preorder4mlc.constants import TargetMetric
+from preorder4mlc.solvers import solve_milp
 from preorder4mlc.utils.suppress import suppress_output
+
+# Parallelism for per-instance ILP solves. Loky backend (process-based) is
+# safe because cvxopt/GLPK keeps solver state per process. Default n_jobs=1
+# preserves the previous sequential behavior; set PREORDER_SEARCH_N_JOBS=-1
+# (or any joblib-compatible value) to parallelize across test instances.
+# Parallel pays a per-task pickle/IPC cost (~ms) so it's only a win when
+# n_instances and the per-solve cost are both non-trivial.
+_SEARCH_N_JOBS = int(os.environ.get("PREORDER_SEARCH_N_JOBS", "1"))
 
 
 class Search_BOPreOs:
@@ -63,47 +74,26 @@ class Search_BOPreOs:
         predicted_Y = []
         predicted_preorders = []
         prediction_with_partial_abstentions = []
-        for n in range(self.n_instances):
-            vector = []
-            if self.target_metric == TargetMetric.Hamming:
-                for i in range(self.n_labels - 1):
-                    for j in range(i + 1, self.n_labels):
-                        pairInfor = [
-                            -self.pairwise_probabilistic_predictions[f"{i}_{j}_{n}_{l}"]
-                            for l in range(4)
-                        ]
-                        vector += pairInfor
-            elif self.target_metric == TargetMetric.Subset:
-                for i in range(self.n_labels - 1):
-                    for j in range(i + 1, self.n_labels):
-                        pairInfor = [
-                            -np.log(self.pairwise_probabilistic_predictions[f"{i}_{j}_{n}_{l}"])
-                            for l in range(4)
-                        ]
-                        vector += pairInfor
-            else:
-                raise ValueError(f"Unknown target metric: {self.target_metric}")
-            Gtest = np.array(G)
-            Atest = np.array(A)
-            (
-                hard_prediction,
-                predicted_preorder,
-                prediction_with_partial_abstention,
-            ) = self._reasoning_procedure_PRE_ORDER(
-                vector,
-                indices_vector,
-                self.n_labels,
-                Gtest,
-                h,
-                Atest,
-                b,
-                I,
-                B,
+        # Precompute upper-triangular pair indices once. np.triu_indices(K, k=1)
+        # yields (i, j) pairs in row-major order matching the prior
+        # `for i in range(K-1): for j in range(i+1, K)` loop. Flattening
+        # `pred[ii, jj, n, :]` then walks (i, j, l) in the same sequence as
+        # the old append-per-l loop, so `vector` ordering — and hence the
+        # downstream `indices_vector` mapping — is unchanged.
+        ii, jj = np.triu_indices(self.n_labels, k=1)
+        # Per-instance ILP solves are independent — wrap in joblib.Parallel.
+        # With _SEARCH_N_JOBS=1 (default) this is a thin wrapper that runs
+        # in-process, equivalent to the prior for-loop. With higher n_jobs,
+        # loky forks worker processes; cvxopt/GLPK is process-safe.
+        results = Parallel(n_jobs=_SEARCH_N_JOBS)(
+            delayed(self._solve_one_PRE_ORDER)(
+                n, ii, jj, indices_vector, G, h, A, b, I, B
             )
-
-            predicted_Y.append(hard_prediction)
-            predicted_preorders.append(predicted_preorder)
-            prediction_with_partial_abstentions.append(prediction_with_partial_abstention)
+            for n in range(self.n_instances)
+        )
+        predicted_Y = [r[0] for r in results]
+        predicted_preorders = [r[1] for r in results]
+        prediction_with_partial_abstentions = [r[2] for r in results]
         return (
             predicted_Y,
             predicted_preorders,
@@ -111,218 +101,120 @@ class Search_BOPreOs:
             prediction_with_partial_abstentions,
         )
 
+    def _solve_one_PRE_ORDER(self, n, ii, jj, indices_vector, G, h, A, b, I, B):
+        """Compute the cost vector for instance n and run the ILP reasoning.
+
+        Extracted to a method so joblib.Parallel can dispatch it per-instance.
+        G/h/A/b/I/B are loop-invariant inputs (built once outside the loop in
+        PRE_ORDER); indices_vector / ii / jj are precomputed mappings.
+        """
+        pair_slice = self.pairwise_probabilistic_predictions[ii, jj, n, :]
+        if self.target_metric == TargetMetric.Hamming:
+            vector = (-pair_slice).flatten()
+        elif self.target_metric == TargetMetric.Subset:
+            vector = (-np.log(np.clip(pair_slice, 1e-12, 1.0))).flatten()
+        else:
+            raise ValueError(f"Unknown target metric: {self.target_metric}")
+        return self._reasoning_procedure_PRE_ORDER(
+            vector, indices_vector, self.n_labels, G, h, A, b, I, B
+        )
+
     def _encode_parameters_PRE_ORDER(self, indices_vector):
         assert self.n_labels is not None
-        h = np.ones((self.n_labels * (self.n_labels - 1) * (self.n_labels - 2), 1))
-        A = np.zeros(
-            (
-                int(self.n_labels * (self.n_labels - 1) * 0.5),
-                int(self.n_labels * (self.n_labels - 1) * 2),
-            )
-        )
-        rowA = 0
-        for i in range(self.n_labels - 1):
-            for j in range(i + 1, self.n_labels):
-                # we can inject the information of partial labels at test time here
-                for l in range(4):
-                    indVec = indices_vector[f"{i}_{j}_{l}"]
-                    A[rowA, indVec] = 1
-                rowA += 1
-        b = np.ones((int(self.n_labels * (self.n_labels - 1) * 0.5), 1))
+        n = self.n_labels
+        n_vars = n * (n - 1) * 2
+        n_ineq = n * (n - 1) * (n - 2)
+        n_eq = n * (n - 1) // 2
+        h = np.ones((n_ineq, 1))
+        b = np.ones((n_eq, 1))
         I = set()
-        B = set(range(self.n_labels * (self.n_labels - 1) * 2))
-        G = np.zeros(
-            (
-                self.n_labels * (self.n_labels - 1) * (self.n_labels - 2),
-                self.n_labels * (self.n_labels - 1) * 2,
-            )
+        B = set(range(n_vars))
+
+        A_rows, A_cols, A_vals = [], [], []
+        rowA = 0
+        for i in range(n - 1):
+            for j in range(i + 1, n):
+                for l in range(4):
+                    A_rows.append(rowA)
+                    A_cols.append(indices_vector[f"{i}_{j}_{l}"])
+                    A_vals.append(1.0)
+                rowA += 1
+        A = sp.csr_matrix(
+            (A_vals, (A_rows, A_cols)), shape=(n_eq, n_vars), dtype=np.float64
         )
+
+        G_rows, G_cols, G_vals = [], [], []
 
         if not self.height:
             rowG = 0
-            for i in range(self.n_labels - 1):
-                for j in range(i + 1, self.n_labels):
+            for i in range(n - 1):
+                for j in range(i + 1, n):
                     for k in range(i):
-                        indVecs = [
-                            indices_vector[val]
-                            for val in [
-                                f"{i}_{j}_{0}",
-                                f"{i}_{j}_{3}",
-                                f"{k}_{i}_{1}",
-                                f"{k}_{i}_{3}",
-                                f"{k}_{j}_{0}",
-                                f"{k}_{j}_{3}",
-                            ]
-                        ]
-                        for ind in range(2):
-                            G[rowG, indVecs[ind]] = -1
-                        for ind in range(2, 6):
-                            G[rowG, indVecs[ind]] = 1
+                        keys1 = [f"{i}_{j}_0", f"{i}_{j}_3", f"{k}_{i}_1", f"{k}_{i}_3", f"{k}_{j}_0", f"{k}_{j}_3"]
+                        vals1 = [-1.0, -1.0, 1.0, 1.0, 1.0, 1.0]
+                        for key, v in zip(keys1, vals1):
+                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(v)
                         rowG += 1
-                        indVecs = [
-                            indices_vector[val]
-                            for val in [
-                                f"{i}_{j}_{1}",
-                                f"{i}_{j}_{3}",
-                                f"{k}_{i}_{0}",
-                                f"{k}_{i}_{3}",
-                                f"{k}_{j}_{1}",
-                                f"{k}_{j}_{3}",
-                            ]
-                        ]
-                        for ind in range(2):
-                            G[rowG, indVecs[ind]] = -1
-                        for ind in range(2, 6):
-                            G[rowG, indVecs[ind]] = 1
+                        keys2 = [f"{i}_{j}_1", f"{i}_{j}_3", f"{k}_{i}_0", f"{k}_{i}_3", f"{k}_{j}_1", f"{k}_{j}_3"]
+                        vals2 = [-1.0, -1.0, 1.0, 1.0, 1.0, 1.0]
+                        for key, v in zip(keys2, vals2):
+                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(v)
                         rowG += 1
                     for k in range(i + 1, j):
-                        indVecs = [
-                            indices_vector[val]
-                            for val in [
-                                f"{i}_{j}_{0}",
-                                f"{i}_{j}_{3}",
-                                f"{i}_{k}_{0}",
-                                f"{i}_{k}_{3}",
-                                f"{k}_{j}_{0}",
-                                f"{k}_{j}_{3}",
-                            ]
-                        ]
-                        for ind in range(2):
-                            G[rowG, indVecs[ind]] = -1
-                        for ind in range(2, 6):
-                            G[rowG, indVecs[ind]] = 1
+                        keys1 = [f"{i}_{j}_0", f"{i}_{j}_3", f"{i}_{k}_0", f"{i}_{k}_3", f"{k}_{j}_0", f"{k}_{j}_3"]
+                        vals1 = [-1.0, -1.0, 1.0, 1.0, 1.0, 1.0]
+                        for key, v in zip(keys1, vals1):
+                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(v)
                         rowG += 1
-                        indVecs = [
-                            indices_vector[val]
-                            for val in [
-                                f"{i}_{j}_{1}",
-                                f"{i}_{j}_{3}",
-                                f"{i}_{k}_{1}",
-                                f"{i}_{k}_{3}",
-                                f"{k}_{j}_{1}",
-                                f"{k}_{j}_{3}",
-                            ]
-                        ]
-                        for ind in range(2):
-                            G[rowG, indVecs[ind]] = -1
-                        for ind in range(2, 6):
-                            G[rowG, indVecs[ind]] = 1
+                        keys2 = [f"{i}_{j}_1", f"{i}_{j}_3", f"{i}_{k}_1", f"{i}_{k}_3", f"{k}_{j}_1", f"{k}_{j}_3"]
+                        vals2 = [-1.0, -1.0, 1.0, 1.0, 1.0, 1.0]
+                        for key, v in zip(keys2, vals2):
+                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(v)
                         rowG += 1
-                    for k in range(j + 1, self.n_labels):
-                        indVecs = [
-                            indices_vector[val]
-                            for val in [
-                                f"{i}_{j}_{0}",
-                                f"{i}_{j}_{3}",
-                                f"{i}_{k}_{0}",
-                                f"{i}_{k}_{3}",
-                                f"{j}_{k}_{1}",
-                                f"{j}_{k}_{3}",
-                            ]
-                        ]
-                        for ind in range(2):
-                            G[rowG, indVecs[ind]] = -1
-                        for ind in range(2, 6):
-                            G[rowG, indVecs[ind]] = 1
+                    for k in range(j + 1, n):
+                        keys1 = [f"{i}_{j}_0", f"{i}_{j}_3", f"{i}_{k}_0", f"{i}_{k}_3", f"{j}_{k}_1", f"{j}_{k}_3"]
+                        vals1 = [-1.0, -1.0, 1.0, 1.0, 1.0, 1.0]
+                        for key, v in zip(keys1, vals1):
+                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(v)
                         rowG += 1
-                        indVecs = [
-                            indices_vector[val]
-                            for val in [
-                                f"{i}_{j}_{1}",
-                                f"{i}_{j}_{3}",
-                                f"{i}_{k}_{1}",
-                                f"{i}_{k}_{3}",
-                                f"{j}_{k}_{0}",
-                                f"{j}_{k}_{3}",
-                            ]
-                        ]
-                        for ind in range(2):
-                            G[rowG, indVecs[ind]] = -1
-                        for ind in range(2, 6):
-                            G[rowG, indVecs[ind]] = 1
+                        keys2 = [f"{i}_{j}_1", f"{i}_{j}_3", f"{i}_{k}_1", f"{i}_{k}_3", f"{j}_{k}_0", f"{j}_{k}_3"]
+                        vals2 = [-1.0, -1.0, 1.0, 1.0, 1.0, 1.0]
+                        for key, v in zip(keys2, vals2):
+                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(v)
                         rowG += 1
+            G = sp.csr_matrix(
+                (G_vals, (G_rows, G_cols)), shape=(n_ineq, n_vars), dtype=np.float64
+            )
             return G, h, A, b, I, B
 
         elif self.height == 2:
             rowG = 0
-            for i in range(self.n_labels - 1):
-                for j in range(i + 1, self.n_labels):
+            for i in range(n - 1):
+                for j in range(i + 1, n):
                     for k in range(i):
-                        indVecs = [
-                            indices_vector[val]
-                            for val in [
-                                f"{k}_{i}_{1}",
-                                f"{k}_{i}_{3}",
-                                f"{k}_{j}_{0}",
-                                f"{k}_{j}_{3}",
-                            ]
-                        ]
-                        for ind_tupe in indVecs:
-                            G[rowG, ind_tupe] = 1
+                        for key in [f"{k}_{i}_1", f"{k}_{i}_3", f"{k}_{j}_0", f"{k}_{j}_3"]:
+                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(1.0)
                         rowG += 1
-
-                        indVecs = [
-                            indices_vector[val]
-                            for val in [
-                                f"{k}_{i}_{0}",
-                                f"{k}_{i}_{3}",
-                                f"{k}_{j}_{1}",
-                                f"{k}_{j}_{3}",
-                            ]
-                        ]
-                        for ind_tupe in indVecs:
-                            G[rowG, ind_tupe] = 1
+                        for key in [f"{k}_{i}_0", f"{k}_{i}_3", f"{k}_{j}_1", f"{k}_{j}_3"]:
+                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(1.0)
                         rowG += 1
                     for k in range(i + 1, j):
-                        indVecs = [
-                            indices_vector[val]
-                            for val in [
-                                f"{i}_{k}_{0}",
-                                f"{i}_{k}_{3}",
-                                f"{k}_{j}_{0}",
-                                f"{k}_{j}_{3}",
-                            ]
-                        ]
-                        for ind_tupe in indVecs:
-                            G[rowG, ind_tupe] = 1
+                        for key in [f"{i}_{k}_0", f"{i}_{k}_3", f"{k}_{j}_0", f"{k}_{j}_3"]:
+                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(1.0)
                         rowG += 1
-                        indVecs = [
-                            indices_vector[val]
-                            for val in [
-                                f"{i}_{k}_{1}",
-                                f"{i}_{k}_{3}",
-                                f"{k}_{j}_{1}",
-                                f"{k}_{j}_{3}",
-                            ]
-                        ]
-                        for ind_tupe in indVecs:
-                            G[rowG, ind_tupe] = 1
+                        for key in [f"{i}_{k}_1", f"{i}_{k}_3", f"{k}_{j}_1", f"{k}_{j}_3"]:
+                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(1.0)
                         rowG += 1
-                    for k in range(j + 1, self.n_labels):
-                        indVecs = [
-                            indices_vector[val]
-                            for val in [
-                                f"{i}_{k}_{0}",
-                                f"{i}_{k}_{3}",
-                                f"{j}_{k}_{1}",
-                                f"{j}_{k}_{3}",
-                            ]
-                        ]
-                        for ind_tupe in indVecs:
-                            G[rowG, ind_tupe] = 1
+                    for k in range(j + 1, n):
+                        for key in [f"{i}_{k}_0", f"{i}_{k}_3", f"{j}_{k}_1", f"{j}_{k}_3"]:
+                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(1.0)
                         rowG += 1
-                        indVecs = [
-                            indices_vector[val]
-                            for val in [
-                                f"{i}_{k}_{1}",
-                                f"{i}_{k}_{3}",
-                                f"{j}_{k}_{0}",
-                                f"{j}_{k}_{3}",
-                            ]
-                        ]
-                        for ind_tupe in indVecs:
-                            G[rowG, ind_tupe] = 1
+                        for key in [f"{i}_{k}_1", f"{i}_{k}_3", f"{j}_{k}_0", f"{j}_{k}_3"]:
+                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(1.0)
                         rowG += 1
+            G = sp.csr_matrix(
+                (G_vals, (G_rows, G_cols)), shape=(n_ineq, n_vars), dtype=np.float64
+            )
             return G, h, A, b, I, B
         else:
             raise ValueError("The height is not supported")
@@ -334,7 +226,7 @@ class Search_BOPreOs:
             c[ind, 0] = vector[ind]
 
         with suppress_output():
-            _, x = ilp(matrix(c), matrix(G), matrix(h), matrix(A), matrix(b), I, B)
+            _, x = solve_milp(c, G, h, A, b, I, B)
 
         optX = array(x)
 
@@ -393,45 +285,18 @@ class Search_BOParOs:
         predicted_Y = []
         predicted_partial_orders = []
         prediction_with_partial_abstentions = []
-        for n in range(self.n_instances):
-            vector = []
-            if self.target_metric == TargetMetric.Hamming:
-                for i in range(self.n_labels - 1):
-                    for j in range(i + 1, self.n_labels):
-                        pairInfor = [
-                            -self.pairwise_probabilistic_predictions[f"{i}_{j}_{n}_{l}"]
-                            for l in range(3)
-                        ]
-                        vector += pairInfor
-            elif self.target_metric == TargetMetric.Subset:
-                for i in range(self.n_labels - 1):
-                    for j in range(i + 1, self.n_labels):
-                        pairInfor = [
-                            -np.log(self.pairwise_probabilistic_predictions[f"{i}_{j}_{n}_{l}"])
-                            for l in range(3)
-                        ]
-                        vector += pairInfor
-            else:
-                raise ValueError(f"Unknown target metric: {self.target_metric}")
-            Gtest = np.array(G)
-            Atest = np.array(A)
-            (
-                hard_prediction,
-                predicted_partial_order,
-                prediction_with_partial_abstention,
-            ) = self._reasoning_procedure_PARTIAL_ORDER(
-                vector,
-                indices_vector,
-                Gtest,
-                h,
-                Atest,
-                b,
-                I,
-                B,
+        # See PRE_ORDER above for the triu_indices vectorisation rationale.
+        ii, jj = np.triu_indices(self.n_labels, k=1)
+        # Per-instance ILP solves wrapped in joblib.Parallel — see PRE_ORDER above.
+        results = Parallel(n_jobs=_SEARCH_N_JOBS)(
+            delayed(self._solve_one_PARTIAL_ORDER)(
+                n, ii, jj, indices_vector, G, h, A, b, I, B
             )
-            predicted_Y.append(hard_prediction)
-            predicted_partial_orders.append(predicted_partial_order)
-            prediction_with_partial_abstentions.append(prediction_with_partial_abstention)
+            for n in range(self.n_instances)
+        )
+        predicted_Y = [r[0] for r in results]
+        predicted_partial_orders = [r[1] for r in results]
+        prediction_with_partial_abstentions = [r[2] for r in results]
         return (
             predicted_Y,
             predicted_partial_orders,
@@ -439,190 +304,124 @@ class Search_BOParOs:
             prediction_with_partial_abstentions,
         )
 
+    def _solve_one_PARTIAL_ORDER(self, n, ii, jj, indices_vector, G, h, A, b, I, B):
+        """Per-instance helper for PARTIAL_ORDER joblib dispatch.
+
+        See _solve_one_PRE_ORDER for the same pattern in the sibling class.
+        """
+        pair_slice = self.pairwise_probabilistic_predictions[ii, jj, n, :]
+        if self.target_metric == TargetMetric.Hamming:
+            vector = (-pair_slice).flatten()
+        elif self.target_metric == TargetMetric.Subset:
+            vector = (-np.log(np.clip(pair_slice, 1e-12, 1.0))).flatten()
+        else:
+            raise ValueError(f"Unknown target metric: {self.target_metric}")
+        return self._reasoning_procedure_PARTIAL_ORDER(
+            vector, indices_vector, G, h, A, b, I, B
+        )
+
     def _encode_parameters_PARTIAL_ORDER(self, indices_vector):
         assert self.n_labels is not None
-
-        h = np.ones((self.n_labels * (self.n_labels - 1) * (self.n_labels - 2), 1))
-        A = np.zeros(
-            (
-                int(self.n_labels * (self.n_labels - 1) * 0.5),
-                int(self.n_labels * (self.n_labels - 1) * 1.5),
-            )
-        )
-        rowA = 0
-        for i in range(self.n_labels - 1):
-            for j in range(i + 1, self.n_labels):
-                # we can inject the information of partial labels at test time here
-                for l in range(3):
-                    indVec = indices_vector[f"{i}_{j}_{l}"]
-                    A[rowA, indVec] = 1
-                rowA += 1
-        b = np.ones((int(self.n_labels * (self.n_labels - 1) * 0.5), 1))
+        n = self.n_labels
+        n_vars_p = int(n * (n - 1) * 1.5)
+        n_ineq = n * (n - 1) * (n - 2)
+        n_eq = n * (n - 1) // 2
+        h = np.ones((n_ineq, 1))
+        b = np.ones((n_eq, 1))
         I = set()
-        B = set(range(int(self.n_labels * (self.n_labels - 1) * 1.5)))
-        G = np.zeros(
-            (
-                int(self.n_labels * (self.n_labels - 1) * (self.n_labels - 2)),
-                int(self.n_labels * (self.n_labels - 1) * 1.5),
-            )
+        B = set(range(n_vars_p))
+
+        A_rows, A_cols, A_vals = [], [], []
+        rowA = 0
+        for i in range(n - 1):
+            for j in range(i + 1, n):
+                for l in range(3):
+                    A_rows.append(rowA)
+                    A_cols.append(indices_vector[f"{i}_{j}_{l}"])
+                    A_vals.append(1.0)
+                rowA += 1
+        A = sp.csr_matrix(
+            (A_vals, (A_rows, A_cols)), shape=(n_eq, n_vars_p), dtype=np.float64
         )
+
+        G_rows, G_cols, G_vals = [], [], []
 
         if not self.height:
             rowG = 0
-            for i in range(self.n_labels - 1):
-                for j in range(i + 1, self.n_labels):
+            for i in range(n - 1):
+                for j in range(i + 1, n):
                     for k in range(i):
-                        indVecs = [
-                            indices_vector[val]
-                            for val in [
-                                f"{i}_{j}_{0}",
-                                f"{k}_{i}_{1}",
-                                f"{k}_{j}_{0}",
-                            ]
-                        ]
-                        for ind in range(1):
-                            G[rowG, indVecs[ind]] = -1
-                        for ind in range(1, 3):
-                            G[rowG, indVecs[ind]] = 1
+                        for key, v in zip(
+                            [f"{i}_{j}_0", f"{k}_{i}_1", f"{k}_{j}_0"],
+                            [-1.0, 1.0, 1.0],
+                        ):
+                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(v)
                         rowG += 1
-                        indVecs = [
-                            indices_vector[val]
-                            for val in [
-                                f"{i}_{j}_{1}",
-                                f"{k}_{i}_{0}",
-                                f"{k}_{j}_{1}",
-                            ]
-                        ]
-                        for ind in range(1):
-                            G[rowG, indVecs[ind]] = -1
-                        for ind in range(1, 3):
-                            G[rowG, indVecs[ind]] = 1
+                        for key, v in zip(
+                            [f"{i}_{j}_1", f"{k}_{i}_0", f"{k}_{j}_1"],
+                            [-1.0, 1.0, 1.0],
+                        ):
+                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(v)
                         rowG += 1
                     for k in range(i + 1, j):
-                        indVecs = [
-                            indices_vector[val]
-                            for val in [
-                                f"{i}_{j}_{0}",
-                                f"{i}_{k}_{0}",
-                                f"{k}_{j}_{0}",
-                            ]
-                        ]
-                        for ind in range(1):
-                            G[rowG, indVecs[ind]] = -1
-                        for ind in range(1, 3):
-                            G[rowG, indVecs[ind]] = 1
+                        for key, v in zip(
+                            [f"{i}_{j}_0", f"{i}_{k}_0", f"{k}_{j}_0"],
+                            [-1.0, 1.0, 1.0],
+                        ):
+                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(v)
                         rowG += 1
-                        indVecs = [
-                            indices_vector[val]
-                            for val in [
-                                f"{i}_{j}_{1}",
-                                f"{i}_{k}_{1}",
-                                f"{k}_{j}_{1}",
-                            ]
-                        ]
-                        for ind in range(1):
-                            G[rowG, indVecs[ind]] = -1
-                        for ind in range(1, 3):
-                            G[rowG, indVecs[ind]] = 1
+                        for key, v in zip(
+                            [f"{i}_{j}_1", f"{i}_{k}_1", f"{k}_{j}_1"],
+                            [-1.0, 1.0, 1.0],
+                        ):
+                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(v)
                         rowG += 1
-                    for k in range(j + 1, self.n_labels):
-                        indVecs = [
-                            indices_vector[val]
-                            for val in [
-                                f"{i}_{j}_{0}",
-                                f"{i}_{k}_{0}",
-                                f"{j}_{k}_{1}",
-                            ]
-                        ]
-                        for ind in range(1):
-                            G[rowG, indVecs[ind]] = -1
-                        for ind in range(1, 3):
-                            G[rowG, indVecs[ind]] = 1
+                    for k in range(j + 1, n):
+                        for key, v in zip(
+                            [f"{i}_{j}_0", f"{i}_{k}_0", f"{j}_{k}_1"],
+                            [-1.0, 1.0, 1.0],
+                        ):
+                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(v)
                         rowG += 1
-                        indVecs = [
-                            indices_vector[val]
-                            for val in [
-                                f"{i}_{j}_{1}",
-                                f"{i}_{k}_{1}",
-                                f"{j}_{k}_{0}",
-                            ]
-                        ]
-                        for ind in range(1):
-                            G[rowG, indVecs[ind]] = -1
-                        for ind in range(1, 3):
-                            G[rowG, indVecs[ind]] = 1
+                        for key, v in zip(
+                            [f"{i}_{j}_1", f"{i}_{k}_1", f"{j}_{k}_0"],
+                            [-1.0, 1.0, 1.0],
+                        ):
+                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(v)
                         rowG += 1
-
+            G = sp.csr_matrix(
+                (G_vals, (G_rows, G_cols)), shape=(n_ineq, n_vars_p), dtype=np.float64
+            )
             return G, h, A, b, I, B
 
         elif self.height == 2:
             rowG = 0
-            for i in range(self.n_labels - 1):
-                for j in range(i + 1, self.n_labels):
+            for i in range(n - 1):
+                for j in range(i + 1, n):
                     for k in range(i):
-                        indVecs = [
-                            indices_vector[val]
-                            for val in [
-                                f"{k}_{i}_{1}",
-                                f"{k}_{j}_{0}",
-                            ]
-                        ]
-                        for ind_tupe in indVecs:
-                            G[rowG, ind_tupe] = 1
+                        for key in [f"{k}_{i}_1", f"{k}_{j}_0"]:
+                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(1.0)
                         rowG += 1
-                        indVecs = [
-                            indices_vector[val]
-                            for val in [
-                                f"{k}_{i}_{0}",
-                                f"{k}_{j}_{1}",
-                            ]
-                        ]
-                        for ind_tupe in indVecs:
-                            G[rowG, ind_tupe] = 1
+                        for key in [f"{k}_{i}_0", f"{k}_{j}_1"]:
+                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(1.0)
                         rowG += 1
                     for k in range(i + 1, j):
-                        indVecs = [
-                            indices_vector[val]
-                            for val in [
-                                f"{i}_{k}_{0}",
-                                f"{k}_{j}_{0}",
-                            ]
-                        ]
-                        for ind_tupe in indVecs:
-                            G[rowG, ind_tupe] = 1
+                        for key in [f"{i}_{k}_0", f"{k}_{j}_0"]:
+                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(1.0)
                         rowG += 1
-                        indVecs = [
-                            indices_vector[val]
-                            for val in [
-                                f"{i}_{k}_{1}",
-                                f"{k}_{j}_{1}",
-                            ]
-                        ]
-                        for ind_tupe in indVecs:
-                            G[rowG, ind_tupe] = 1
+                        for key in [f"{i}_{k}_1", f"{k}_{j}_1"]:
+                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(1.0)
                         rowG += 1
-                    for k in range(j + 1, self.n_labels):
-                        indVecs = [
-                            indices_vector[val]
-                            for val in [
-                                f"{i}_{k}_{0}",
-                                f"{j}_{k}_{1}",
-                            ]
-                        ]
-                        for ind_tupe in indVecs:
-                            G[rowG, ind_tupe] = 1
+                    for k in range(j + 1, n):
+                        for key in [f"{i}_{k}_0", f"{j}_{k}_1"]:
+                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(1.0)
                         rowG += 1
-                        indVecs = [
-                            indices_vector[val]
-                            for val in [
-                                f"{i}_{k}_{1}",
-                                f"{j}_{k}_{0}",
-                            ]
-                        ]
-                        for ind_tupe in indVecs:
-                            G[rowG, ind_tupe] = 1
+                        for key in [f"{i}_{k}_1", f"{j}_{k}_0"]:
+                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(1.0)
                         rowG += 1
-
+            G = sp.csr_matrix(
+                (G_vals, (G_rows, G_cols)), shape=(n_ineq, n_vars_p), dtype=np.float64
+            )
             return G, h, A, b, I, B
         else:
             raise ValueError("The height is not supported")
@@ -632,7 +431,7 @@ class Search_BOParOs:
         for ind in range(len(vector)):
             c[ind, 0] = vector[ind]
         with suppress_output():
-            _, x = ilp(matrix(c), matrix(G), matrix(h), matrix(A), matrix(b), I, B)
+            _, x = solve_milp(c, G, h, A, b, I, B)
         optX = array(x)
 
         # Let both partial and preorder make the hard predictions in similar ways ...

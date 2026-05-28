@@ -23,9 +23,45 @@ import scipy.sparse as sparse
 
 # Monkey-patch MLkNN._compute_cond for the modern sklearn API used in env.
 import skmultilearn.adapt.mlknn as _mlknn_mod
+from lightgbm import LGBMClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import NearestNeighbors
 from skmultilearn.utils import get_matrix_in_format
+
+
+def _make_base_learner(name: str, random_state=None, is_unbalance: bool = True):
+    """Return a fresh base-learner instance for ECC / LP wrappers.
+
+    Choices:
+        - 'rf'   : RandomForestClassifier with paper-equivalent defaults.
+        - 'lgbm' : LGBMClassifier tuned for small/imbalanced multi-label tasks.
+
+    'rf' is the default so this script reproduces the original paper
+    baseline numbers byte-for-byte; pass --base_learner lgbm to compare
+    PA/PR + calibration against a stronger ECC/LP base.
+    """
+    if name == "rf":
+        # n_estimators=100 (sklearn default since 0.22, made explicit) and
+        # n_jobs=-1 match the original ECC call on main exactly so the default
+        # --base_learner rf reproduces the paper baseline numbers. LP on main
+        # used a bare RandomForestClassifier(); n_jobs=-1 only speeds that
+        # path up — RF determinism depends solely on random_state.
+        return RandomForestClassifier(
+            n_estimators=100, random_state=random_state, n_jobs=-1
+        )
+    if name == "lgbm":
+        return LGBMClassifier(
+            n_estimators=100,
+            random_state=random_state,
+            n_jobs=-1,
+            verbose=-1,
+            num_leaves=20,
+            max_depth=6,
+            learning_rate=0.1,
+            min_child_samples=5,
+            is_unbalance=is_unbalance,
+        )
+    raise ValueError(f"Unknown base_learner: {name!r} (choose 'rf' or 'lgbm')")
 
 
 def _patched_compute_cond(self, X, y):
@@ -73,7 +109,6 @@ from preorder4mlc.datasets4experiments import Datasets4Experiments  # noqa: E402
 NOISY_RATES = [0.0, 0.1, 0.2, 0.3]
 N_REPEAT = 5
 N_FOLDS = 5
-BASE_LEARNER = "RF"
 
 
 def _to_dense_int(M) -> np.ndarray:
@@ -88,6 +123,8 @@ def _ecc_predict(
     X_test: np.ndarray,
     n_ensembles: int = 10,
     rng_seed: int = RANDOM_STATE,
+    base_learner: str = "rf",
+    is_unbalance: bool = True,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Ensemble of Classifier Chains with random orders + bagging-style sampling.
 
@@ -112,9 +149,7 @@ def _ecc_predict(
         Y_bs = Y_train[idx][:, perm]
 
         chain = ClassifierChain(
-            classifier=RandomForestClassifier(
-                n_estimators=100, random_state=rng_seed + k, n_jobs=-1
-            ),
+            classifier=_make_base_learner(base_learner, random_state=rng_seed + k, is_unbalance=is_unbalance),
             require_dense=[True, True],
         )
         chain.fit(X_bs, Y_bs)
@@ -182,11 +217,20 @@ def _lp_marginal_proba(clf: "LabelPowerset", X: np.ndarray, n_labels: int) -> np
     return np.clip(proba, 0.0, 1.0)
 
 
+import os
+
+# At K above this, LabelPowerset explodes combinatorially (2^K meta-classes).
+# Override via env if you really want to try.
+MAX_K_LP = int(os.environ.get("PREORDER_MAX_K_LP", "30"))
+
+
 def train_one(
     algo: str,
     X_train: np.ndarray,
     Y_train: np.ndarray,
     X_test: np.ndarray,
+    base_learner: str = "rf",
+    is_unbalance: bool = True,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Train one baseline and return (Y_pred, Y_proba).
 
@@ -194,6 +238,12 @@ def train_one(
     float array in [0, 1] giving per-label marginal probability.
     """
     n_labels = Y_train.shape[1]
+
+    if algo == "lp" and n_labels > MAX_K_LP:
+        raise ValueError(
+            f"LabelPowerset skipped: K={n_labels} exceeds PREORDER_MAX_K_LP={MAX_K_LP}. "
+            "Set PREORDER_MAX_K_LP=999 to force-run."
+        )
 
     if algo == "mlknn":
         clf = MLkNN(k=10)
@@ -211,9 +261,7 @@ def train_one(
 
     if algo == "lp":
         clf = LabelPowerset(
-            classifier=RandomForestClassifier(
-                n_estimators=100, random_state=RANDOM_STATE, n_jobs=-1
-            ),
+            classifier=_make_base_learner(base_learner, random_state=RANDOM_STATE, is_unbalance=is_unbalance),
             require_dense=[True, True],
         )
         clf.fit(X_train, Y_train)
@@ -232,12 +280,29 @@ def train_one(
         return Y_pred, Y_proba
 
     if algo == "ecc":
-        return _ecc_predict(X_train, Y_train, X_test, n_ensembles=10)
+        return _ecc_predict(X_train, Y_train, X_test, n_ensembles=10, base_learner=base_learner, is_unbalance=is_unbalance)
 
     raise ValueError(f"Unknown algorithm: {algo}")
 
 
-def run(dataset_key: str, results_dir: str, algo: str) -> None:
+def run(
+    dataset_key: str,
+    results_dir: str,
+    algo: str,
+    base_learner: str = "rf",
+    noisy_rate: float | None = None,
+    repeat: int | None = None,
+    fold: int | None = None,
+    is_unbalance: bool = True,
+) -> None:
+    """Run extra baseline.
+
+    Default (no noisy_rate/repeat/fold): full sweep, one pickle per noise level.
+    Per-noise mode (noisy_rate only): one pickle for that noise level only.
+    Split mode (noisy_rate AND repeat AND fold): run a single (R,F) cell and
+    write ``dataset_<name>_noisy_<r>_<algo>[_lgbm]_r<R>_f<F>.pkl`` so the
+    existing merge_split_results.py can consolidate them.
+    """
     basicConfig(level=INFO)
 
     dataset_cfg = ConfigManager.get_dataset_config(dataset_key)
@@ -249,13 +314,31 @@ def run(dataset_key: str, results_dir: str, algo: str) -> None:
     )
     exp.load_datasets()
 
-    for noisy_rate in NOISY_RATES:
+    bl_suffix = f"_{base_learner}" if base_learner != "rf" else ""
+    split_mode = noisy_rate is not None and repeat is not None and fold is not None
+    if split_mode:
+        out = Path(results_dir) / (
+            f"dataset_{dataset_cfg.name.lower()}_noisy_{noisy_rate}_{algo}{bl_suffix}"
+            f"_r{repeat}_f{fold}.pkl"
+        )
+        if out.exists():
+            log(INFO, f"[skip] {out} already exists")
+            return
+        rates = [noisy_rate]
+    elif noisy_rate is not None:
+        rates = [noisy_rate]
+    else:
+        rates = NOISY_RATES
+
+    for noisy_rate in rates:
         log(INFO, f"=== {dataset_cfg.name} | {algo} | noisy_rate={noisy_rate} ===")
         results = []
 
         for repeat_time in range(N_REPEAT):
+            if split_mode and repeat_time != repeat:
+                continue
             log(INFO, f"Repeat {repeat_time+1}/{N_REPEAT}")
-            for fold, (X_train, Y_train, X_test, Y_test) in enumerate(
+            for fold_idx, (X_train, Y_train, X_test, Y_test) in enumerate(
                 exp.kfold_split_with_noise(
                     dataset_index=0,
                     n_splits=N_FOLDS,
@@ -263,11 +346,13 @@ def run(dataset_key: str, results_dir: str, algo: str) -> None:
                     random_state=RANDOM_STATE,
                 )
             ):
+                if split_mode and fold_idx != fold:
+                    continue
                 t0 = time.time()
-                Y_pred, Y_proba = train_one(algo, X_train, Y_train, X_test)
+                Y_pred, Y_proba = train_one(algo, X_train, Y_train, X_test, base_learner=base_learner, is_unbalance=is_unbalance)
                 log(
                     INFO,
-                    f"fold={fold+1} time={(time.time()-t0):.2f}s "
+                    f"fold={fold_idx+1} time={(time.time()-t0):.2f}s "
                     f"Y_test={Y_test.shape} Y_pred={Y_pred.shape} "
                     f"Y_proba={Y_proba.shape}",
                 )
@@ -283,16 +368,22 @@ def run(dataset_key: str, results_dir: str, algo: str) -> None:
                     "preference_order": None,
                     "height": None,
                     "repeat_time": repeat_time,
-                    "fold": fold,
+                    "fold": fold_idx,
                     "dataset_name": dataset_cfg.name,
-                    "base_learner_name": BASE_LEARNER,
+                    "base_learner_name": base_learner.upper(),
                     "noisy_rate": noisy_rate,
                 }
                 results.append(record)
 
-        out = (
-            Path(results_dir) / f"dataset_{dataset_cfg.name.lower()}_noisy_{noisy_rate}_{algo}.pkl"
-        )
+        if split_mode:
+            out = Path(results_dir) / (
+                f"dataset_{dataset_cfg.name.lower()}_noisy_{noisy_rate}_{algo}{bl_suffix}"
+                f"_r{repeat}_f{fold}.pkl"
+            )
+        else:
+            out = (
+                Path(results_dir) / f"dataset_{dataset_cfg.name.lower()}_noisy_{noisy_rate}_{algo}{bl_suffix}.pkl"
+            )
         with open(out, "wb") as f:
             pickle.dump(results, f)
         log(INFO, f"Saved {out} ({len(results)} records)")
@@ -303,8 +394,34 @@ def main():
     p.add_argument("--dataset", required=True)
     p.add_argument("--results_dir", required=True)
     p.add_argument("--algorithm", required=True, choices=["mlknn", "ecc", "lp"])
+    p.add_argument(
+        "--base_learner",
+        choices=["rf", "lgbm"],
+        default="rf",
+        help="Base learner for ECC / LP wrappers. Default 'rf' reproduces "
+        "the original paper baseline; use 'lgbm' for a fair comparison "
+        "against PA/PR with PREORDER_CALIBRATE=1.",
+    )
+    p.add_argument(
+        "--noisy_rate", "--noise_rate", dest="noisy_rate", type=float, default=None,
+        help="Run only this noise level (split mode requires --repeat and --fold too).",
+    )
+    p.add_argument("--repeat", type=int, default=None, help="Split mode: 0-indexed repeat.")
+    p.add_argument("--fold", type=int, default=None, help="Split mode: 0-indexed fold.")
+    p.add_argument(
+        "--no_is_unbalance",
+        action="store_true",
+        default=False,
+        help="Disable is_unbalance=True in LGBMClassifier. Useful when clean "
+        "labels (noise_rate=0.0) cause extreme class weights and slow training.",
+    )
     args = p.parse_args()
-    run(args.dataset, args.results_dir, args.algorithm)
+    run(
+        args.dataset, args.results_dir, args.algorithm,
+        base_learner=args.base_learner,
+        noisy_rate=args.noisy_rate, repeat=args.repeat, fold=args.fold,
+        is_unbalance=not args.no_is_unbalance,
+    )
 
 
 if __name__ == "__main__":

@@ -62,15 +62,15 @@ class BaseClassifiers:
             # Example: Y[:, k] = [1, 0, 1, 0] -> MCC_y = [0, 1, 0, 1].
             MCC_y = np.logical_not(Y[:, k]).astype(int)
             clr_dataset_classifier[str(k)] = {  # type: ignore
-                "X": X.copy(),
-                "Y": MCC_y.copy(),
+                "X": X,
+                "Y": MCC_y,
             }
 
         log(
             INFO,
             f"\t - Training for {len(clr_dataset_classifier.keys())} calibrated_classifiers with {self.name}",
         )
-        # run parraellly fit for each pair of labels
+        # run fit in parallel for each pair of labels
         classifiers = Parallel(n_jobs=-1)(
             delayed(train_classifier)(
                 clr_dataset_classifier[str(k)]["X"],
@@ -110,18 +110,31 @@ class BaseClassifiers:
             f"\t - Training for {len(dataset_classifier.keys())} pairs with {self.name}",
         )
 
+        # Skip degenerate pairs (empty, single-sample, or single-class). LGBM
+        # rejects single-sample fits and any single-class fit; RF tolerates
+        # single-sample but not single-class. downstream predict_CLR guards
+        # against missing keys.
+        trainable_keys = [
+            k for k in dataset_classifier.keys()
+            if len(dataset_classifier[k]["Y"]) >= 2
+            and len(set(dataset_classifier[k]["Y"])) >= 2
+        ]
+        skipped = len(dataset_classifier) - len(trainable_keys)
+        if skipped:
+            log(INFO, f"\t - Skipping {skipped} empty pairs (degenerate fold)")
+
         classifiers = Parallel(n_jobs=-1)(
             delayed(train_classifier)(
                 dataset_classifier[key]["X"],
                 dataset_classifier[key]["Y"],
                 self.name,
             )  # type: ignore
-            for key in dataset_classifier.keys()
+            for key in trainable_keys
         )
 
-        log(INFO, f"\t - Trained {len(dataset_classifier.keys())} classifiers")
+        log(INFO, f"\t - Trained {len(trainable_keys)} classifiers")
 
-        pairwise_classifiers = dict(zip(dataset_classifier.keys(), classifiers))  # type: ignore
+        pairwise_classifiers = dict(zip(trainable_keys, classifiers))  # type: ignore
 
         for i in range(n_labels - 1):
             for j in range(i + 1, n_labels):
@@ -153,15 +166,18 @@ class BaseClassifiers:
                         MCC_y.append(0)
                     elif Y[n, i] == 0 and Y[n, j] == 1:
                         MCC_y.append(1)
+                # X is read-only input for sklearn/LightGBM fit; share the
+                # reference across pairs instead of copying. For K=101 (mediamill)
+                # that's 5050 copies of a 42 MB array (~212 GB) avoided.
                 dataset_classifier[key] = {  # type: ignore
-                    "X": X.copy(),
-                    "Y": MCC_y.copy(),
+                    "X": X,
+                    "Y": MCC_y,
                 }
         log(
             INFO,
             f"\t - Training for {len(dataset_classifier.keys())} pairs with {self.name}",
         )
-        # run parraellly fit for each pair of labels
+        # run fit in parallel for each pair of labels
         classifiers = Parallel(n_jobs=-1)(
             delayed(train_classifier)(
                 dataset_classifier[key]["X"],
@@ -198,15 +214,17 @@ class BaseClassifiers:
                     elif Y[n, i] == 0 and Y[n, j] == 1:
                         MCC_y.append(1)
 
+                # X is read-only input for sklearn/LightGBM fit; share the
+                # reference across pairs instead of copying.
                 dataset_classifier[key] = {  # type: ignore
-                    "X": X.copy(),
-                    "Y": MCC_y.copy(),
+                    "X": X,
+                    "Y": MCC_y,
                 }
         log(
             INFO,
             f"\t - Training {len(dataset_classifier.keys())} pairs with {self.name}",
         )
-        # run parraellly fit for each pair of labels
+        # run fit in parallel for each pair of labels
         classifiers = Parallel(n_jobs=-1)(
             delayed(train_classifier)(
                 dataset_classifier[key]["X"],

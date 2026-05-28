@@ -103,6 +103,11 @@ BASELINES_ORDER: list[str] = ["br", "cc", "clr", "mlknn", "ecc", "lp"]
 
 NOISE_LEVELS: list[str] = ["0.0", "0.1", "0.2", "0.3"]
 
+# Distinct markers for each algorithm — used in all line/scatter plots so that
+# figures remain readable in greyscale and for colour-blind readers.
+BOPOS_MARKERS: list[str] = ["o", "s", "D", "^", "v", "P", "X", "*"]
+BASELINE_MARKERS: list[str] = ["h", "d", "<", ">", "+", "x"]
+
 DATASETS: list[str] = [
     "CHD_49",
     "emotions",
@@ -424,7 +429,7 @@ def make_noise_curves(results_dir: str, out_dir: str) -> None:
             ax.plot(
                 sub["noise"],
                 sub["avg_rank"],
-                marker="o",
+                marker=BOPOS_MARKERS[i % len(BOPOS_MARKERS)],
                 lw=1.8,
                 color=bopos_palette[i],
                 label=short,
@@ -437,7 +442,7 @@ def make_noise_curves(results_dir: str, out_dir: str) -> None:
             ax.plot(
                 sub["noise"],
                 sub["avg_rank"],
-                marker="s",
+                marker=BASELINE_MARKERS[i % len(BASELINE_MARKERS)],
                 lw=1.6,
                 color=baseline_palette[i],
                 linestyle="--",
@@ -629,10 +634,10 @@ def make_tradeoff_plot(long_df: pd.DataFrame, out_dir: str) -> None:
     marker_map: dict[str, str] = {}
     for i, (_short, full) in enumerate(IA_ORDER):
         color_map[full] = bopos_palette[i]
-        marker_map[full] = "o"
+        marker_map[full] = BOPOS_MARKERS[i % len(BOPOS_MARKERS)]
     for i, b in enumerate(BASELINES_ORDER):
         color_map[b] = baseline_palette[i]
-        marker_map[b] = "s"
+        marker_map[b] = BASELINE_MARKERS[i % len(BASELINE_MARKERS)]
 
     fig, ax = plt.subplots(figsize=(8.5, 6.5))
     for alg, group in merged.groupby("algorithm"):
