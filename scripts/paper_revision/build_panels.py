@@ -324,6 +324,7 @@ def render_panel(
             color="lightgrey", markeredgewidth=0.8, linestyle="None",
         )
     ax.set_xticks(x_pos)
+    ax2 = None
     if style == "enhanced":
         # 2-tier xticks: number on top, method label rotated below.
         ax.set_xticklabels([str(int(p)) for p in x_pos], fontsize=9)
@@ -374,7 +375,11 @@ def render_panel(
         if emit_notitle:
             title_obj.set_visible(False)
             method_names = [m[1] for m in methods]
-            ax.set_xticklabels(method_names, rotation=-35, ha="left", fontsize=7)
+            ax.set_xticklabels(method_names, rotation=-35, ha="left", fontsize=9)
+            # Hide the secondary method-label axis so it doesn't draw a second,
+            # smaller copy of the method names on top of the primary labels.
+            if ax2 is not None:
+                ax2.set_visible(False)
             fig.tight_layout(pad=0.2)
             notitle_path = out_path_pdf.with_name(out_path_pdf.stem + "_notitle.pdf")
             fig.savefig(
