@@ -49,6 +49,7 @@ DATASETS = [
     "CHD_49",
     "Water-quality",
     "enron",
+    "VirusPseAAC",
 ]
 LEARNERS = ["RF", "LGBM"]
 PREDICTION_TYPES = ["BinaryVector", "PartialAbstention", "ScoreVector"]
@@ -102,6 +103,7 @@ FOLDER_MAP = {
     ("CHD_49", "RF"): _ORIGINAL_PAPER_FOLDER,
     ("CHD_49", "LGBM"): "full_chd_49_lgbm_summary",
     ("Water-quality", "RF"): _ORIGINAL_PAPER_FOLDER,
+    ("VirusPseAAC", "RF"): _ORIGINAL_PAPER_FOLDER,
     ("Water-quality", "LGBM"): "full_water_quality_lgbm_summary",
     ("enron", "RF"): "full_enron_split_summary",
 }
@@ -380,7 +382,7 @@ def render_panel(
         if emit_notitle:
             title_obj.set_visible(False)
             method_names = [m[1] for m in methods]
-            ax.set_xticklabels(method_names, rotation=35, ha="right", rotation_mode="anchor", fontsize=9)
+            ax.set_xticklabels(method_names, rotation=35, ha="right", rotation_mode="anchor", fontsize=8 if n_methods > 8 else 9)
             # Hide the secondary method-label axis so it doesn't draw a second,
             # smaller copy of the method names on top of the primary labels.
             if ax2 is not None:
