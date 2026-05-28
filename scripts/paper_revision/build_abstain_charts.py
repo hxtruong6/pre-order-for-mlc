@@ -1321,11 +1321,6 @@ def render_abstain_grid_cells(
 
             _style_score(ax)
             ax.set_ylabel("score (%)", fontsize=8)
-            ax.set_title(
-                f"{title_prefix} — {col_label}\n"
-                fr"$\alpha={noise}$",
-                fontsize=9, weight="bold",
-            )
             fig.tight_layout(pad=0.5)
             out_path = out_dir / f"aggregate_{learner.lower()}_{col_name}_noise{noise_tag}.pdf"
             fig.savefig(out_path, format="pdf", bbox_inches="tight", pad_inches=0.05)
@@ -1349,11 +1344,6 @@ def render_abstain_grid_cells(
         )
         _style_abstain(ax)
         ax.set_ylabel("rate (%)", fontsize=8)
-        ax.set_title(
-            f"{title_prefix} — Abstention rate\n"
-            fr"$\alpha={noise}$  (bar=abs, dot=aabs)",
-            fontsize=9, weight="bold",
-        )
         fig.tight_layout(pad=0.5)
         out_path = out_dir / f"aggregate_{learner.lower()}_abstain_noise{noise_tag}.pdf"
         fig.savefig(out_path, format="pdf", bbox_inches="tight", pad_inches=0.05)
