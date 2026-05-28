@@ -95,7 +95,7 @@ rsync "${RSYNC_FLAGS[@]}" "$SRC" "$DEST"
 [[ $DRY_RUN -eq 1 ]] && { echo "(dry run; no commit)"; exit 0; }
 
 cd "$DEST_REPO"
-git add experiment_revision
+git add experiment_results
 
 if git diff --cached --quiet; then
   echo "no changes to commit"
