@@ -189,7 +189,7 @@ def render_coverage_risk(
     )
     ax.set_title(title, fontsize=7)
     ax.tick_params(axis="both", labelsize=6)
-    ax.grid(True, linestyle="-", linewidth=0.4, alpha=0.4)
+    ax.grid(True, linestyle="-", linewidth=0.45, alpha=0.40)
     ax.set_axisbelow(True)
     for spine in ("top", "right"):
         ax.spines[spine].set_visible(False)
@@ -237,12 +237,12 @@ def render_paired_bars(
         ax.axvline(x=7.5, color="grey", linestyle="--", linewidth=0.5, alpha=0.5)
         ax.set_xticks(x)
         ax.set_xticklabels(
-            [m[1] for m in METHOD_ORDER], rotation=-35, ha="left", fontsize=5,
+            [m[1] for m in METHOD_ORDER], rotation=35, ha="right", rotation_mode="anchor", fontsize=5,
         )
         ax.set_title(fr"$\alpha={noise}$", fontsize=7)
         ax.tick_params(axis="y", labelsize=6)
         ax.legend(fontsize=5, loc="lower left", framealpha=0.85, borderpad=0.3)
-        ax.grid(True, axis="y", linestyle="-", linewidth=0.4, alpha=0.4)
+        ax.grid(True, axis="y", linestyle="-", linewidth=0.45, alpha=0.40)
         ax.set_axisbelow(True)
         for spine in ("top", "right"):
             ax.spines[spine].set_visible(False)
@@ -348,7 +348,7 @@ def render_coverage_risk_pareto(
     ax.set_title(f"{title}  -- Pareto frontier + win-region", fontsize=7)
     ax.tick_params(axis="both", labelsize=6)
     ax.legend(fontsize=5, loc="lower right", framealpha=0.85, borderpad=0.3)
-    ax.grid(True, linestyle="-", linewidth=0.4, alpha=0.4)
+    ax.grid(True, linestyle="-", linewidth=0.45, alpha=0.40)
     ax.set_axisbelow(True)
     for spine in ("top", "right"):
         ax.spines[spine].set_visible(False)
@@ -435,7 +435,7 @@ def render_delta_bars(
                            fontsize=5)
         ax.set_title(fr"$\alpha={noise}$", fontsize=7)
         ax.tick_params(axis="y", labelsize=6)
-        ax.grid(True, axis="y", linestyle="-", linewidth=0.4, alpha=0.4)
+        ax.grid(True, axis="y", linestyle="-", linewidth=0.45, alpha=0.40)
         ax.set_axisbelow(True)
         for spine in ("top", "right"):
             ax.spines[spine].set_visible(False)
@@ -492,7 +492,7 @@ def render_efficiency_quality(
     ax.set_title(f"{title}  -- robustness: upper-right = robust", fontsize=7)
     ax.tick_params(axis="both", labelsize=6)
     ax.legend(fontsize=5, loc="lower left", framealpha=0.85, borderpad=0.3)
-    ax.grid(True, linestyle="-", linewidth=0.4, alpha=0.4)
+    ax.grid(True, linestyle="-", linewidth=0.45, alpha=0.40)
     ax.set_axisbelow(True)
     for spine in ("top", "right"):
         ax.spines[spine].set_visible(False)
@@ -552,7 +552,7 @@ def render_effective_f1(
     ax.tick_params(axis="y", labelsize=6)
     ax.legend(fontsize=4, loc="lower left", ncol=3, framealpha=0.85,
               borderpad=0.3, handletextpad=0.3, columnspacing=0.6)
-    ax.grid(True, linestyle="-", linewidth=0.4, alpha=0.4)
+    ax.grid(True, linestyle="-", linewidth=0.45, alpha=0.40)
     ax.set_axisbelow(True)
     for spine in ("top", "right"):
         ax.spines[spine].set_visible(False)
@@ -619,12 +619,12 @@ def render_abstention_rate(
                 )
         ax.set_xticks(x)
         ax.set_xticklabels(
-            [m[1] for m in PA_METHODS], rotation=-35, ha="left", fontsize=5,
+            [m[1] for m in PA_METHODS], rotation=35, ha="right", rotation_mode="anchor", fontsize=5,
         )
         ax.set_title(fr"$\alpha={noise}$", fontsize=7)
         ax.tick_params(axis="y", labelsize=6)
         ax.legend(fontsize=5, loc="upper left", framealpha=0.85, borderpad=0.3)
-        ax.grid(True, axis="y", linestyle="-", linewidth=0.4, alpha=0.4)
+        ax.grid(True, axis="y", linestyle="-", linewidth=0.45, alpha=0.40)
         ax.set_axisbelow(True)
         ax.set_ylim(0, max(40, float(np.nanmax(abs_vals)) * 1.15 if np.any(finite) else 40))
         for spine in ("top", "right"):
@@ -689,11 +689,11 @@ def render_abstain_summary(
             )
         ax.axvline(x=3.5, color="grey", linestyle="--", linewidth=0.4, alpha=0.5)
         ax.set_xticks(x)
-        ax.set_xticklabels(method_labels, rotation=-35, ha="left", fontsize=6)
+        ax.set_xticklabels(method_labels, rotation=35, ha="right", rotation_mode="anchor", fontsize=6)
         ax.set_title(panel_title, fontsize=8)
         ax.set_ylabel("score (%)", fontsize=7)
         ax.tick_params(axis="y", labelsize=6)
-        ax.grid(True, axis="y", linestyle="-", linewidth=0.4, alpha=0.4)
+        ax.grid(True, axis="y", linestyle="-", linewidth=0.45, alpha=0.40)
         ax.set_axisbelow(True)
         for spine in ("top", "right"):
             ax.spines[spine].set_visible(False)
@@ -721,11 +721,11 @@ def render_abstain_summary(
         )
     ax.axvline(x=3.5, color="grey", linestyle="--", linewidth=0.4, alpha=0.5)
     ax.set_xticks(x)
-    ax.set_xticklabels(method_labels, rotation=-35, ha="left", fontsize=6)
+    ax.set_xticklabels(method_labels, rotation=35, ha="right", rotation_mode="anchor", fontsize=6)
     ax.set_title("(c) Abstention rates (bar=abs, dot=aabs)", fontsize=8)
     ax.set_ylabel("rate (%)", fontsize=7)
     ax.tick_params(axis="y", labelsize=6)
-    ax.grid(True, axis="y", linestyle="-", linewidth=0.4, alpha=0.4)
+    ax.grid(True, axis="y", linestyle="-", linewidth=0.45, alpha=0.40)
     ax.set_axisbelow(True)
     for spine in ("top", "right"):
         ax.spines[spine].set_visible(False)
@@ -801,11 +801,11 @@ def render_abstain_summary_gain(
         ax.axhline(y=0, color="black", linewidth=0.5)
         ax.axvline(x=3.5, color="grey", linestyle="--", linewidth=0.4, alpha=0.5)
         ax.set_xticks(x)
-        ax.set_xticklabels(method_labels, rotation=-35, ha="left", fontsize=6)
+        ax.set_xticklabels(method_labels, rotation=35, ha="right", rotation_mode="anchor", fontsize=6)
         ax.set_title(panel_title, fontsize=8)
         ax.set_ylabel("gain (score-points)", fontsize=7)
         ax.tick_params(axis="y", labelsize=6)
-        ax.grid(True, axis="y", linestyle="-", linewidth=0.4, alpha=0.4)
+        ax.grid(True, axis="y", linestyle="-", linewidth=0.45, alpha=0.40)
         ax.set_axisbelow(True)
         for spine in ("top", "right"):
             ax.spines[spine].set_visible(False)
@@ -836,11 +836,11 @@ def render_abstain_summary_gain(
         )
     ax.axvline(x=3.5, color="grey", linestyle="--", linewidth=0.4, alpha=0.5)
     ax.set_xticks(x)
-    ax.set_xticklabels(method_labels, rotation=-35, ha="left", fontsize=6)
+    ax.set_xticklabels(method_labels, rotation=35, ha="right", rotation_mode="anchor", fontsize=6)
     ax.set_title("(c) Abstention rates (bar=abs, dot=aabs)", fontsize=8)
     ax.set_ylabel("rate (%)", fontsize=7)
     ax.tick_params(axis="y", labelsize=6)
-    ax.grid(True, axis="y", linestyle="-", linewidth=0.4, alpha=0.4)
+    ax.grid(True, axis="y", linestyle="-", linewidth=0.45, alpha=0.40)
     ax.set_axisbelow(True)
     for spine in ("top", "right"):
         ax.spines[spine].set_visible(False)
@@ -899,10 +899,10 @@ def render_abstain_summary_2row(
         for vx in (3.5, 7.5, 10.5):
             ax.axvline(x=vx, color="grey", linestyle="--", linewidth=0.4, alpha=0.5)
         ax.set_xticks(x_full)
-        ax.set_xticklabels(method_labels_full, rotation=-35, ha="left", fontsize=5)
+        ax.set_xticklabels(method_labels_full, rotation=35, ha="right", rotation_mode="anchor", fontsize=5)
         ax.set_title(fr"$\alpha={noise}$", fontsize=6)
         ax.tick_params(axis="y", labelsize=5)
-        ax.grid(True, axis="y", linestyle="-", linewidth=0.4, alpha=0.4)
+        ax.grid(True, axis="y", linestyle="-", linewidth=0.45, alpha=0.40)
         ax.set_axisbelow(True)
         for spine in ("top", "right"):
             ax.spines[spine].set_visible(False)
@@ -910,10 +910,10 @@ def render_abstain_summary_2row(
     def _style_abstain(ax, noise):
         ax.axvline(x=3.5, color="grey", linestyle="--", linewidth=0.4, alpha=0.5)
         ax.set_xticks(x_pa)
-        ax.set_xticklabels(method_labels_pa, rotation=-35, ha="left", fontsize=5)
+        ax.set_xticklabels(method_labels_pa, rotation=35, ha="right", rotation_mode="anchor", fontsize=5)
         ax.set_title(fr"$\alpha={noise}$", fontsize=6)
         ax.tick_params(axis="y", labelsize=5)
-        ax.grid(True, axis="y", linestyle="-", linewidth=0.4, alpha=0.4)
+        ax.grid(True, axis="y", linestyle="-", linewidth=0.45, alpha=0.40)
         ax.set_axisbelow(True)
         for spine in ("top", "right"):
             ax.spines[spine].set_visible(False)
@@ -1043,9 +1043,9 @@ def render_abstain_summary_grid(
         for vx in (3.5, 7.5, 10.5):
             ax.axvline(x=vx, color="grey", linestyle="--", linewidth=0.4, alpha=0.5)
         ax.set_xticks(x_full)
-        ax.set_xticklabels(method_labels_full, rotation=-35, ha="left", fontsize=6)
+        ax.set_xticklabels(method_labels_full, rotation=35, ha="right", rotation_mode="anchor", fontsize=6)
         ax.tick_params(axis="y", labelsize=6)
-        ax.grid(True, axis="y", linestyle="-", linewidth=0.4, alpha=0.4)
+        ax.grid(True, axis="y", linestyle="-", linewidth=0.45, alpha=0.40)
         ax.set_axisbelow(True)
         for spine in ("top", "right"):
             ax.spines[spine].set_visible(False)
@@ -1053,9 +1053,9 @@ def render_abstain_summary_grid(
     def _style_abstain(ax):
         ax.axvline(x=3.5, color="grey", linestyle="--", linewidth=0.4, alpha=0.5)
         ax.set_xticks(x_pa)
-        ax.set_xticklabels(method_labels_pa, rotation=-35, ha="left", fontsize=6)
+        ax.set_xticklabels(method_labels_pa, rotation=35, ha="right", rotation_mode="anchor", fontsize=6)
         ax.tick_params(axis="y", labelsize=6)
-        ax.grid(True, axis="y", linestyle="-", linewidth=0.4, alpha=0.4)
+        ax.grid(True, axis="y", linestyle="-", linewidth=0.45, alpha=0.40)
         ax.set_axisbelow(True)
         for spine in ("top", "right"):
             ax.spines[spine].set_visible(False)
@@ -1151,9 +1151,9 @@ def render_abstain_summary_grid_v2(
     def _style_axes(ax):
         ax.axvline(x=3.5, color="grey", linestyle="--", linewidth=0.4, alpha=0.5)
         ax.set_xticks(x)
-        ax.set_xticklabels(method_labels, rotation=-35, ha="left", fontsize=6)
+        ax.set_xticklabels(method_labels, rotation=35, ha="right", rotation_mode="anchor", fontsize=6)
         ax.tick_params(axis="y", labelsize=6)
-        ax.grid(True, axis="y", linestyle="-", linewidth=0.4, alpha=0.4)
+        ax.grid(True, axis="y", linestyle="-", linewidth=0.45, alpha=0.40)
         ax.set_axisbelow(True)
         for spine in ("top", "right"):
             ax.spines[spine].set_visible(False)

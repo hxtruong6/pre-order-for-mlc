@@ -54,6 +54,10 @@ LEARNERS = ["RF", "LGBM"]
 PREDICTION_TYPES = ["BinaryVector", "PartialAbstention", "ScoreVector"]
 NOISE_LEVELS = ["0.0", "0.1", "0.2", "0.3"]
 
+# Distinct marker per noise level so figures are readable in greyscale and
+# for colour-blind readers (reviewer suggestion).
+NOISE_MARKERS = {"0.0": "o", "0.1": "s", "0.2": "D", "0.3": "^"}
+
 # Two palettes, switched by --style:
 #   "original" reproduces the qualitative red/blue/green/black scheme used by
 #   the original paper (Table 5 caption).
@@ -273,7 +277,7 @@ def render_panel(
 
     # Jitter markers per noise level on the x-axis so red/blue/green/black
     # dots at the same method don't completely overlap.
-    jitter_step = 0.08
+    jitter_step = 0.12
     centered = (np.arange(len(NOISE_LEVELS)) - (len(NOISE_LEVELS) - 1) / 2.0)
     noise_jitters = {n: float(centered[i] * jitter_step)
                      for i, n in enumerate(NOISE_LEVELS)}
@@ -294,12 +298,13 @@ def render_panel(
         ax.plot(
             x_segs,
             y_segs,
-            linestyle=":",
-            linewidth=0.8,
-            marker="o",
-            markersize=4.0,
+            linestyle=(0, (2, 2)),
+            linewidth=0.75,
+            marker=NOISE_MARKERS[noise],
+            markersize={"o": 3.8, "s": 3.2, "D": 3.0, "^": 3.8}[NOISE_MARKERS[noise]],
             color=palette[noise],
-            markeredgewidth=0,
+            markeredgewidth=0.5,
+            markeredgecolor="white",
             zorder=3,
         )
     # Vertical dividers grouping methods into 4 blocks:
@@ -356,7 +361,7 @@ def render_panel(
     # tables to identify each subplot. Reduced from 8pt -> 7pt + tight
     # padding so its bbox is smaller and trim is more predictable.
     title_obj = ax.set_title(metric, fontsize=7, pad=2.0)
-    ax.grid(True, which="major", linestyle="-", linewidth=0.4, alpha=0.4)
+    ax.grid(True, which="major", linestyle="-", linewidth=0.45, alpha=0.40)
     ax.set_axisbelow(True)
     for spine in ("top", "right"):
         ax.spines[spine].set_visible(False)
@@ -375,7 +380,7 @@ def render_panel(
         if emit_notitle:
             title_obj.set_visible(False)
             method_names = [m[1] for m in methods]
-            ax.set_xticklabels(method_names, rotation=-35, ha="left", fontsize=9)
+            ax.set_xticklabels(method_names, rotation=35, ha="right", rotation_mode="anchor", fontsize=9)
             # Hide the secondary method-label axis so it doesn't draw a second,
             # smaller copy of the method names on top of the primary labels.
             if ax2 is not None:
