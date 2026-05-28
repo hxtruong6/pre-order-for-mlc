@@ -1246,7 +1246,7 @@ def render_abstain_grid_cells(
 
     Files: aggregate_{learner}_{f1|jaccard|abstain}_noise{noise_tag}.pdf
     Always uses original-paper color palette. Score panels (f1, Jaccard)
-    show 8 PA/PR methods with +X.X gain labels matching v2 format.
+    show all 12 methods; +X.X gain labels appear only on the 8 PA/PR bars.
     No legend. Abstain panels have no bar annotations.
     """
     palette = NOISE_COLORS_ORIGINAL
@@ -1254,15 +1254,19 @@ def render_abstain_grid_cells(
     out_dir.mkdir(parents=True, exist_ok=True)
     count = 0
 
+    n_methods_full = len(METHOD_ORDER)
+    method_labels_full = [m[1] for m in METHOD_ORDER]
+    x_full = np.arange(n_methods_full)
     n_methods_pa = len(PA_METHODS)
     method_labels_pa = [m[1] for m in PA_METHODS]
     x_pa = np.arange(n_methods_pa)
 
     def _style_score(ax):
-        ax.axvline(x=3.5, color="grey", linestyle="--", linewidth=0.4, alpha=0.5)
-        ax.set_xticks(x_pa)
-        ax.set_xticklabels(method_labels_pa, rotation=35, ha="right",
-                           rotation_mode="anchor", fontsize=7)
+        for vx in (3.5, 7.5, 10.5):
+            ax.axvline(x=vx, color="grey", linestyle="--", linewidth=0.4, alpha=0.5)
+        ax.set_xticks(x_full)
+        ax.set_xticklabels(method_labels_full, rotation=35, ha="right",
+                           rotation_mode="anchor", fontsize=6)
         ax.tick_params(axis="y", labelsize=7)
         ax.grid(True, axis="y", linestyle="-", linewidth=0.45, alpha=0.40)
         ax.set_axisbelow(True)
@@ -1283,30 +1287,31 @@ def render_abstain_grid_cells(
     for noise in NOISE_LEVELS:
         noise_tag = str(noise).replace(".", "")
 
-        # --- score panels (f1 and Jaccard) — 8 PA/PR methods only ---
+        # --- score panels (f1 and Jaccard) — all 12 methods ---
         for pa_metric, bv_metric, col_name, col_label in (
             ("f1_pa", "f1", "f1", r"$f_1$ paired bars"),
             ("jaccard_pa", "jaccard", "jaccard", "Jaccard paired bars"),
         ):
-            bv_vals = np.full(n_methods_pa, np.nan)
-            pa_vals = np.full(n_methods_pa, np.nan)
-            for i, (algo, _) in enumerate(PA_METHODS):
+            bv_vals = np.full(n_methods_full, np.nan)
+            pa_vals = np.full(n_methods_full, np.nan)
+            for i, (algo, _) in enumerate(METHOD_ORDER):
                 bv_vals[i] = _bv_value(df, algo, pa_metric, bv_metric, noise) * 100.0
-                pa_vals[i] = _aggregate_value(df, algo, pa_metric, noise) * 100.0
+                if i < 8:
+                    pa_vals[i] = _aggregate_value(df, algo, pa_metric, noise) * 100.0
 
-            fig, ax = plt.subplots(figsize=(4.5, 3.2))
+            fig, ax = plt.subplots(figsize=(5.5, 3.2))
             width = 0.4
-            ax.bar(x_pa - width / 2, bv_vals, width, color=bv_color, linewidth=0)
-            ax.bar(x_pa + width / 2, pa_vals, width, color=palette[noise], linewidth=0)
+            ax.bar(x_full - width / 2, bv_vals, width, color=bv_color, linewidth=0)
+            ax.bar(x_full + width / 2, pa_vals, width, color=palette[noise], linewidth=0)
 
-            # +X.X gain labels matching v2 format (absolute score-point diff)
-            for i in range(n_methods_pa):
+            # +X.X gain labels on the 8 PA/PR bars only
+            for i in range(n_methods_full):
                 if np.isfinite(bv_vals[i]) and np.isfinite(pa_vals[i]):
                     gap = pa_vals[i] - bv_vals[i]
                     sign = "+" if gap >= 0 else ""
                     ax.annotate(
                         f"{sign}{gap:.1f}",
-                        xy=(x_pa[i] + width / 2, pa_vals[i]),
+                        xy=(x_full[i] + width / 2, pa_vals[i]),
                         xytext=(0, 2),
                         textcoords="offset points",
                         ha="center",
