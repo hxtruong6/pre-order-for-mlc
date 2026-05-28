@@ -75,6 +75,10 @@ RSYNC_FLAGS=(
   --exclude='*.fls'
   --exclude='*.synctex.gz'
   --exclude='*.toc'
+  # Exclude all figures_original/ — intermediate raw output, not needed on Overleaf.
+  # Only figs/ (final figures) is synced.
+  --exclude='figures_original/'
+  --exclude='figures_enhanced/'
   # LGBM panel PDFs are large; we only keep what §3 abstain overview
   # actually references (the 2 summary_grid figures under abstain/_shared/).
   # Everything else under lgbm/ is excluded to stay under Overleaf's
