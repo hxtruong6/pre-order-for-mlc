@@ -15,7 +15,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SRC="$ROOT/paper_revision/"
 DEST_REPO="$ROOT/overleaf"
-DEST="$DEST_REPO/experiment_revision/"
+DEST="$DEST_REPO/experiment_results/"
 
 DRY_RUN=0
 DO_PUSH=1
