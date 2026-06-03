@@ -113,12 +113,12 @@ times, and the file layout produced by each step.
 
 ## Datasets
 
-Nine multi-label datasets are used in the paper:
+Ten multi-label datasets are used in the paper:
 
 `chd_49`, `emotions`, `scene`, `yeast`, `water_quality`,
-`humanpseaac`, `gpositivepseaac`, `plantpseaac`, `enron`.
+`humanpseaac`, `gpositivepseaac`, `plantpseaac`, `viruspseaac`, `enron`.
 
-The first eight ARFFs are bundled under `data/` so the pipeline can run
+The first nine ARFFs are bundled under `data/` so the pipeline can run
 end-to-end after `pip install`. `enron.arff` (K=53) is downloaded
 separately from COMETA / MULAN and placed at `data/enron.arff`; see
 [REPRODUCE.md](REPRODUCE.md) §2.

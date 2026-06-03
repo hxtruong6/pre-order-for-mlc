@@ -85,7 +85,14 @@ class Search_BOPreOs:
         # With _SEARCH_N_JOBS=1 (default) this is a thin wrapper that runs
         # in-process, equivalent to the prior for-loop. With higher n_jobs,
         # loky forks worker processes; cvxopt/GLPK is process-safe.
-        results = Parallel(n_jobs=_SEARCH_N_JOBS)(
+        # batch_size=1: per-instance solve times are wildly uneven (sub-second to
+        # tens of seconds on enron K=53). One task per dispatch gives proper
+        # work-stealing instead of joblib's 'auto' lumping; the ~ms IPC cost is
+        # negligible vs multi-second solves. NB: on enron this only modestly helps
+        # (~4->4.5x effective) — the ceiling is the workload (few instances are
+        # slow at once), not batching or CPU count (cores are NOT cgroup-confined;
+        # the node grants all SLURM_CPUS_ON_NODE). Scheduling-only — results identical.
+        results = Parallel(n_jobs=_SEARCH_N_JOBS, batch_size=1)(
             delayed(self._solve_one_PRE_ORDER)(
                 n, ii, jj, indices_vector, G, h, A, b, I, B
             )
@@ -288,7 +295,8 @@ class Search_BOParOs:
         # See PRE_ORDER above for the triu_indices vectorisation rationale.
         ii, jj = np.triu_indices(self.n_labels, k=1)
         # Per-instance ILP solves wrapped in joblib.Parallel — see PRE_ORDER above.
-        results = Parallel(n_jobs=_SEARCH_N_JOBS)(
+        # batch_size=1 for the same load-balancing reason (scheduling-only).
+        results = Parallel(n_jobs=_SEARCH_N_JOBS, batch_size=1)(
             delayed(self._solve_one_PARTIAL_ORDER)(
                 n, ii, jj, indices_vector, G, h, A, b, I, B
             )

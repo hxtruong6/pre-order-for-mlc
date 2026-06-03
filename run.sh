@@ -28,6 +28,7 @@ DATASETS=(
     water_quality
     gpositivepseaac
     plantpseaac
+    viruspseaac
     humanpseaac
     enron
 )

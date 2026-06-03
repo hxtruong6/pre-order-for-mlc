@@ -146,11 +146,20 @@ def _solve_highs(c, G, h, A, b, I, B):
 
     _time_limit = os.environ.get("HIGHS_TIME_LIMIT")
     _mip_gap = os.environ.get("HIGHS_MIP_REL_GAP")
+    _node_limit = os.environ.get("HIGHS_NODE_LIMIT")
     _options = {}
     if _time_limit is not None:
         _options["time_limit"] = float(_time_limit)
     if _mip_gap is not None:
         _options["mip_rel_gap"] = float(_mip_gap)
+    if _node_limit is not None:
+        # Hard cap on branch-and-bound nodes — the only DETERMINISTIC bound on
+        # tree memory. On K=53 enron the noisy-RF LP relaxation is so weak that
+        # mip_rel_gap never triggers and the tree grows to fill any RAM cap
+        # (OOM in <9 min at 240G). node_limit returns the best incumbent found
+        # (res.x is not None), so easy instances still solve exactly while the
+        # pathological ones are bounded near-optimal instead of OOM-killed.
+        _options["node_limit"] = int(_node_limit)
 
     res = milp(
         c=c_arr,

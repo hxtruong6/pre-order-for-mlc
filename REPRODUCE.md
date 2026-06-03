@@ -23,7 +23,7 @@ pip install -e .
 
 ## 2. Data
 
-Nine multi-label datasets are used in the paper. Eight ARFFs are tracked
+Ten multi-label datasets are used in the paper. Nine ARFFs are tracked
 under `data/` for one-click reproduction; `enron.arff` (K=53) must be
 downloaded separately from COMETA / MULAN and placed at
 `data/enron.arff`.
@@ -38,6 +38,7 @@ downloaded separately from COMETA / MULAN and placed at
 | `humanpseaac` | `HumanPseAAC.arff` | 14 | Pse-AAC encoding |
 | `gpositivepseaac` | `GpositivePseAAC.arff` | 4 | Pse-AAC encoding |
 | `plantpseaac` | `PlantPseAAC.arff` | 12 | Pse-AAC encoding |
+| `viruspseaac` | `VirusPseAAC.arff` | 6 | Pse-AAC encoding |
 | `enron` | `enron.arff` | 53 | COMETA / MULAN (not bundled) |
 
 ## 3. Determinism
@@ -50,7 +51,7 @@ splits produce identical predictions.
 
 ## 4. Reproducing all results
 
-A single command reproduces the full pipeline for all nine datasets
+A single command reproduces the full pipeline for all ten datasets
 with the default base learner (Random Forest):
 
 ```bash
@@ -112,33 +113,37 @@ per dataset, with Random Forest as the base learner:
 |---|---|
 | chd_49 | ~4 min |
 | gpositivepseaac | ~5 min |
+| viruspseaac | ~5 min |
 | emotions | ~6 min |
 | plantpseaac | ~30 min |
 | scene | ~40 min |
 | water_quality | ~60 min |
 | yeast | ~60 min |
 | humanpseaac | ~2.5 h |
-| enron | ~12 h (K=53; recommend an HPC node with 32 GB RAM) |
+| enron | per-fold ~18 min on an HPC node (K=53; uses the HiGHS solver — set `PREORDER_SOLVER=highs` — and ~300 GB RAM; GLPK is intractable at this label count) |
 
 ECC adds at most ~30 min per dataset (typically far less). For HPC
 re-runs, dataset jobs can be submitted in parallel.
 
 ## 8. Output bundle
 
-After step 6 the run directory contains:
+After step 5 the run directory contains:
 
 * `results/run-<date>/*.pkl` — per-fold training records (not tracked
-  by git; recreated by step 4).
-* `results/run-<date>/evaluation_*.csv` and `*.xlsx` — per-fold
-  metric CSVs.
-* `results/run-<date>_summary/*_summary.{csv,xlsx}` — per-dataset
-  aggregate tables consumed by `statistical_tests` and `plot_figures`.
-* `results/run-<date>_summary/stats/` — Friedman / Nemenyi outputs
-  and CD-diagram PDFs.
-* `results/run-<date>_summary/figures/` — paper figures.
+  by git; recreated by step 1).
+* `results/run-<date>/evaluation_*.csv` — per-fold metric CSVs.
+* `results/run-<date>_summary/*_summary.csv` — per-dataset aggregate
+  tables (one per `<Dataset>_<PredictionType>`).
 
-The canonical Random-Forest aggregate tables that produced the paper
-numbers ship under `results/final_20260514_v2_summary/`, and the
-LightGBM aggregate tables ship under
-`results/full_<dataset>_lgbm_summary/`. New runs can be diffed against
-these to confirm byte-for-byte equivalence.
+The canonical aggregate tables that produced the paper numbers ship as
+CSV under:
+
+* `results/final_rf_summary/` — Random Forest (paper default).
+* `results/final_lgbm_summary/` — LightGBM variant.
+
+Each also keeps its raw `results/final_rf/` and `results/final_lgbm/`
+per-fold pickles + `evaluation_*.csv` on disk (pickles untracked) so the
+summaries can be re-aggregated via step 5 without retraining. New runs
+can be diffed against these CSVs to confirm equivalence. The optional
+statistical tests and figures (step 6) are not shipped; regenerate them
+from the summary CSVs as needed.

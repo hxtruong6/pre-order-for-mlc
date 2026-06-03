@@ -55,6 +55,7 @@ class ConfigManager:
         "humanpseaac": DatasetConfig("HumanPseAAC", "HumanPseAAC.arff", 14),
         "gpositivepseaac": DatasetConfig("GpositivePseAAC", "GpositivePseAAC.arff", 4),
         "plantpseaac": DatasetConfig("PlantPseAAC", "PlantPseAAC.arff", 12),
+        "viruspseaac": DatasetConfig("VirusPseAAC", "VirusPseAAC.arff", 6),
         # enron (K=53). ARFF is NOT bundled — download from COMETA / MULAN
         # and place at ./data/enron.arff. See REPRODUCE.md.
         "enron": DatasetConfig("enron", "enron.arff", 53),
