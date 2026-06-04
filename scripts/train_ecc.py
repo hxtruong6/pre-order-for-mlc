@@ -22,6 +22,11 @@ import numpy as np
 import scipy.sparse as sparse
 from lightgbm import LGBMClassifier
 from sklearn.ensemble import RandomForestClassifier
+from skmultilearn.problem_transform import ClassifierChain
+
+from preorder4mlc.config import ConfigManager
+from preorder4mlc.constants import RANDOM_STATE
+from preorder4mlc.datasets4experiments import Datasets4Experiments
 
 
 def _make_base_learner(name: str, random_state=None, is_unbalance: bool = True):
@@ -58,12 +63,6 @@ def _make_base_learner(name: str, random_state=None, is_unbalance: bool = True):
         )
     raise ValueError(f"Unknown base_learner: {name!r} (choose 'rf' or 'lgbm')")
 
-
-from skmultilearn.problem_transform import ClassifierChain
-
-from preorder4mlc.config import ConfigManager
-from preorder4mlc.constants import RANDOM_STATE
-from preorder4mlc.datasets4experiments import Datasets4Experiments
 
 NOISY_RATES = [0.0, 0.1, 0.2, 0.3]
 N_REPEAT = 5

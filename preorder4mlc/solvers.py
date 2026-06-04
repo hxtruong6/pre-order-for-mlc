@@ -12,8 +12,8 @@ problem has a unique optimum. Selected via env var ``PREORDER_SOLVER`` (or
 from __future__ import annotations
 
 import os
-import numpy as np
 
+import numpy as np
 
 _SOLVER_ENV = "PREORDER_SOLVER"
 
@@ -45,9 +45,9 @@ def solve_milp(c, G, h, A, b, I, B):
 
 
 def _solve_glpk(c, G, h, A, b, I, B):
+    import cvxopt.glpk as _glpk
     import scipy.sparse as sp
     from cvxopt import matrix, spmatrix
-    import cvxopt.glpk as _glpk
     from cvxopt.glpk import ilp
 
     def _to_cvxopt(M):
@@ -86,9 +86,8 @@ def _solve_glpk(c, G, h, A, b, I, B):
 
 def _solve_highs(c, G, h, A, b, I, B):
     """HiGHS via scipy.optimize.milp (officially wraps HiGHS, stable API)."""
-    from scipy.optimize import LinearConstraint, milp, Bounds
-
     import scipy.sparse as sp
+    from scipy.optimize import Bounds, LinearConstraint, milp
 
     # cvxopt.glpk silently uses only the first ncol(G/A) entries of c, so the
     # legacy encoders allocate c larger than the constraint matrix expects.

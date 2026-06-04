@@ -23,7 +23,6 @@ import pickle
 import re
 import sys
 
-
 _SUFFIXES = [
     "", "_clr", "_br", "_cc",
     "_mlknn", "_ecc", "_lp",

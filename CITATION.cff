@@ -28,6 +28,7 @@ preferred-citation:
       given-names: Xuân Trường
     - family-names: Nguyen
       given-names: Vu-Linh
-  journal: "<TODO: journal name>"
+  journal: "Machine Learning"
+  publisher: "Springer"
   year: 2026
   doi: "<TODO: DOI once assigned>"

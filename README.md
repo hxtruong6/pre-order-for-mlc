@@ -1,13 +1,13 @@
 # preorder4MLC: Pre-Order Based Multi-Label Classification
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/python-3.12-blue)](https://www.python.org/)
 
 Code and full experimental results for the paper
 
 > **\<TODO: paper title\>**
 > Hoàng Xuân Trường, Vu-Linh Nguyen.
-> *\<TODO: journal name\>*, 2026.
+> *Machine Learning* (Springer), 2026.
 > \<TODO: DOI link once assigned\>
 
 ## Overview
@@ -74,7 +74,7 @@ probabilities used for the ranking metrics (`ranking_loss`, `one_error`,
 │   ├── train_ecc.py                    # Train the ECC baseline
 │   ├── evaluate_ecc.py                 # Evaluate the ECC pickle
 │   └── smoke_predict_bopos.py          # Behavior-preservation smoke test
-├── data/                               # 8 ARFF datasets bundled (enron is downloaded; see REPRODUCE.md §2)
+├── data/                               # 9 ARFF datasets bundled (enron is downloaded; see REPRODUCE.md §2)
 ├── results/                            # Per-fold CSVs + aggregated tables (gitignored except CSV/XLSX)
 ├── run.sh                              # End-to-end reproduction driver
 ├── REPRODUCE.md                        # Step-by-step reproduction recipe
@@ -153,10 +153,11 @@ once the DOI is assigned):
 
 ```bibtex
 @article{TODO,
-  title   = {<TODO: paper title>},
-  author  = {Hoàng, Xuân Trường and Nguyen, Vu-Linh},
-  journal = {<TODO: journal name>},
-  year    = {2026},
+  title     = {<TODO: paper title>},
+  author    = {Hoàng, Xuân Trường and Nguyen, Vu-Linh},
+  journal   = {Machine Learning},
+  publisher = {Springer},
+  year      = {2026},
 }
 ```
 

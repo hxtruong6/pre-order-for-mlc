@@ -160,34 +160,46 @@ class Search_BOPreOs:
                         keys1 = [f"{i}_{j}_0", f"{i}_{j}_3", f"{k}_{i}_1", f"{k}_{i}_3", f"{k}_{j}_0", f"{k}_{j}_3"]
                         vals1 = [-1.0, -1.0, 1.0, 1.0, 1.0, 1.0]
                         for key, v in zip(keys1, vals1):
-                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(v)
+                            G_rows.append(rowG)
+                            G_cols.append(indices_vector[key])
+                            G_vals.append(v)
                         rowG += 1
                         keys2 = [f"{i}_{j}_1", f"{i}_{j}_3", f"{k}_{i}_0", f"{k}_{i}_3", f"{k}_{j}_1", f"{k}_{j}_3"]
                         vals2 = [-1.0, -1.0, 1.0, 1.0, 1.0, 1.0]
                         for key, v in zip(keys2, vals2):
-                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(v)
+                            G_rows.append(rowG)
+                            G_cols.append(indices_vector[key])
+                            G_vals.append(v)
                         rowG += 1
                     for k in range(i + 1, j):
                         keys1 = [f"{i}_{j}_0", f"{i}_{j}_3", f"{i}_{k}_0", f"{i}_{k}_3", f"{k}_{j}_0", f"{k}_{j}_3"]
                         vals1 = [-1.0, -1.0, 1.0, 1.0, 1.0, 1.0]
                         for key, v in zip(keys1, vals1):
-                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(v)
+                            G_rows.append(rowG)
+                            G_cols.append(indices_vector[key])
+                            G_vals.append(v)
                         rowG += 1
                         keys2 = [f"{i}_{j}_1", f"{i}_{j}_3", f"{i}_{k}_1", f"{i}_{k}_3", f"{k}_{j}_1", f"{k}_{j}_3"]
                         vals2 = [-1.0, -1.0, 1.0, 1.0, 1.0, 1.0]
                         for key, v in zip(keys2, vals2):
-                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(v)
+                            G_rows.append(rowG)
+                            G_cols.append(indices_vector[key])
+                            G_vals.append(v)
                         rowG += 1
                     for k in range(j + 1, n):
                         keys1 = [f"{i}_{j}_0", f"{i}_{j}_3", f"{i}_{k}_0", f"{i}_{k}_3", f"{j}_{k}_1", f"{j}_{k}_3"]
                         vals1 = [-1.0, -1.0, 1.0, 1.0, 1.0, 1.0]
                         for key, v in zip(keys1, vals1):
-                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(v)
+                            G_rows.append(rowG)
+                            G_cols.append(indices_vector[key])
+                            G_vals.append(v)
                         rowG += 1
                         keys2 = [f"{i}_{j}_1", f"{i}_{j}_3", f"{i}_{k}_1", f"{i}_{k}_3", f"{j}_{k}_0", f"{j}_{k}_3"]
                         vals2 = [-1.0, -1.0, 1.0, 1.0, 1.0, 1.0]
                         for key, v in zip(keys2, vals2):
-                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(v)
+                            G_rows.append(rowG)
+                            G_cols.append(indices_vector[key])
+                            G_vals.append(v)
                         rowG += 1
             G = sp.csr_matrix(
                 (G_vals, (G_rows, G_cols)), shape=(n_ineq, n_vars), dtype=np.float64
@@ -200,24 +212,36 @@ class Search_BOPreOs:
                 for j in range(i + 1, n):
                     for k in range(i):
                         for key in [f"{k}_{i}_1", f"{k}_{i}_3", f"{k}_{j}_0", f"{k}_{j}_3"]:
-                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(1.0)
+                            G_rows.append(rowG)
+                            G_cols.append(indices_vector[key])
+                            G_vals.append(1.0)
                         rowG += 1
                         for key in [f"{k}_{i}_0", f"{k}_{i}_3", f"{k}_{j}_1", f"{k}_{j}_3"]:
-                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(1.0)
+                            G_rows.append(rowG)
+                            G_cols.append(indices_vector[key])
+                            G_vals.append(1.0)
                         rowG += 1
                     for k in range(i + 1, j):
                         for key in [f"{i}_{k}_0", f"{i}_{k}_3", f"{k}_{j}_0", f"{k}_{j}_3"]:
-                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(1.0)
+                            G_rows.append(rowG)
+                            G_cols.append(indices_vector[key])
+                            G_vals.append(1.0)
                         rowG += 1
                         for key in [f"{i}_{k}_1", f"{i}_{k}_3", f"{k}_{j}_1", f"{k}_{j}_3"]:
-                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(1.0)
+                            G_rows.append(rowG)
+                            G_cols.append(indices_vector[key])
+                            G_vals.append(1.0)
                         rowG += 1
                     for k in range(j + 1, n):
                         for key in [f"{i}_{k}_0", f"{i}_{k}_3", f"{j}_{k}_1", f"{j}_{k}_3"]:
-                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(1.0)
+                            G_rows.append(rowG)
+                            G_cols.append(indices_vector[key])
+                            G_vals.append(1.0)
                         rowG += 1
                         for key in [f"{i}_{k}_1", f"{i}_{k}_3", f"{j}_{k}_0", f"{j}_{k}_3"]:
-                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(1.0)
+                            G_rows.append(rowG)
+                            G_cols.append(indices_vector[key])
+                            G_vals.append(1.0)
                         rowG += 1
             G = sp.csr_matrix(
                 (G_vals, (G_rows, G_cols)), shape=(n_ineq, n_vars), dtype=np.float64
@@ -363,39 +387,51 @@ class Search_BOParOs:
                             [f"{i}_{j}_0", f"{k}_{i}_1", f"{k}_{j}_0"],
                             [-1.0, 1.0, 1.0],
                         ):
-                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(v)
+                            G_rows.append(rowG)
+                            G_cols.append(indices_vector[key])
+                            G_vals.append(v)
                         rowG += 1
                         for key, v in zip(
                             [f"{i}_{j}_1", f"{k}_{i}_0", f"{k}_{j}_1"],
                             [-1.0, 1.0, 1.0],
                         ):
-                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(v)
+                            G_rows.append(rowG)
+                            G_cols.append(indices_vector[key])
+                            G_vals.append(v)
                         rowG += 1
                     for k in range(i + 1, j):
                         for key, v in zip(
                             [f"{i}_{j}_0", f"{i}_{k}_0", f"{k}_{j}_0"],
                             [-1.0, 1.0, 1.0],
                         ):
-                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(v)
+                            G_rows.append(rowG)
+                            G_cols.append(indices_vector[key])
+                            G_vals.append(v)
                         rowG += 1
                         for key, v in zip(
                             [f"{i}_{j}_1", f"{i}_{k}_1", f"{k}_{j}_1"],
                             [-1.0, 1.0, 1.0],
                         ):
-                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(v)
+                            G_rows.append(rowG)
+                            G_cols.append(indices_vector[key])
+                            G_vals.append(v)
                         rowG += 1
                     for k in range(j + 1, n):
                         for key, v in zip(
                             [f"{i}_{j}_0", f"{i}_{k}_0", f"{j}_{k}_1"],
                             [-1.0, 1.0, 1.0],
                         ):
-                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(v)
+                            G_rows.append(rowG)
+                            G_cols.append(indices_vector[key])
+                            G_vals.append(v)
                         rowG += 1
                         for key, v in zip(
                             [f"{i}_{j}_1", f"{i}_{k}_1", f"{j}_{k}_0"],
                             [-1.0, 1.0, 1.0],
                         ):
-                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(v)
+                            G_rows.append(rowG)
+                            G_cols.append(indices_vector[key])
+                            G_vals.append(v)
                         rowG += 1
             G = sp.csr_matrix(
                 (G_vals, (G_rows, G_cols)), shape=(n_ineq, n_vars_p), dtype=np.float64
@@ -408,24 +444,36 @@ class Search_BOParOs:
                 for j in range(i + 1, n):
                     for k in range(i):
                         for key in [f"{k}_{i}_1", f"{k}_{j}_0"]:
-                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(1.0)
+                            G_rows.append(rowG)
+                            G_cols.append(indices_vector[key])
+                            G_vals.append(1.0)
                         rowG += 1
                         for key in [f"{k}_{i}_0", f"{k}_{j}_1"]:
-                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(1.0)
+                            G_rows.append(rowG)
+                            G_cols.append(indices_vector[key])
+                            G_vals.append(1.0)
                         rowG += 1
                     for k in range(i + 1, j):
                         for key in [f"{i}_{k}_0", f"{k}_{j}_0"]:
-                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(1.0)
+                            G_rows.append(rowG)
+                            G_cols.append(indices_vector[key])
+                            G_vals.append(1.0)
                         rowG += 1
                         for key in [f"{i}_{k}_1", f"{k}_{j}_1"]:
-                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(1.0)
+                            G_rows.append(rowG)
+                            G_cols.append(indices_vector[key])
+                            G_vals.append(1.0)
                         rowG += 1
                     for k in range(j + 1, n):
                         for key in [f"{i}_{k}_0", f"{j}_{k}_1"]:
-                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(1.0)
+                            G_rows.append(rowG)
+                            G_cols.append(indices_vector[key])
+                            G_vals.append(1.0)
                         rowG += 1
                         for key in [f"{i}_{k}_1", f"{j}_{k}_0"]:
-                            G_rows.append(rowG); G_cols.append(indices_vector[key]); G_vals.append(1.0)
+                            G_rows.append(rowG)
+                            G_cols.append(indices_vector[key])
+                            G_vals.append(1.0)
                         rowG += 1
             G = sp.csr_matrix(
                 (G_vals, (G_rows, G_cols)), shape=(n_ineq, n_vars_p), dtype=np.float64

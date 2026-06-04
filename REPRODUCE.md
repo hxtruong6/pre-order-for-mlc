@@ -6,7 +6,7 @@ this repository.
 
 ## 1. Environment
 
-Tested on Python 3.11 with the pinned versions in `requirements.txt`.
+Tested on Python 3.12 with the pinned versions in `requirements.txt`.
 GLPK headers must be present on the system so that `cvxopt.glpk` can
 solve the per-instance ILP.
 
