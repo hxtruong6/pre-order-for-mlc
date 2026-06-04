@@ -3,153 +3,132 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.12-blue)](https://www.python.org/)
 
-Code and full experimental results for the paper
+In **multi-label classification (MLC)** each instance can carry several
+labels at once (a song that is both *happy* and *relaxed* — as in the
+`emotions` dataset; an email tagged both *business* and *legal* — as in the
+`enron` dataset, both used in this paper). This repository introduces a method that predicts
+labels by first learning **how labels compare** rather than deciding each
+label in isolation — and that can **abstain** on labels it is unsure about
+instead of guessing.
 
-> **\<TODO: paper title\>**
-> Hoàng Xuân Trường, Vu-Linh Nguyen.
-> *Machine Learning* (Springer), 2026.
-> \<TODO: DOI link once assigned\>
+> 📄 Code and full experimental results for:
+> **\<TODO: paper title\>** — Hoàng Xuân Trường, Vu-Linh Nguyen.
+> *Machine Learning* (Springer), 2026. \<TODO: DOI once assigned\>
 
-## Overview
+## What it does
 
-This repository implements **B**ipartite **O**rdered **P**reference
-**O**rders (BOPOs) for multi-label classification (MLC). For each pair
-of labels, a probabilistic pairwise classifier is trained; an integer
-linear program then searches per instance for the preference order
-(either a pre-order or a partial-order) that minimises an expected loss
-(Hamming or Subset 0/1). The search admits an optional height
-constraint, yielding eight inference algorithms (PA-{H,S}-{2,∅} and
-PR-{H,S}-{2,∅}) plus three prediction types — `BinaryVector`,
-`PreferenceOrder`, and `PartialAbstention` — evaluated against four
-published baselines (BR, CC, CLR, ECC).
+The method is built around **Bipartite Ordered Preference Orders (BOPOs)**.
+Instead of predicting each label independently, it works in three steps:
 
-## Method at a glance
+1. **Learn pairwise preferences.** For every pair of labels, a calibrated
+   classifier estimates the probability of their relative ordering.
+2. **Search for the best order.** Per instance, an integer linear program
+   (ILP) combines those pairwise probabilities into a single coherent
+   **preference order** — a *pre-order* or a *partial-order* — that
+   minimises an expected loss (Hamming or Subset 0/1).
+3. **Derive a prediction.** The order is turned into one of three outputs:
+   a plain binary vector, the preference order itself, or a
+   **partial-abstention** vector that marks uncertain labels as "abstain".
+
+An optional *height* constraint on the order yields **eight inference
+algorithms** in total (pre-/partial-order × Hamming/Subset × height 2/∅).
+We compare against four standard baselines: **BR, CC, CLR, ECC**.
 
 ```
-              ┌─────────────────────┐
-   training → │ K(K-1)/2 pairwise   │ → pairwise probabilities p_ij
-              │ calibrated classif. │      (4 classes / pair for pre-order;
-              └─────────────────────┘       3 for partial-order)
+              ┌──────────────────────┐
+   training → │ K(K−1)/2 pairwise    │ → pairwise probabilities pᵢⱼ
+              │ calibrated classif.  │
+              └──────────────────────┘
                          │
                          ▼
-              ┌─────────────────────┐
-              │ per-instance ILP    │ → preference order
-              │ search (cvxopt+GLPK)│      (height ∈ {2, None})
-              └─────────────────────┘
+              ┌──────────────────────┐
+              │ per-instance ILP     │ → preference order
+              │ search (cvxopt+GLPK) │   (pre- or partial-order)
+              └──────────────────────┘
                          │
                          ▼
-              ┌─────────────────────┐
-              │ derive prediction:  │ → BinaryVector
-              │ binary / order /    │   PreferenceOrder
-              │ partial abstention  │   PartialAbstention
-              └─────────────────────┘
-```
-
-A separately trained binary-relevance head produces per-label marginal
-probabilities used for the ranking metrics (`ranking_loss`, `one_error`,
-`coverage`, `lr_ap`, `auc_macro`, `auc_micro`).
-
-## Repository layout
-
-```
-.
-├── preorder4mlc/                       # Library package
-│   ├── config.py, constants.py         # Run configuration + global seed
-│   ├── datasets4experiments.py         # ARFF loading, k-fold splits, label-noise
-│   ├── estimator.py                    # Uniform interface over RF / ETC / XGBoost / LightGBM
-│   ├── base_classifiers.py             # Pairwise / calibrated classifier factory
-│   ├── inference_models.py             # PredictBOPOs (BOPOs + BR / CC / CLR baselines)
-│   ├── searching_algorithms.py         # ILP search for pre- and partial-orders
-│   ├── training_orchestrator.py        # Training loop over learners × folds × algorithms
-│   ├── evaluation_metric.py            # Example-, label-, ranking-, abstention-metrics
-│   └── utils/
-│       ├── results_manager.py          # Pickle I/O
-│       ├── summarize_metrics.py        # Per-dataset summary tables
-│       ├── statistical_tests.py        # Friedman + Nemenyi + CD diagrams
-│       ├── plot_figures.py             # Paper figure suite
-│       └── suppress.py                 # Mute GLPK stdout/stderr
-├── scripts/                            # CLI entry points
-│   ├── train.py                        # Train BOPOs + CLR / BR / CC
-│   ├── evaluate.py                     # Evaluate BOPOs / CLR / BR / CC pickles
-│   ├── train_ecc.py                    # Train the ECC baseline
-│   ├── evaluate_ecc.py                 # Evaluate the ECC pickle
-│   └── smoke_predict_bopos.py          # Behavior-preservation smoke test
-├── data/                               # 9 ARFF datasets bundled (enron is downloaded; see REPRODUCE.md §2)
-├── results/                            # Per-fold CSVs + aggregated tables (gitignored except CSV/XLSX)
-├── run.sh                              # End-to-end reproduction driver
-├── REPRODUCE.md                        # Step-by-step reproduction recipe
-├── CITATION.cff                        # How to cite this work
-├── pyproject.toml                      # Package metadata + lint config
-└── requirements.txt                    # Pinned runtime dependencies
+              ┌──────────────────────┐
+              │ derive prediction    │ → BinaryVector
+              │                      │   PreferenceOrder
+              │                      │   PartialAbstention
+              └──────────────────────┘
 ```
 
 ## Quick start
 
 ```bash
-# 1. Install (editable so scripts/ can import the package)
+# Install (editable, so scripts/ can import the package)
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 pip install -e .
 
-# 2. Run one dataset end-to-end
+# Run one dataset end-to-end
 python scripts/train.py    --dataset emotions --results_dir results/run-dev
 python scripts/evaluate.py --dataset emotions --results_dir results/run-dev
-
-# 3. Reproduce every result in the paper
-RESULTS_DIR=results/run-$(date +%Y%m%d) bash run.sh
-python -m preorder4mlc.utils.summarize_metrics \
-    --results_dir   "${RESULTS_DIR}" \
-    --output_dir    "${RESULTS_DIR}_summary"
-python -m preorder4mlc.utils.statistical_tests \
-    --results_dir   "${RESULTS_DIR}_summary" \
-    --output_dir    "${RESULTS_DIR}_summary/stats"
-python -m preorder4mlc.utils.plot_figures \
-    --results_dir   "${RESULTS_DIR}_summary" \
-    --raw_results_dir "${RESULTS_DIR}"
 ```
 
-See [REPRODUCE.md](REPRODUCE.md) for the full recipe, expected wall
-times, and the file layout produced by each step.
+To reproduce **every** number and figure in the paper, see
+[REPRODUCE.md](REPRODUCE.md) — it covers the full pipeline, expected wall
+times, and the exact environment.
 
 ## Datasets
 
-Ten multi-label datasets are used in the paper:
+Ten multi-label datasets are used:
+`chd_49`, `emotions`, `scene`, `yeast`, `water_quality`, `humanpseaac`,
+`gpositivepseaac`, `plantpseaac`, `viruspseaac`, and `enron`.
 
-`chd_49`, `emotions`, `scene`, `yeast`, `water_quality`,
-`humanpseaac`, `gpositivepseaac`, `plantpseaac`, `viruspseaac`, `enron`.
+The first nine ARFFs are bundled under `data/`, so the pipeline runs
+end-to-end right after `pip install`. `enron.arff` (K=53) is downloaded
+separately — see [REPRODUCE.md §2](REPRODUCE.md). CLI keys match
+`preorder4mlc.config::ConfigManager.DATASET_CONFIGS`.
 
-The first nine ARFFs are bundled under `data/` so the pipeline can run
-end-to-end after `pip install`. `enron.arff` (K=53) is downloaded
-separately from COMETA / MULAN and placed at `data/enron.arff`; see
-[REPRODUCE.md](REPRODUCE.md) §2.
+## Partial abstention
 
-CLI keys match `preorder4mlc.config::ConfigManager.DATASET_CONFIGS`.
-
-## Partial-abstention metrics
-
-A partial-abstention prediction is a vector in `{0, 1, -1}^K` where
-`-1` denotes "abstain". The accompanying metrics are defined as:
-
-```
-AREC(ŷ, y) = (1/K) · Σ_k 1[ y_k  ∈ ŷ_k ]   where -1 stands for {0, 1}
-AABS(ŷ)    = (1/K) · Σ_k 1[ ŷ_k =  -1 ]
-REC(ŷ, y)  = 1 if AREC(ŷ, y) = 1 else 0
-ABS(ŷ)     = K · AABS(ŷ)
-```
-
-Example:
+A partial-abstention prediction is a vector in `{0, 1, −1}` where `−1`
+means **"abstain"** on that label. This lets the model stay silent where
+it is uncertain instead of forcing a 0/1 call. Two pairs of metrics
+capture the trade-off — *recovery* (did the abstentions cover the truth?)
+and *abstention rate* (how often did it abstain?):
 
 ```
-ŷ = [1, 0, 1, -1, 0, -1]      y = [0, 0, 1, 1, 0, 0]
+ŷ = [1, 0, 1, −1, 0, −1]      y = [0, 0, 1, 1, 0, 0]
 
-AREC = (0 + 1 + 1 + 1 + 1 + 1) / 6 = 4/6
-AABS = 2 / 6
+AREC = (0 + 1 + 1 + 1 + 1 + 1) / 6 = 4/6      # −1 counts as covering {0,1}
+AABS = 2 / 6                                   # fraction abstained
+```
+
+Full definitions (`AREC`, `AABS`, `REC`, `ABS`) live in
+`preorder4mlc.evaluation_metric`.
+
+## Repository layout
+
+```
+preorder4mlc/            # Library package
+├── config.py            # Run configuration + dataset registry
+├── datasets4experiments.py   # ARFF loading, k-fold splits, label noise
+├── base_classifiers.py  # Pairwise / calibrated classifier factory
+├── estimator.py         # Uniform interface over RF / ETC / XGBoost / LightGBM
+├── inference_models.py  # PredictBOPOs (BOPOs + BR / CC / CLR baselines)
+├── searching_algorithms.py   # ILP search for pre- and partial-orders
+├── training_orchestrator.py  # Training loop over learners × folds × algorithms
+├── evaluation_metric.py # Example-, label-, ranking-, abstention-metrics
+└── utils/               # Summaries, statistical tests, figures
+
+scripts/                 # CLI entry points
+├── train.py / evaluate.py          # BOPOs + CLR / BR / CC
+├── train_ecc.py / evaluate_ecc.py  # ECC baseline
+└── smoke_predict_bopos.py          # Behavior-preservation smoke test
+
+data/                    # 9 bundled ARFFs (enron downloaded separately)
+results/                 # Per-fold CSVs + aggregated tables
+run.sh                   # End-to-end reproduction driver
+REPRODUCE.md             # Step-by-step reproduction recipe
 ```
 
 ## Citation
 
-If you use this code, please cite the paper (see [CITATION.cff](CITATION.cff)
-once the DOI is assigned):
+If you use this code, please cite the paper (see
+[CITATION.cff](CITATION.cff)):
 
 ```bibtex
 @article{TODO,
