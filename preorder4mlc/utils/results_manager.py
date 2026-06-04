@@ -61,6 +61,8 @@ class ExperimentResults:
         is_clr=False,
         is_br=False,
         is_cc=False,
+        repeat_idx=None,
+        fold_idx=None,
     ):
         """
         Saves the results dictionary to both pickle and CSV formats.
@@ -73,6 +75,8 @@ class ExperimentResults:
             is_clr: Whether results are from CLR
             is_br: Whether results are from Binary Relevance
             is_cc: Whether results are from Classifier Chain
+            repeat_idx: If set, suffix filename with _r<repeat_idx>
+            fold_idx: If set, suffix filename with _f<fold_idx>
         """
         # Create results directory if it doesn't exist
         Path(results_dir).mkdir(parents=True, exist_ok=True)
@@ -89,7 +93,15 @@ class ExperimentResults:
         elif is_cc:
             suffix = "_cc"
 
-        base_filename = f"{results_dir}/dataset_{dataset_name}_noisy_{noisy_rate}{suffix}"
+        split_suffix = ""
+        if repeat_idx is not None:
+            split_suffix += f"_r{repeat_idx}"
+        if fold_idx is not None:
+            split_suffix += f"_f{fold_idx}"
+
+        base_filename = (
+            f"{results_dir}/dataset_{dataset_name}_noisy_{noisy_rate}{suffix}{split_suffix}"
+        )
 
         # Save as pickle for exact Python object preservation
         with open(f"{base_filename}.pkl", "wb") as f:
@@ -107,6 +119,7 @@ class ExperimentResults:
         dataset_name,
         noisy_rate,
         algorithm_type: AlgorithmType = AlgorithmType.BOPOS,
+        base_learner: str = "rf",
     ):
         """
         Loads results from pickle file.
@@ -125,13 +138,18 @@ class ExperimentResults:
         dataset_name = dataset_name.lower().replace(" ", "_")
 
         # Determine suffix based on method type
-        suffix = ""  # default is BOPOs
-        if algorithm_type == AlgorithmType.CLR:
-            suffix = "_clr"
-        elif algorithm_type == AlgorithmType.BR:
-            suffix = "_br"
-        elif algorithm_type == AlgorithmType.CC:
-            suffix = "_cc"
+        suffix_map = {
+            AlgorithmType.BOPOS: "",
+            AlgorithmType.CLR: "_clr",
+            AlgorithmType.BR: "_br",
+            AlgorithmType.CC: "_cc",
+            AlgorithmType.ECC: "_ecc",
+        }
+        suffix = suffix_map[algorithm_type]
+        # ECC is parameterised by its base learner; non-RF runs get an extra
+        # tag so the RF and LGBM pickles don't collide.
+        if algorithm_type == AlgorithmType.ECC and base_learner != "rf":
+            suffix += f"_{base_learner}"
 
         filename = f"{path}/dataset_{dataset_name}_noisy_{noisy_rate}{suffix}.pkl"
 

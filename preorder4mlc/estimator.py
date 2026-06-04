@@ -14,6 +14,7 @@ from logging import INFO, basicConfig
 from lightgbm import LGBMClassifier
 from numpy.typing import NDArray
 from sklearn.base import BaseEstimator
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.ensemble import (
     ExtraTreesClassifier,
     GradientBoostingClassifier,
@@ -27,11 +28,27 @@ basicConfig(level=INFO)  # type: ignore
 number_of_cores: int = os.cpu_count() if os.cpu_count() is not None else 1  # type: ignore
 # log(INFO, f"Number of cores: {number_of_cores}")
 
+# Whether to wrap the base learner in CalibratedClassifierCV (isotonic).
+# Opt-in: default OFF so existing pipelines / paper-equivalent runs are
+# unchanged. Enable per-run via env (PREORDER_CALIBRATE=1) or constructor
+# (Estimator(name, calibrate=True)). The A/B/C/D ablation in
+# scripts/ablations/ablation_base_learner.py decides whether to flip the default.
+CALIBRATE_PROBAS = os.environ.get("PREORDER_CALIBRATE", "0") not in ("0", "false", "False")
+CALIBRATION_METHOD = os.environ.get("PREORDER_CALIBRATION_METHOD", "isotonic")
+CALIBRATION_CV = int(os.environ.get("PREORDER_CALIBRATION_CV", "3"))
+
 
 class Estimator:
-    def __init__(self, name: str):
+    def __init__(self, name: str, calibrate: bool | None = None):
         self.name = name
-        self.clf: BaseEstimator | LGBMClassifier = self.get_classifier()
+        self.calibrate = CALIBRATE_PROBAS if calibrate is None else calibrate
+        base = self.get_classifier()
+        if self.calibrate:
+            self.clf = CalibratedClassifierCV(
+                base, method=CALIBRATION_METHOD, cv=CALIBRATION_CV
+            )
+        else:
+            self.clf = base
 
     def get_classifier(self) -> BaseEstimator | LGBMClassifier:
         """Get the classifier based on name with proper error handling."""
@@ -44,8 +61,11 @@ class Estimator:
         elif self.name == BaseLearnerName.LightGBM.value:
             return LGBMClassifier(
                 random_state=RANDOM_STATE,
-                n_jobs=int(number_of_cores - 1),
-                # n_jobs=16,
+                # n_jobs=1 because LGBM is always called inside a
+                # joblib.Parallel(n_jobs=-1) loop in base_classifiers.py and the
+                # ECC/LP path. Using n_jobs=cores caused thread oversubscription
+                # (~5x slower on yeast); see scripts/ablations/NOTES.md.
+                n_jobs=1,
                 verbose=-1,
                 num_leaves=20,  # Moderate complexity
                 max_depth=6,
@@ -63,11 +83,25 @@ class Estimator:
             raise ValueError(f"Unknown base learner: {self.name}")
 
     def fit(self, X: NDArray, Y: NDArray):
-        """Fit the classifier with proper error handling."""
+        """Fit the classifier with proper error handling.
+
+        When calibration is enabled but the data is degenerate (single class
+        or too few samples per class to support cv folds), fall back to the
+        uncalibrated base estimator so the pairwise pipeline still runs.
+        """
         try:
-            assert isinstance(self.clf, BaseEstimator | LGBMClassifier)
             self.clf.fit(X, Y)  # type: ignore
         except Exception as e:
+            if self.calibrate:
+                fallback = self.get_classifier()
+                try:
+                    fallback.fit(X, Y)  # type: ignore
+                    self.clf = fallback
+                    return
+                except Exception as e2:
+                    raise ValueError(
+                        f"Error training {self.name} (calibrated and uncalibrated both failed): {e2}"
+                    ) from e2
             raise ValueError(f"Error training {self.name}: {e}") from e
 
     def predict_proba(self, X: NDArray) -> NDArray:

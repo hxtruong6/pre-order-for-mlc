@@ -19,6 +19,7 @@ class AlgorithmType(Enum):
     CLR = "clr"
     BR = "br"
     CC = "cc"
+    ECC = "ecc"
 
 
 @dataclass
@@ -37,6 +38,11 @@ class TrainingConfig:
     total_repeat_times: int
     number_folds: int
     algorithms: list[AlgorithmType]  # Which algorithms to run
+    # When set, orchestrator skips repeats/folds whose index does not match.
+    # Result pickle filename is suffixed with _r<repeat>_f<fold> to keep
+    # split partials distinct; merge_split_results.py recombines them.
+    repeat_idx_filter: int | None = None
+    fold_idx_filter: int | None = None
 
 
 class ConfigManager:
@@ -44,12 +50,15 @@ class ConfigManager:
         "chd_49": DatasetConfig("CHD_49", "CHD_49.arff", 6),
         "emotions": DatasetConfig("emotions", "emotions.arff", 6),
         "scene": DatasetConfig("scene", "scene.arff", 6),
-        "viruspseaac": DatasetConfig("VirusPseAAC", "VirusPseAAC.arff", 6),
         "yeast": DatasetConfig("Yeast", "Yeast.arff", 14),
         "water_quality": DatasetConfig("Water-quality", "Water-quality.arff", 14),
         "humanpseaac": DatasetConfig("HumanPseAAC", "HumanPseAAC.arff", 14),
         "gpositivepseaac": DatasetConfig("GpositivePseAAC", "GpositivePseAAC.arff", 4),
         "plantpseaac": DatasetConfig("PlantPseAAC", "PlantPseAAC.arff", 12),
+        "viruspseaac": DatasetConfig("VirusPseAAC", "VirusPseAAC.arff", 6),
+        # enron (K=53). ARFF is NOT bundled — download from COMETA / MULAN
+        # and place at ./data/enron.arff. See REPRODUCE.md.
+        "enron": DatasetConfig("enron", "enron.arff", 53),
     }
 
     @staticmethod
@@ -77,13 +86,21 @@ class ConfigManager:
                 0.2,
                 0.3,
             ]
+        # Default is RF (paper-equivalent). Pass --base_learner LightGBM on
+        # the CLI to switch to LightGBM (paper also reports LGBM results).
         BASE_LEARNERS = [BaseLearnerName.RF]
+        bl_override = getattr(args, "base_learner", None)
+        if bl_override:
+            BASE_LEARNERS = [BaseLearnerName(bl_override)]
         ALGORITHMS = [
             AlgorithmType.BOPOS,
             AlgorithmType.CLR,
             AlgorithmType.BR,
             AlgorithmType.CC,
         ]
+        algo_override = getattr(args, "algorithm", None)
+        if algo_override:
+            ALGORITHMS = [AlgorithmType(algo_override)]
 
         return TrainingConfig(
             data_path="./data/",
@@ -93,4 +110,6 @@ class ConfigManager:
             total_repeat_times=5,
             number_folds=5,
             algorithms=ALGORITHMS,
+            repeat_idx_filter=getattr(args, "repeat_idx", None),
+            fold_idx_filter=getattr(args, "fold_idx", None),
         )

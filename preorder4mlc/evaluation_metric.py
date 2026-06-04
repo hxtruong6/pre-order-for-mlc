@@ -53,6 +53,21 @@ class EvaluationMetricName(Enum):
     HAMMING_ACCURACY_PA = "hamming_accuracy_pa"  # Hamming accuracy with partial abstention
     SUBSET0_1_PA = "subset0_1_pa"  # Subset accuracy with partial abstention
     F1_PA = "f1_pa"  # F1 score with partial abstention
+    # Partial-Abstention mirrors of the BinaryVector metric set. Each
+    # filters out abstained predictions (-1) before computing the standard
+    # quantity; instances/labels where every prediction is abstained are
+    # excluded from the average.
+    JACCARD_PA = "jaccard_pa"
+    EXAMPLE_PRECISION_PA = "example_precision_pa"
+    EXAMPLE_RECALL_PA = "example_recall_pa"
+    MACRO_PRECISION_PA = "macro_precision_pa"
+    MICRO_PRECISION_PA = "micro_precision_pa"
+    MACRO_RECALL_PA = "macro_recall_pa"
+    MICRO_RECALL_PA = "micro_recall_pa"
+    MACRO_F1_PA = "macro_f1_pa"
+    MICRO_F1_PA = "micro_f1_pa"
+    MFRD_PA = "mfrd_pa"
+    AFRD_PA = "afrd_pa"
     # New Abstention Metrics
     AREC = "arec"  # Average Recall per Label
     AABS = "aabs"  # Average Abstention per Label
@@ -580,6 +595,196 @@ class EvaluationMetric:
                 total_instances += 1
 
         return float(f1_sum / total_instances) if total_instances > 0 else 0.0
+
+    # ------------------------------------------------------------------
+    # Partial-Abstention mirrors of the BinaryVector metric set.
+    # Each helper filters out abstained predictions (-1) before computing
+    # the standard quantity. Instances or labels with no non-abstained
+    # predictions are excluded from the average.
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _pa_pred_true_pairs(
+        predicted_Y: np.ndarray, true_Y: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Return (pred, true, mask) where mask[i,k] is True iff non-abstained."""
+        mask = predicted_Y != -1
+        return predicted_Y, true_Y, mask
+
+    def jaccard_pa(self, predicted_Y: np.ndarray, true_Y: np.ndarray) -> float:
+        """Example-based Jaccard over non-abstained labels per instance."""
+        n_samples = len(predicted_Y)
+        total = 0.0
+        count = 0
+        for i in range(n_samples):
+            m = predicted_Y[i] != -1
+            if not np.any(m):
+                continue
+            p, t = predicted_Y[i][m], true_Y[i][m]
+            if p.sum() == 0 and t.sum() == 0:
+                total += 1.0
+            else:
+                inter = float(np.dot(p, t))
+                union = float(p.sum() + t.sum() - inter)
+                total += inter / union if union > 0 else 0.0
+            count += 1
+        return total / count if count > 0 else 0.0
+
+    def example_precision_pa(
+        self, predicted_Y: np.ndarray, true_Y: np.ndarray
+    ) -> float:
+        n_samples = len(predicted_Y)
+        total = 0.0
+        count = 0
+        for i in range(n_samples):
+            m = predicted_Y[i] != -1
+            if not np.any(m):
+                continue
+            p, t = predicted_Y[i][m], true_Y[i][m]
+            if p.sum() == 0 and t.sum() == 0:
+                total += 1.0
+            else:
+                tp = float(np.dot(p, t))
+                total += tp / float(p.sum()) if p.sum() > 0 else 0.0
+            count += 1
+        return total / count if count > 0 else 0.0
+
+    def example_recall_pa(
+        self, predicted_Y: np.ndarray, true_Y: np.ndarray
+    ) -> float:
+        n_samples = len(predicted_Y)
+        total = 0.0
+        count = 0
+        for i in range(n_samples):
+            m = predicted_Y[i] != -1
+            if not np.any(m):
+                continue
+            p, t = predicted_Y[i][m], true_Y[i][m]
+            if p.sum() == 0 and t.sum() == 0:
+                total += 1.0
+            else:
+                tp = float(np.dot(p, t))
+                total += tp / float(t.sum()) if t.sum() > 0 else 0.0
+            count += 1
+        return total / count if count > 0 else 0.0
+
+    def _label_pa_confusion(
+        self, predicted_Y: np.ndarray, true_Y: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """Return per-label TP, FP, FN, support counts over non-abstained predictions."""
+        _, n_labels = predicted_Y.shape
+        tp = np.zeros(n_labels, dtype=float)
+        fp = np.zeros(n_labels, dtype=float)
+        fn = np.zeros(n_labels, dtype=float)
+        support = np.zeros(n_labels, dtype=float)  # # non-abstained per label
+        for k in range(n_labels):
+            m = predicted_Y[:, k] != -1
+            if not np.any(m):
+                continue
+            p = predicted_Y[m, k]
+            t = true_Y[m, k]
+            tp[k] = float(np.sum((p == 1) & (t == 1)))
+            fp[k] = float(np.sum((p == 1) & (t == 0)))
+            fn[k] = float(np.sum((p == 0) & (t == 1)))
+            support[k] = float(np.sum(m))
+        return tp, fp, fn, support
+
+    def macro_precision_pa(
+        self, predicted_Y: np.ndarray, true_Y: np.ndarray
+    ) -> float:
+        tp, fp, _, support = self._label_pa_confusion(predicted_Y, true_Y)
+        active = support > 0
+        if not np.any(active):
+            return 0.0
+        denom = tp + fp
+        with np.errstate(divide="ignore", invalid="ignore"):
+            per_label = np.where(denom > 0, tp / np.where(denom > 0, denom, 1), 0.0)
+        return float(per_label[active].mean())
+
+    def macro_recall_pa(
+        self, predicted_Y: np.ndarray, true_Y: np.ndarray
+    ) -> float:
+        tp, _, fn, support = self._label_pa_confusion(predicted_Y, true_Y)
+        active = support > 0
+        if not np.any(active):
+            return 0.0
+        denom = tp + fn
+        with np.errstate(divide="ignore", invalid="ignore"):
+            per_label = np.where(denom > 0, tp / np.where(denom > 0, denom, 1), 0.0)
+        return float(per_label[active].mean())
+
+    def macro_f1_pa(self, predicted_Y: np.ndarray, true_Y: np.ndarray) -> float:
+        tp, fp, fn, support = self._label_pa_confusion(predicted_Y, true_Y)
+        active = support > 0
+        if not np.any(active):
+            return 0.0
+        with np.errstate(divide="ignore", invalid="ignore"):
+            p_denom = tp + fp
+            r_denom = tp + fn
+            prec = np.where(p_denom > 0, tp / np.where(p_denom > 0, p_denom, 1), 0.0)
+            rec = np.where(r_denom > 0, tp / np.where(r_denom > 0, r_denom, 1), 0.0)
+            f_denom = prec + rec
+            per_label = np.where(
+                f_denom > 0, 2 * prec * rec / np.where(f_denom > 0, f_denom, 1), 0.0
+            )
+        return float(per_label[active].mean())
+
+    def micro_precision_pa(
+        self, predicted_Y: np.ndarray, true_Y: np.ndarray
+    ) -> float:
+        tp, fp, _, _ = self._label_pa_confusion(predicted_Y, true_Y)
+        denom = tp.sum() + fp.sum()
+        return float(tp.sum() / denom) if denom > 0 else 0.0
+
+    def micro_recall_pa(
+        self, predicted_Y: np.ndarray, true_Y: np.ndarray
+    ) -> float:
+        tp, _, fn, _ = self._label_pa_confusion(predicted_Y, true_Y)
+        denom = tp.sum() + fn.sum()
+        return float(tp.sum() / denom) if denom > 0 else 0.0
+
+    def micro_f1_pa(self, predicted_Y: np.ndarray, true_Y: np.ndarray) -> float:
+        tp, fp, fn, _ = self._label_pa_confusion(predicted_Y, true_Y)
+        p_d = tp.sum() + fp.sum()
+        r_d = tp.sum() + fn.sum()
+        prec = float(tp.sum() / p_d) if p_d > 0 else 0.0
+        rec = float(tp.sum() / r_d) if r_d > 0 else 0.0
+        return 2 * prec * rec / (prec + rec) if (prec + rec) > 0 else 0.0
+
+    def _pa_fpr_fnr(
+        self, predicted_Y: np.ndarray, true_Y: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Per-label FPR/FNR over non-abstained predictions; returns (fpr, fnr, active_mask)."""
+        _, n_labels = predicted_Y.shape
+        fpr = np.zeros(n_labels, dtype=float)
+        fnr = np.zeros(n_labels, dtype=float)
+        active = np.zeros(n_labels, dtype=bool)
+        for k in range(n_labels):
+            m = predicted_Y[:, k] != -1
+            if not np.any(m):
+                continue
+            p = predicted_Y[m, k]
+            t = true_Y[m, k]
+            tp = float(np.sum((p == 1) & (t == 1)))
+            fp = float(np.sum((p == 1) & (t == 0)))
+            tn = float(np.sum((p == 0) & (t == 0)))
+            fn = float(np.sum((p == 0) & (t == 1)))
+            fpr[k] = fp / (fp + tn) if (fp + tn) > 0 else 0.0
+            fnr[k] = fn / (fn + tp) if (fn + tp) > 0 else 0.0
+            active[k] = True
+        return fpr, fnr, active
+
+    def mfrd_pa(self, predicted_Y: np.ndarray, true_Y: np.ndarray) -> float:
+        fpr, fnr, active = self._pa_fpr_fnr(predicted_Y, true_Y)
+        if not np.any(active):
+            return 0.0
+        return float(np.max(np.abs(fpr[active] - fnr[active])))
+
+    def afrd_pa(self, predicted_Y: np.ndarray, true_Y: np.ndarray) -> float:
+        fpr, fnr, active = self._pa_fpr_fnr(predicted_Y, true_Y)
+        if not np.any(active):
+            return 0.0
+        return float(np.mean(np.abs(fpr[active] - fnr[active])))
 
     def arec(self, predicted_Y: np.ndarray, true_Y: np.ndarray) -> float:
         """

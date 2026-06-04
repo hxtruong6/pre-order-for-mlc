@@ -95,11 +95,9 @@ BASELINE_DISPLAY: dict[str, str] = {
     "br": "BR",
     "cc": "CC",
     "clr": "CLR",
-    "mlknn": "MLkNN",
     "ecc": "ECC",
-    "lp": "LP",
 }
-BASELINES_ORDER: list[str] = ["br", "cc", "clr", "mlknn", "ecc", "lp"]
+BASELINES_ORDER: list[str] = ["br", "cc", "clr", "ecc"]
 
 NOISE_LEVELS: list[str] = ["0.0", "0.1", "0.2", "0.3"]
 
@@ -107,12 +105,12 @@ DATASETS: list[str] = [
     "CHD_49",
     "emotions",
     "scene",
-    "VirusPseAAC",
     "Yeast",
     "Water-quality",
     "HumanPseAAC",
     "GpositivePseAAC",
     "PlantPseAAC",
+    "enron",
 ]
 
 

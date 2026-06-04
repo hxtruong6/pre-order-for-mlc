@@ -94,6 +94,17 @@ class EvaluationConfig:
             EvaluationMetricName.HAMMING_ACCURACY_PA,
             EvaluationMetricName.SUBSET0_1_PA,
             EvaluationMetricName.F1_PA,
+            EvaluationMetricName.JACCARD_PA,
+            EvaluationMetricName.EXAMPLE_PRECISION_PA,
+            EvaluationMetricName.EXAMPLE_RECALL_PA,
+            EvaluationMetricName.MACRO_PRECISION_PA,
+            EvaluationMetricName.MICRO_PRECISION_PA,
+            EvaluationMetricName.MACRO_RECALL_PA,
+            EvaluationMetricName.MICRO_RECALL_PA,
+            EvaluationMetricName.MACRO_F1_PA,
+            EvaluationMetricName.MICRO_F1_PA,
+            EvaluationMetricName.MFRD_PA,
+            EvaluationMetricName.AFRD_PA,
             EvaluationMetricName.AREC,
             EvaluationMetricName.AABS,
             EvaluationMetricName.REC,
@@ -132,6 +143,7 @@ class EvaluationFramework:
         dataset_name: str,
         noisy_rate: float,
         algorithm_type: AlgorithmType = AlgorithmType.BOPOS,
+        base_learner: str = "rf",
     ):
         """Load results from file"""
         try:
@@ -140,6 +152,7 @@ class EvaluationFramework:
                 dataset_name,
                 noisy_rate,
                 algorithm_type=algorithm_type,
+                base_learner=base_learner,
             )
         except Exception as e:
             log(ERROR, f"Failed to load results: {str(e)}")
@@ -335,6 +348,29 @@ class EvaluationFramework:
                 predicted_Y=partial_abstention,
                 true_Y=true_labels,
             )
+        # PA mirrors of BV metrics (added for major revision).
+        elif metric_name == EvaluationMetricName.JACCARD_PA:
+            return self.evaluation_metric.jaccard_pa(partial_abstention, true_labels)
+        elif metric_name == EvaluationMetricName.EXAMPLE_PRECISION_PA:
+            return self.evaluation_metric.example_precision_pa(partial_abstention, true_labels)
+        elif metric_name == EvaluationMetricName.EXAMPLE_RECALL_PA:
+            return self.evaluation_metric.example_recall_pa(partial_abstention, true_labels)
+        elif metric_name == EvaluationMetricName.MACRO_PRECISION_PA:
+            return self.evaluation_metric.macro_precision_pa(partial_abstention, true_labels)
+        elif metric_name == EvaluationMetricName.MICRO_PRECISION_PA:
+            return self.evaluation_metric.micro_precision_pa(partial_abstention, true_labels)
+        elif metric_name == EvaluationMetricName.MACRO_RECALL_PA:
+            return self.evaluation_metric.macro_recall_pa(partial_abstention, true_labels)
+        elif metric_name == EvaluationMetricName.MICRO_RECALL_PA:
+            return self.evaluation_metric.micro_recall_pa(partial_abstention, true_labels)
+        elif metric_name == EvaluationMetricName.MACRO_F1_PA:
+            return self.evaluation_metric.macro_f1_pa(partial_abstention, true_labels)
+        elif metric_name == EvaluationMetricName.MICRO_F1_PA:
+            return self.evaluation_metric.micro_f1_pa(partial_abstention, true_labels)
+        elif metric_name == EvaluationMetricName.MFRD_PA:
+            return self.evaluation_metric.mfrd_pa(partial_abstention, true_labels)
+        elif metric_name == EvaluationMetricName.AFRD_PA:
+            return self.evaluation_metric.afrd_pa(partial_abstention, true_labels)
         else:
             raise ValueError(f"Unknown metric for partial abstention: {metric_name}")
 
@@ -831,11 +867,15 @@ def main():
     evaluator = EvaluationFramework(results_dir)
     # Algorithm types
 
-    algorithm_types = [
-        AlgorithmType.BOPOS,
-        AlgorithmType.BR,
-        AlgorithmType.CC,
-        AlgorithmType.CLR,
+    # (algorithm, base_learner) pairs. Only ECC varies its base learner;
+    # everything else is RF-only in this paper.
+    algorithm_runs: list[tuple[AlgorithmType, str]] = [
+        (AlgorithmType.BOPOS, "rf"),
+        (AlgorithmType.BR, "rf"),
+        (AlgorithmType.CC, "rf"),
+        (AlgorithmType.CLR, "rf"),
+        (AlgorithmType.ECC, "rf"),
+        (AlgorithmType.ECC, "lgbm"),
     ]
 
     # Process each noise rate
@@ -849,13 +889,21 @@ def main():
                 f"{results_dir}/evaluation_{dataset_name}_noisy_{noisy_rate}_dataset_level"
             )
 
-            for algorithm_type in algorithm_types:
-                log(INFO, f"\n-----Start for algorithm: {algorithm_type.value}:")
-                evaluator.load_results(dataset_name, noisy_rate, algorithm_type)
-                evaluator.evaluate_dataset(dataset_name, noisy_rate, algorithm_type)
-                evaluator.save_results(
-                    f"{results_dir}/evaluation_{dataset_name}_noisy_{noisy_rate}_{algorithm_type.value}"
+            for algorithm_type, base_learner in algorithm_runs:
+                tag = algorithm_type.value + (
+                    f"_{base_learner}"
+                    if algorithm_type == AlgorithmType.ECC and base_learner != "rf"
+                    else ""
                 )
+                log(INFO, f"\n-----Start for algorithm: {tag}:")
+                try:
+                    evaluator.load_results(dataset_name, noisy_rate, algorithm_type, base_learner)
+                    evaluator.evaluate_dataset(dataset_name, noisy_rate, algorithm_type)
+                    evaluator.save_results(
+                        f"{results_dir}/evaluation_{dataset_name}_noisy_{noisy_rate}_{tag}"
+                    )
+                except FileNotFoundError:
+                    log(INFO, f"Skipping {tag} (pkl not found)")
 
             log(INFO, f"Evaluation completed successfully for {dataset_name}")
 

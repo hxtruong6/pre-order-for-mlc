@@ -1,7 +1,7 @@
 """Aggregate per-fold evaluation CSVs into per-dataset summary tables.
 
 Reads ``evaluation_<DatasetName>_noisy_<rate>_<algo>.csv`` files written
-by :mod:`evaluation_test` and :mod:`evaluate_extra_baselines`, then
+by :mod:`scripts.evaluate` and :mod:`scripts.evaluate_ecc`, then
 emits one ``<DatasetName>_<PredictionType>_summary.csv`` per dataset
 containing ``mean +/- std`` cells across folds and repeats. These are
 the tables consumed downstream by :mod:`utils.statistical_tests` and
@@ -24,9 +24,8 @@ FILE_PATTERNS = {
     "br": "evaluation_*_noisy_*_br.csv",
     "cc": "evaluation_*_noisy_*_cc.csv",
     "clr": "evaluation_*_noisy_*_clr.csv",
-    "mlknn": "evaluation_*_noisy_*_mlknn.csv",
     "ecc": "evaluation_*_noisy_*_ecc.csv",
-    "lp": "evaluation_*_noisy_*_lp.csv",
+    "ecc_lgbm": "evaluation_*_noisy_*_ecc_lgbm.csv",
 }
 
 # Prediction types to include for bopos files (skip PreferenceOrder)
@@ -121,19 +120,15 @@ def collect_metrics(files):
                 print(f"    Added: {prediction_type} - {algo} - {metric} - {noise}: {mean}±{std}")
 
         else:
-            # Handle br, cc, clr, mlknn, ecc, lp files - all prediction types included
+            # Handle br, cc, clr, ecc files - all prediction types included
             if file.endswith("_br.csv"):
                 algo = "br"
             elif file.endswith("_cc.csv"):
                 algo = "cc"
             elif file.endswith("_clr.csv"):
                 algo = "clr"
-            elif file.endswith("_mlknn.csv"):
-                algo = "mlknn"
-            elif file.endswith("_ecc.csv"):
+            elif file.endswith("_ecc.csv") or file.endswith("_ecc_lgbm.csv"):
                 algo = "ecc"
-            elif file.endswith("_lp.csv"):
-                algo = "lp"
             else:
                 continue
 
