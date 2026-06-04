@@ -12,8 +12,18 @@ label in isolation — and that can **abstain** on labels it is unsure about
 instead of guessing.
 
 > 📄 Code and full experimental results for:
-> **\<TODO: paper title\>** — Hoàng Xuân Trường, Vu-Linh Nguyen.
+> **Robust Multi-Label Classification via Preference Learning** —
+> Vu-Linh Nguyen, Xuan-Truong Hoang, Sébastien Destercke, Cassio de Campos,
+> Van-Nam Huynh (Nguyen and Hoang contributed equally).
 > *Machine Learning* (Springer), 2026. \<TODO: DOI once assigned\>
+
+> **Abstract.** We explore how multi-label classification (MLC) tasks can
+> be cast into order structure learning, exploiting the rich structure of
+> orders to improve and robustify MLC. We formalise the transformation of
+> MLC into an order structure learning and prediction task, study the
+> prediction of Bayes-optimal order structures, and run experiments in
+> settings where orders are especially beneficial: robust MLC under noisy
+> and imbalanced labels, and MLC prediction with partial abstention.
 
 ## What it does
 
@@ -131,9 +141,9 @@ If you use this code, please cite the paper (see
 [CITATION.cff](CITATION.cff)):
 
 ```bibtex
-@article{TODO,
-  title     = {<TODO: paper title>},
-  author    = {Hoàng, Xuân Trường and Nguyen, Vu-Linh},
+@article{nguyen2026robust,
+  title     = {Robust Multi-Label Classification via Preference Learning},
+  author    = {Nguyen, Vu-Linh and Hoang, Xuan-Truong and Destercke, S{\'e}bastien and de Campos, Cassio and Huynh, Van-Nam},
   journal   = {Machine Learning},
   publisher = {Springer},
   year      = {2026},

@@ -4,30 +4,51 @@ title: "preorder4MLC: Pre-Order Based Multi-Label Classification"
 message: "If you use this software, please cite the accompanying paper."
 type: software
 authors:
-  - family-names: Hoàng
-    given-names: Xuân Trường
-    email: hxtruong6@gmail.com
   - family-names: Nguyen
     given-names: Vu-Linh
-    email: nguyenvulinhhus@gmail.com
-repository-code: "https://github.com/<org>/preorder4MLC"
+    email: vu-linh.nguyen@hds.utc.fr
+    affiliation: "Heudiasyc Laboratory, University of Technology of Compiègne, France"
+  - family-names: Hoang
+    given-names: Xuan-Truong
+    email: hxtruong@jaist.ac.jp
+    affiliation: "School of Knowledge Science, Japan Advanced Institute of Science and Technology, Japan"
+  - family-names: Destercke
+    given-names: Sébastien
+    email: sebastien.destercke@hds.utc.fr
+    affiliation: "Heudiasyc Laboratory, University of Technology of Compiègne, France"
+  - family-names: de Campos
+    given-names: Cassio
+    email: c.decampos@tue.nl
+    affiliation: "Uncertainty in Artificial Intelligence Group, Eindhoven University of Technology, The Netherlands"
+  - family-names: Huynh
+    given-names: Van-Nam
+    email: huynh@jaist.ac.jp
+    affiliation: "School of Knowledge Science, Japan Advanced Institute of Science and Technology, Japan"
+repository-code: "https://github.com/hxtruong6/pre-order-for-mlc"
 license: MIT
 version: "1.0.0"
 date-released: "2026-05-15"
 keywords:
   - multi-label classification
   - preference learning
-  - pre-order
+  - noisy and imbalanced labels
+  - robustness
   - partial-abstention
   - integer linear programming
 preferred-citation:
   type: article
-  title: "<TODO: paper title>"
+  title: "Robust Multi-Label Classification via Preference Learning"
   authors:
-    - family-names: Hoàng
-      given-names: Xuân Trường
     - family-names: Nguyen
       given-names: Vu-Linh
+    - family-names: Hoang
+      given-names: Xuan-Truong
+    - family-names: Destercke
+      given-names: Sébastien
+    - family-names: de Campos
+      given-names: Cassio
+    - family-names: Huynh
+      given-names: Van-Nam
   journal: "Machine Learning"
   publisher: "Springer"
   year: 2026

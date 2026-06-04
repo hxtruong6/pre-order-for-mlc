@@ -51,14 +51,18 @@ splits produce identical predictions.
 
 ## 4. Reproducing all results
 
-A single command reproduces the full pipeline for all ten datasets
-with the default base learner (Random Forest):
+The repository ships **two drivers** for the same pipeline. Both call the
+same four `scripts/*.py` entry points per dataset; they differ only in how
+the work is orchestrated. Pick one:
 
-```bash
-RESULTS_DIR=results/run-$(date +%Y%m%d) bash run.sh
-```
+| | `run.sh` | `scripts/slurm/submit_all.sh` |
+|---|---|---|
+| Target | a single machine | a SLURM HPC cluster |
+| Execution | datasets run sequentially | hundreds of array tasks in parallel |
+| Resume | re-runs everything from scratch | skips cells already complete on disk |
+| Best for | small/quick runs, a few datasets | full reproduction incl. `enron` (K=53) |
 
-For each dataset this runs, in order:
+Whichever driver you use, each dataset runs the same four steps in order:
 
 1. `python scripts/train.py --dataset <key> --results_dir <dir>` —
    train pairwise classifiers, BOPOs (pre- and partial-order), and the
@@ -71,10 +75,49 @@ For each dataset this runs, in order:
 4. `python scripts/evaluate_ecc.py --dataset <key> --algorithm ecc
    --results_dir <dir>` — write per-fold evaluation CSVs for ECC.
 
-Per-dataset stdout/stderr lands in `logs/run-<date>/<dataset>.log`.
+### 4a. Single machine — `run.sh`
 
-To reproduce the LightGBM variant of the paper, pass
-`--base_learner lgbm` to both `train.py` and `train_ecc.py`.
+```bash
+RESULTS_DIR=results/run-$(date +%Y%m%d) bash run.sh
+```
+
+Runs all ten datasets sequentially with the default base learner (Random
+Forest). Per-dataset stdout/stderr lands in `logs/run-<date>/<dataset>.log`.
+To reproduce the LightGBM variant, pass `--base_learner lgbm` to both
+`train.py` and `train_ecc.py`.
+
+`run.sh` does **not** skip completed work and has no `enron` throttle, so it
+suits local runs of the lighter datasets. For the full matrix — especially
+`enron`, which needs an HPC node and the HiGHS solver (see §7) — use the
+SLURM driver below.
+
+### 4b. HPC cluster — `scripts/slurm/submit_all.sh`
+
+```bash
+# Submit the full RF + LightGBM matrix; results land in
+# results/rerun_<date>_rf and results/rerun_<date>_lgbm by default.
+bash scripts/slurm/submit_all.sh
+
+# Preview the sbatch plan without submitting:
+bash scripts/slurm/submit_all.sh --dry-run
+
+# Restrict learners / datasets via env vars:
+LEARNERS="RF"            bash scripts/slurm/submit_all.sh   # RF only
+DATASETS="viruspseaac"   bash scripts/slurm/submit_all.sh   # one dataset
+```
+
+The controller expands the full matrix (10 datasets × 4 noise levels × 5
+algorithms × {RF, LightGBM}) into array jobs, **skips any cell already
+complete on disk**, and submits eval jobs with
+`--dependency=afterok:<train-jobids>`. It respects the cluster QOS submit
+cap (`SUBMIT_CAP`) with backoff, and throttles the heavy `enron` BOPOS
+arrays (`ENRON_QUEUE_FRACTION`, default 0.4) so other datasets keep ~60% of
+the queue; the throttle lifts automatically once every non-`enron` cell is
+done. Logs land in `slurm_logs/`; watch with `squeue -u $USER`.
+
+`merge_split_results.py` reassembles the per-repeat sub-arrays that the
+`enron` throttle splits jobs into. After all eval jobs finish, aggregate
+with `summarize_metrics` (§5).
 
 ## 5. Summarising into the paper tables
 
