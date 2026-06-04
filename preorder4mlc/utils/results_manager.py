@@ -162,6 +162,3 @@ class ExperimentResults:
 
     def to_dataframe(self) -> pd.DataFrame | None:
         """Convert results to pandas DataFrame."""
-
-    def generate_summary(self) -> dict | None:
-        """Generate summary statistics."""

@@ -96,9 +96,6 @@ class EvaluationMetricName(Enum):
 
 class EvaluationMetric:
 
-    def list_metrics(self):
-        return [metric.value for metric in EvaluationMetricName]
-
     def hamming_accuracy(self, predicted_Y, true_Y) -> float:
         return 1 - hamming_loss(predicted_Y, true_Y)  # type: ignore
 

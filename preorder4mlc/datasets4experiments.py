@@ -168,9 +168,3 @@ class Datasets4Experiments:
 
     def get_datasets(self) -> list:
         return self.datasets
-
-    def get_length(self) -> int:
-        return len(self.datasets)
-
-    def get_dataset_name(self, dataset_index) -> str:
-        return self.datasets[dataset_index][2]
