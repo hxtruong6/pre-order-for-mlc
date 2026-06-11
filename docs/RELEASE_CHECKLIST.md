@@ -15,7 +15,8 @@ Infrastructure is in place; publishing is a deliberate manual action.
       once known, bumping the version in lockstep.
 
 ## Each release
-- [ ] Bump version in `pyproject.toml`, `.zenodo.json`, `CITATION.cff` (all equal).
+- [ ] Bump version in `pyproject.toml`, `.zenodo.json`, `CITATION.cff` (all equal),
+      and update the pinned version in `tests/test_smoke.py`.
 - [ ] Add a `CHANGELOG.md` entry.
 - [ ] (Optional) Run the `Publish` workflow via **workflow_dispatch** to push to TestPyPI
       and verify the artifact installs from TestPyPI.
