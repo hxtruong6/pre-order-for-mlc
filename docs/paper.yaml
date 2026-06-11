@@ -1,0 +1,30 @@
+# Experimental protocol for "Robust multi-label classification via preference learning"
+# (Machine Learning, Springer, 2026). Human/reviewer reference manifest; the CLI defaults
+# in preorder4mlc/config.py encode the operative values.
+
+model:
+  formulation: order-structure-learning   # MLC cast as (pre)order / preference learning
+  base_classifiers: [LogisticRegression, LightGBM, RandomForest]
+  pairwise: calibrated-label-ranking
+  inference: ilp                            # Bayes-optimal order via integer linear program
+  solver: HiGHS                             # highspy; CVXOPT fallback
+
+evaluation:
+  scheme: KFold
+  settings:
+    - robust-mlc-noisy-imbalanced
+    - partial-abstention
+  metrics: [F1, Jaccard, Hamming, abstention-rate]
+  noise_levels: [0.0, 0.1, 0.2, 0.3]        # cf. overleaf/figs/aggregate_*_noise0{0..3}
+
+datasets:
+  - chd_49
+  - emotions
+  - scene
+  - yeast
+  - water_quality
+  - gpositivepseaac
+  - plantpseaac
+  - viruspseaac
+  - humanpseaac
+  - enron
