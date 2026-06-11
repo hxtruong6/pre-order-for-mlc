@@ -1,0 +1,7 @@
+include LICENSE
+include README.md
+include REPRODUCE.md
+include CITATION.cff
+include requirements.txt
+include requirements-core.txt
+recursive-include docs *.md *.yaml
