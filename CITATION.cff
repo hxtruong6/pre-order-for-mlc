@@ -4,14 +4,15 @@ title: "preorder4MLC: Pre-Order Based Multi-Label Classification"
 message: "If you use this software, please cite the accompanying paper."
 type: software
 authors:
-  - family-names: Nguyen
-    given-names: Vu-Linh
-    email: vu-linh.nguyen@hds.utc.fr
-    affiliation: "Heudiasyc Laboratory, University of Technology of Compiègne, France"
   - family-names: Hoang
     given-names: Xuan-Truong
     email: hxtruong@jaist.ac.jp
     affiliation: "School of Knowledge Science, Japan Advanced Institute of Science and Technology, Japan"
+    orcid: "https://orcid.org/0009-0003-4350-5148"
+  - family-names: Nguyen
+    given-names: Vu-Linh
+    email: vu-linh.nguyen@hds.utc.fr
+    affiliation: "Heudiasyc Laboratory, University of Technology of Compiègne, France"
   - family-names: Destercke
     given-names: Sébastien
     email: sebastien.destercke@hds.utc.fr
@@ -39,10 +40,11 @@ preferred-citation:
   type: article
   title: "Robust Multi-Label Classification via Preference Learning"
   authors:
-    - family-names: Nguyen
-      given-names: Vu-Linh
     - family-names: Hoang
       given-names: Xuan-Truong
+      orcid: "https://orcid.org/0009-0003-4350-5148"
+    - family-names: Nguyen
+      given-names: Vu-Linh
     - family-names: Destercke
       given-names: Sébastien
     - family-names: de Campos
