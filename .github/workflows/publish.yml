@@ -1,0 +1,88 @@
+name: Publish
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  version-check:
+    name: Check version consistency
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check pyproject.toml, .zenodo.json, CITATION.cff match (and match tag if pushed)
+        run: |
+          python - <<'EOF'
+          import tomllib, json, sys, os
+          with open("pyproject.toml", "rb") as f:
+              pkg = tomllib.load(f)["project"]["version"]
+          with open(".zenodo.json") as f:
+              zen = json.load(f)["version"]
+          with open("CITATION.cff") as f:
+              cff = next(l.split(":")[1].strip().strip('"') for l in f if l.startswith("version:"))
+          errors = []
+          if not (pkg == zen == cff):
+              errors.append(f"version mismatch: pyproject.toml={pkg}  .zenodo.json={zen}  CITATION.cff={cff}")
+          ref = os.environ.get("GITHUB_REF", "")
+          if ref.startswith("refs/tags/v"):
+              tag = ref.removeprefix("refs/tags/v")
+              if tag != pkg:
+                  errors.append(f"tag v{tag} does not match pyproject.toml version {pkg}")
+          if errors:
+              for e in errors:
+                  print("ERROR:", e)
+              sys.exit(1)
+          print(f"OK: all files at {pkg}" + (" (tag matches)" if ref.startswith("refs/tags/") else ""))
+          EOF
+
+  build:
+    name: Build distributions
+    needs: version-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build sdist and wheel
+        run: |
+          python -m pip install --upgrade pip build twine
+          python -m build
+          python -m twine check dist/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  testpypi:
+    name: Publish to TestPyPI
+    needs: build
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: testpypi
+    permissions:
+      id-token: write  # OIDC trusted publishing
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
+  pypi:
+    name: Publish to PyPI
+    needs: build
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write  # OIDC trusted publishing
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
