@@ -1,14 +1,64 @@
 [build-system]
-requires = ["setuptools>=65"]
+requires = ["setuptools>=64", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "preorder4mlc"
 version = "1.0.0"
-description = "Pre-order based multi-label classification via pairwise classifiers and ILP search."
-requires-python = ">=3.10"
+description = "Robust multi-label classification via preference learning: pairwise classifiers and ILP-based Bayes-optimal order-structure prediction."
 readme = "README.md"
+requires-python = ">=3.10"
 license = { file = "LICENSE" }
+authors = [
+    { name = "Xuan-Truong Hoang", email = "hxtruong@jaist.ac.jp" },
+    { name = "Vu-Linh Nguyen", email = "vu-linh.nguyen@hds.utc.fr" },
+    { name = "Sébastien Destercke", email = "sebastien.destercke@hds.utc.fr" },
+    { name = "Cassio de Campos", email = "c.decampos@tue.nl" },
+    { name = "Van-Nam Huynh", email = "huynh@jaist.ac.jp" },
+]
+keywords = [
+    "multi-label classification",
+    "preference learning",
+    "order structures",
+    "integer linear programming",
+    "partial abstention",
+    "robustness",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "numpy>=1.26",
+    "scipy>=1.12",
+    "scikit-learn>=1.4",
+    "pandas>=2.0",
+    "joblib>=1.3",
+    "liac-arff>=2.5",
+    "lightgbm>=4.0",
+    "highspy>=1.7",
+    "cvxopt>=1.3",
+    "scikit-multilearn>=0.2",
+]
+
+[project.optional-dependencies]
+viz = [
+    "matplotlib>=3.8",
+    "seaborn>=0.13",
+    "openpyxl>=3.1",
+]
+dev = [
+    "pytest>=7",
+    "pytest-cov>=4",
+    "ruff>=0.4",
+    "build>=1.0",
+    "twine>=5.0",
+]
+
+[project.urls]
+Repository = "https://github.com/hxtruong6/pre-order-for-mlc"
 
 [tool.setuptools.packages.find]
 include = ["preorder4mlc*"]
