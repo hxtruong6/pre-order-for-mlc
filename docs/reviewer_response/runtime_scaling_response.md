@@ -51,6 +51,20 @@ tensor to each subset, and time the ILP. Both solvers used in the paper are
 reported: **GLPK** (the default `cvxopt.glpk` backend) and **HiGHS** (the
 stronger backend, via `scipy.optimize.milp`).
 
+> **Note on fairness (same problem, same answer, only speed differs).** GLPK and
+> HiGHS are two interchangeable MILP back-ends plugged into the *same* code path
+> (`preorder4mlc/solvers.py`). They receive the identical standard-form ILP and
+> return the **same optimal preference order** whenever the optimum is unique;
+> they differ only in how fast they reach it. Reporting both is therefore not a
+> method-vs-method comparison and does not advantage BOPOs: (i) the solver is
+> only ever used by BOPOs, never by the BR/CC/CLR baselines, and both curves are
+> shown side by side; and (ii) because the two solvers return the same solution,
+> **prediction accuracy is identical under either solver**, so the accuracy
+> numbers in the main paper are unchanged by the solver choice. The only thing
+> that changes across solvers is runtime, which is exactly the quantity under
+> discussion here. We keep the solver consistent between the reported accuracy
+> and the reported runtime.
+
 **Average inference time per test instance (ms):**
 
 | `L` | GLPK, full transitivity | GLPK, height=2 | HiGHS, full transitivity | HiGHS, height=2 |
@@ -161,7 +175,9 @@ and it buys the accuracy gains reported in the main experiments.
 - **Environment:** conda env `research_preorder_mlc` (sklearn 1.6.1, numpy
   2.3.0, scipy 1.15.3, cvxopt 1.3.2, python 3.12), matching `requirements.txt`.
 - **Solvers:** GLPK via `cvxopt.glpk.ilp`; HiGHS via `scipy.optimize.milp`
-  (`PREORDER_SOLVER=highs`), both solving the identical standard-form MILP.
+  (`PREORDER_SOLVER=highs`), both solving the identical standard-form MILP and
+  returning the same optimal solution (hence the same predictions and the same
+  accuracy); only runtime differs.
 - **Artefacts:** `runtime_scaling.png` / `.pdf` (figure),
   `runtime_scaling_data.csv` (all rows), and the four `scripts/bench_step*.py`
   drivers.
