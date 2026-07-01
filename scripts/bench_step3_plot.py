@@ -73,7 +73,10 @@ def make_figure(rows, meta):
 
     # baseline per-instance inference (horizontal references)
     bl = meta["baseline_per_instance_s"]
-    for name, c in [("BR", "#7f8c8d"), ("CC", "#95a5a6"), ("CLR", "#27ae60")]:
+    for name, c in [("BR", "#7f8c8d"), ("CC", "#95a5a6"),
+                    ("CLR", "#27ae60"), ("ECC", "#8e44ad")]:
+        if name not in bl:
+            continue
         ax.axhline(bl[name] * 1e3, color=c, ls=":", lw=1.3)
         ax.text(6.2, bl[name] * 1e3 * 1.05, f"{name} baseline "
                 f"({bl[name]*1e3:.1f} ms/inst)", color=c, fontsize=8, va="bottom")

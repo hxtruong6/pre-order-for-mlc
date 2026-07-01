@@ -8,6 +8,7 @@ label subsets), so the model is trained only once.
 """
 
 import pickle
+import sys
 import time
 from pathlib import Path
 
@@ -18,11 +19,12 @@ from preorder4mlc.datasets4experiments import Datasets4Experiments
 from preorder4mlc.inference_models import PredictBOPOs, PreferenceOrder
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "scripts"))
 OUT = Path("/tmp/claude-24679/-home-s2320437-WORK-preorder4MLC/"
            "1acafedf-6413-4348-9250-5e9e5557bcc1/scratchpad")
 OUT.mkdir(parents=True, exist_ok=True)
 
-N_TEST = 60  # test instances whose proba we keep (enough to time the ILP)
+N_TEST = 300  # test instances whose proba we keep (for a robust per-instance mean)
 
 
 def main():
@@ -73,6 +75,34 @@ def main():
         baseline_times[name] = dt / len(X_test)  # per-instance seconds
         print(f"[baseline {name}] total={dt:.3f}s per_inst={dt/len(X_test)*1e3:.3f}ms",
               flush=True)
+
+    # --- ECC baseline (Ensemble of 10 Classifier Chains): fit chains once,
+    #     time prediction only (to match the predict-only timing above). ---
+    from train_ecc import ClassifierChain, _make_base_learner, _to_dense_int
+    from preorder4mlc.constants import RANDOM_STATE
+    rng = np.random.RandomState(RANDOM_STATE)
+    chains = []
+    for k in range(10):
+        perm = rng.permutation(n_labels)
+        inv = np.argsort(perm)
+        idx = rng.randint(0, len(X_train), size=len(X_train))
+        ch = ClassifierChain(
+            classifier=_make_base_learner("rf", random_state=RANDOM_STATE + k,
+                                          is_unbalance=True),
+            require_dense=[True, True])
+        ch.fit(X_train[idx], Y_train[idx][:, perm])
+        chains.append((ch, inv))
+    t = time.perf_counter()
+    for ch, inv in chains:
+        _to_dense_int(ch.predict(X_test))
+        try:
+            ch.predict_proba(X_test)  # matches train_ecc: guarded, may fail
+        except Exception:
+            pass
+    dt_ecc = time.perf_counter() - t
+    baseline_times["ECC"] = dt_ecc / len(X_test)
+    print(f"[baseline ECC] total={dt_ecc:.3f}s per_inst={dt_ecc/len(X_test)*1e3:.3f}ms",
+          flush=True)
 
     np.save(OUT / "enron_proba_preorder.npy", proba)
     with (OUT / "enron_bench_meta.pkl").open("wb") as f:
