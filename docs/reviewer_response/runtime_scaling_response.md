@@ -43,12 +43,27 @@ same trained enron model (only `L` varies):
 
 ![Runtime scaling](runtime_scaling.png)
 
-- **GLPK (default solver) does not scale**: cost grows ~L^5 and a single
-  instance already needs seconds at `L=25` and tens of seconds by `L=31`. It is
-  impractical beyond `L≈37`.
-- **HiGHS scales ~L^3** (matching the constraint count) and stays practical:
-  about **2 s / instance** at `L=53` (full transitivity) or **~0.6 s** with the
-  height=2 variant.
+Fitting a power law `time ∝ L^x` to the measured curves gives:
+
+| curve | fitted exponent |
+|---|---|
+| GLPK, full transitivity | L^5.4 |
+| GLPK, height=2 | L^6.1 |
+| HiGHS, full transitivity | L^3.0 |
+| HiGHS, height=2 | L^2.7 |
+
+The figure below overlays these curves against explicit `L^3` and `L^4`
+reference lines: HiGHS (full) sits almost exactly on the `L^3` reference, while
+GLPK is far steeper.
+
+![Empirical power-law slopes](runtime_scaling_slopes.png)
+
+- **GLPK (default solver) does not scale**: cost grows ~L^5.4 (full) / ~L^6.1
+  (height=2) and a single instance already needs seconds at `L=25` and tens of
+  seconds by `L=31`. It is impractical beyond `L≈37`.
+- **HiGHS scales ~L^3.0** (matching the O(L³) constraint count) and stays
+  practical: about **2 s / instance** at `L=53` (full transitivity) or **~0.6 s**
+  with the height=2 variant.
 
 ## 3. Trade-off vs baselines and guideline
 
