@@ -91,6 +91,7 @@ def make_tikz(order, metric, rows, meta):
     P("    xtick={6,10,14,19,25,31,37,45,53},")
     P("    xticklabels={6,10,14,19,25,31,37,45,53},")
     P("    grid=none,")   # no interior grid (requested)
+    P("    xminorticks=false, yminorticks=false,")   # no log minor tick marks
     P("    legend pos=north west, legend cell align=left, legend style={font=\\scriptsize},")
     P("    xmin=5.5, xmax=60,")
     P("]")
