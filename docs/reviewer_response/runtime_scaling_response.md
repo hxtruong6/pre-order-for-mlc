@@ -58,6 +58,24 @@ GLPK is far steeper.
 
 ![Empirical power-law slopes](runtime_scaling_slopes.png)
 
+### Per-target-metric breakdown
+
+The ILP is solved separately for each target metric. Runtime is essentially
+identical across the two metrics (same variables and constraints; only the
+objective vector differs), so we give one figure per metric. Both include the
+baselines and the `L^3`/`L^4` reference lines.
+
+Hamming accuracy:
+
+![Runtime scaling, Hamming](runtime_scaling_hamming.png)
+
+Subset (0/1 exact-match) accuracy:
+
+![Runtime scaling, Subset](runtime_scaling_subset.png)
+
+Fitted exponents per metric: GLPK `L^5.3`/`L^5.6` (full, Hamming/Subset),
+HiGHS `L^3.1`/`L^2.9` (full). The two metrics track each other closely.
+
 - **GLPK (default solver) does not scale**: cost grows ~L^5.4 (full) / ~L^6.1
   (height=2) and a single instance already needs seconds at `L=25` and tens of
   seconds by `L=31`. It is impractical beyond `L≈37`.
@@ -88,6 +106,27 @@ and returning the **same optimal solution**; they differ only in speed, so
 **accuracy is unchanged by the solver choice**. Both are used only by BOPOs (not
 by the baselines), and we keep the solver consistent between the reported
 accuracy and runtime.
+
+## Notation
+
+- **`L`**: number of labels (candidate labels for one instance).
+- **`O(L²)`, `O(L³)`**: big-O growth order. `O(L²)` means the quantity grows
+  proportionally to `L²` up to a constant, i.e. doubling `L` roughly quadruples
+  it. Used here for the ILP's variable count (`O(L²)`) and constraint count
+  (`O(L³)`).
+- **`∝`**: "proportional to". `time ∝ L^x` means `time = c · L^x` for some
+  constant `c`; on a log-log plot this is a straight line of slope `x`.
+- **`L^3`, `L^4` reference lines**: straight lines of exact slope 3 and 4 on the
+  log-log axes, drawn so the reader can visually compare the measured curves'
+  slopes against pure cubic/quartic growth (no fitting, fixed reference).
+- **fitted `L^x`**: the exponent `x` obtained by least-squares fitting a line to
+  `(log L, log time)`; it is the empirical growth rate of that curve.
+- **full transitivity vs height=2**: two BOPOs variants. "full" enforces
+  complete transitivity of the preference order; "height=2" restricts the order
+  to depth 2, giving a different (usually cheaper for HiGHS) constraint set.
+- **GLPK / HiGHS**: two MILP solvers. GLPK (`cvxopt.glpk.ilp`) is the paper's
+  default; HiGHS (`scipy.optimize.milp`) is the faster back-end. Same ILP, same
+  optimal solution, different speed.
 
 ## Setup
 
