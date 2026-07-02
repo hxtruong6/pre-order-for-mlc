@@ -87,7 +87,9 @@ def make_tikz(order, metric, rows, meta):
     P("    width=10cm, height=7.5cm,")
     P("    xlabel={Number of labels $K$}, ylabel={Avg.\\ time per instance (ms)},")
     P(f"    title={{{ORDER_TITLE[order]}, {METRIC_TITLE[metric]}}},")
-    P("    xtick={6,10,14,19,25,31,37,45,53}, log ticks with fixed point,")
+    # x ticks as plain integers; y ticks stay in 10^k exponent form
+    P("    xtick={6,10,14,19,25,31,37,45,53},")
+    P("    xticklabels={6,10,14,19,25,31,37,45,53},")
     P("    grid=none,")   # no interior grid (requested)
     P("    legend pos=north west, legend cell align=left, legend style={font=\\scriptsize},")
     P("    xmin=5.5, xmax=60,")
