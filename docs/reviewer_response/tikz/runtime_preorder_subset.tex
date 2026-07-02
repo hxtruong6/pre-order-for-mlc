@@ -8,7 +8,9 @@
     xticklabels={6,10,14,19,25,31,37,45,53},
     grid=none,
     xminorticks=false, yminorticks=false,
-    legend pos=north west, legend cell align=left, legend style={font=\scriptsize},
+    axis x line*=bottom, axis y line*=left,
+    legend pos=north west, legend cell align=left,
+    legend style={font=\tiny, inner sep=1pt, row sep=-1pt},
     xmin=5.5, xmax=60,
 ]
 \addplot[green!55!black, dotted, thick, forget plot, domain=6:53, samples=2] {2.548};

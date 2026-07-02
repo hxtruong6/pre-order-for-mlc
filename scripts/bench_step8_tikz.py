@@ -92,7 +92,9 @@ def make_tikz(order, metric, rows, meta):
     P("    xticklabels={6,10,14,19,25,31,37,45,53},")
     P("    grid=none,")   # no interior grid (requested)
     P("    xminorticks=false, yminorticks=false,")   # no log minor tick marks
-    P("    legend pos=north west, legend cell align=left, legend style={font=\\scriptsize},")
+    P("    axis x line*=bottom, axis y line*=left,")  # drop top/right frame
+    P("    legend pos=north west, legend cell align=left,")
+    P("    legend style={font=\\tiny, inner sep=1pt, row sep=-1pt},")
     P("    xmin=5.5, xmax=60,")
     P("]")
 
