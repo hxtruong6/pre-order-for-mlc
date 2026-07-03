@@ -52,6 +52,10 @@ BASELINES = [
     ("CLR", "violet", "Calibrated Label Ranking (CLR)"),
     ("ECC", "brown", "Ensemble of Classifier Chains (ECC)"),
 ]
+# Set False (or delete the emitted \node lines in the .tex) to drop the
+# "BR 2.5 ms" style labels next to each dotted baseline; the lines stay.
+SHOW_BASELINE_LABELS = True
+BASELINE_LABEL_FONT = "\\fontsize{4}{5}\\selectfont"   # smaller than \tiny
 KGRID = [6, 10, 14, 19, 25, 31, 37, 45, 53]
 
 # Clean integer-exponent reference slopes K^x drawn as thin black guide lines
@@ -114,8 +118,9 @@ def make_tikz(order, metric, rows, meta):
     for name, color, _ in BASELINES:
         y = meta["baseline_per_instance_s"][name] * 1e3
         P(f"\\addplot[{color}, dotted, thick, forget plot, domain=6:53, samples=2] {{{y:.4g}}};")
-        P(f"\\node[{color}, font=\\tiny, anchor=south east] at (axis cs:53,{y:.4g}) "
-          f"{{{name} {y:.1f} ms}};")
+        if SHOW_BASELINE_LABELS:
+            P(f"\\node[{color}, font={BASELINE_LABEL_FONT}, anchor=south east] "
+              f"at (axis cs:53,{y:.4g}) {{{name} {y:.1f} ms}};")
 
     # clean-exponent reference slopes K^x (thin black, labelled on the line);
     # drawn behind the curves so the measured markers stay on top.
