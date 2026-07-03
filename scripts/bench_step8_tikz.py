@@ -58,17 +58,6 @@ SHOW_BASELINE_LABELS = True
 BASELINE_LABEL_FONT = "\\fontsize{4}{5}\\selectfont"   # smaller than \tiny
 KGRID = [6, 10, 14, 19, 25, 31, 37, 45, 53]
 
-# Clean integer-exponent reference slopes K^x drawn as thin black guide lines
-# and labelled directly on the plot, so the reader can eyeball each solver's
-# growth against a round power law. Each is anchored at the first measured
-# point of a representative curve (whose fitted exponent is closest to x), so
-# the guide sits alongside the solver it characterises. K^3 is the theoretical
-# transitivity-constraint count O(K^3); K^6 brackets GLPK from above.
-REF_LINES = {
-    "preorder": [(3, "highs", "full"), (6, "glpk", "h2")],
-    "partial": [(3, "glpk", "full")],
-}
-
 
 def load_rows(path):
     rows = []
@@ -122,27 +111,21 @@ def make_tikz(order, metric, rows, meta):
             P(f"\\node[{color}, font={BASELINE_LABEL_FONT}, anchor=south east] "
               f"at (axis cs:53,{y:.4g}) {{{name} {y:.1f} ms}};")
 
-    # clean-exponent reference slopes K^x (thin black, labelled on the line);
-    # drawn behind the curves so the measured markers stay on top.
-    for x, asolver, aheight in REF_LINES[order]:
-        Ks, ys = curve(rows, asolver, aheight, metric)
-        if len(Ks) == 0:
-            continue
-        coeff = ys[0] / Ks[0] ** x          # anchor at the first measured point
-        klab = 19                            # label parked in interior whitespace
-        ylab = coeff * klab ** x * 1.6       # lifted just above the guide line
-        P(f"\\addplot[black, thin, densely dashed, forget plot, "
-          f"domain=6:53, samples=2] {{{coeff:.6g}*x^{x}}};")
-        P(f"\\node[black, font=\\tiny, anchor=south east] at "
-          f"(axis cs:{klab},{ylab:.5g}) {{$\\propto K^{{{x}}}$}};")
-
-    # main curves; the fitted exponent goes into the legend entry.
+    # main curves; each gets a colour-matched dashed power-law line c*K^x whose
+    # exponent x AND coefficient c come from a least-squares fit of log(time)
+    # vs log(K) for THAT method. On log-log this dashed line is a straight line
+    # of slope x sitting over its own curve, so its closeness shows how well a
+    # pure power law describes the method. The fitted x is echoed in the legend.
     for solver, height, color, mark, legend in CURVES:
         Ks, ys = curve(rows, solver, height, metric)
         if len(Ks) == 0:
             continue
         coords = " ".join(f"({int(k)},{v:.5g})" for k, v in zip(Ks, ys))
-        slope, _ = fit(Ks, ys)
+        slope, coeff = fit(Ks, ys)
+        # dashed fitted K^x line first (behind the measured markers), drawn
+        # across the full K range so GLPK's trend shows past its measured cap.
+        P(f"\\addplot[{color}, dashed, forget plot, domain=6:53, samples=2] "
+          f"{{{coeff:.6g}*x^{slope:.4f}}};")
         P(f"\\addplot[{color}, mark={mark}, thick] coordinates {{{coords}}};")
         P(f"\\addlegendentry{{{legend} ($\\propto K^{{{slope:.1f}}}$)}}")
 

@@ -21,16 +21,16 @@
 \node[violet, font=\fontsize{4}{5}\selectfont, anchor=south east] at (axis cs:53,30.03) {CLR 30.0 ms};
 \addplot[brown, dotted, thick, forget plot, domain=6:53, samples=2] {137.4};
 \node[brown, font=\fontsize{4}{5}\selectfont, anchor=south east] at (axis cs:53,137.4) {ECC 137.4 ms};
-\addplot[black, thin, densely dashed, forget plot, domain=6:53, samples=2] {0.013887*x^3};
-\node[black, font=\tiny, anchor=south east] at (axis cs:19,152.4) {$\propto K^{3}$};
-\addplot[black, thin, densely dashed, forget plot, domain=6:53, samples=2] {2.42198e-05*x^6};
-\node[black, font=\tiny, anchor=south east] at (axis cs:19,1823.1) {$\propto K^{6}$};
+\addplot[red!75!black, dashed, forget plot, domain=6:53, samples=2] {2.69146e-05*x^5.5717};
 \addplot[red!75!black, mark=*, thick] coordinates {(6,0.87) (10,7.84) (14,47.3) (19,280.6) (25,1657) (31,8316.8)};
 \addlegendentry{GLPK, full transitivity ($\propto K^{5.6}$)}
+\addplot[orange!90!black, dashed, forget plot, domain=6:53, samples=2] {1.77524e-05*x^6.0586};
 \addplot[orange!90!black, mark=square*, thick] coordinates {(6,1.13) (10,17.6) (14,124.26) (19,986.67) (25,5450.6) (31,21968)};
 \addlegendentry{GLPK, height=2 ($\propto K^{6.1}$)}
+\addplot[blue!70!black, dashed, forget plot, domain=6:53, samples=2] {0.0115714*x^2.9318};
 \addplot[blue!70!black, mark=*, thick] coordinates {(6,2.9996) (10,8.3643) (14,23.071) (19,60.136) (25,129.27) (31,245.64) (37,470.64) (45,884.73) (53,1587.2)};
 \addlegendentry{HiGHS, full transitivity ($\propto K^{2.9}$)}
+\addplot[cyan!70!black, dashed, forget plot, domain=6:53, samples=2] {0.0096463*x^2.7104};
 \addplot[cyan!70!black, mark=square*, thick] coordinates {(6,1.8185) (10,4.476) (14,9.6767) (19,22.593) (25,50.917) (31,100.42) (37,175.77) (45,334.29) (53,574.84)};
 \addlegendentry{HiGHS, height=2 ($\propto K^{2.7}$)}
 \end{loglogaxis}
