@@ -22,6 +22,15 @@ Each figure shows, on log-log axes (x = number of labels `K`):
   inference times, for context.
 - No interior grid; axis labelled in `K` (paper notation).
 
+## Companion table
+
+`runtime_at_53.tex` is a `booktabs` table of the per-instance inference
+time at `K=53` for every method across all four figures (pre-order /
+partial order x Hamming / Subset). HiGHS values are measured; GLPK is
+capped at `K<=31`, so its `K=53` entries are extrapolated from the
+least-squares power-law fit and flagged with `*`. Needs
+`\usepackage{booktabs}`.
+
 ## Usage
 
 Add to the preamble:
@@ -29,6 +38,7 @@ Add to the preamble:
 ```latex
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.16}
+\usepackage{booktabs}   % for runtime_at_53.tex
 ```
 
 then `\input{runtime_preorder_hamming.tex}` (or paste the `tikzpicture` body)
