@@ -26,10 +26,12 @@ Each figure shows, on log-log axes (x = number of labels `K`):
 
 `runtime_at_53.tex` is a `booktabs` table of the per-instance inference
 time at `K=53` for every method across all four figures (pre-order /
-partial order x Hamming / Subset). HiGHS values are measured; GLPK is
-capped at `K<=31`, so its `K=53` entries are extrapolated from the
-least-squares power-law fit and flagged with `*`. Needs
-`\usepackage{booktabs}`.
+partial order x Hamming / Subset). All entries are measured directly at
+`K=53` (GLPK partial and HiGHS over test instances via
+`scripts/bench_step9_glpk_k53.py`; baselines over the full test set). GLPK
+does not complete the pre-order search at `K=53` (the solve is killed
+after several minutes, exhausting memory), so those cells are `n/a` with a
+`$\dagger$` note. No extrapolation is used. Needs `\usepackage{booktabs}`.
 
 ## Usage
 
