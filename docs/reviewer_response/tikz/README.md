@@ -27,12 +27,14 @@ Each figure shows, on log-log axes (x = number of labels `K`):
 `runtime_at_53.tex` is a `booktabs` table of the per-instance inference
 time at `K=53` for every method across all four figures (pre-order /
 partial order x Hamming / Subset). All entries are measured directly at
-`K=53` (GLPK partial and HiGHS over test instances via
-`scripts/bench_step9_glpk_k53.py`; baselines over the full test set). GLPK
-is impractically slow for the pre-order search at `K=53` (a single
-instance did not finish within 15 min of solving, vs. under a second for
-HiGHS), so those cells are `n/a` with a `$\dagger$` note. No extrapolation
-is used. Needs `\usepackage{booktabs}`.
+`K=53` (GLPK partial via `scripts/bench_step9_glpk_k53.py`, GLPK pre-order
+via `scripts/bench_step10_one.py`; HiGHS over test instances; baselines
+over the full test set). For the pre-order search, GLPK at **full
+transitivity** is impractically slow (a single instance did not finish
+after more than four hours, vs. under a second for HiGHS), so those two
+cells are `n/a` with a `$\dagger$` note; the **height-2** pre-order case is
+tractable but ~10^3x slower than HiGHS (about 10 min/instance). No
+extrapolation is used. Needs `\usepackage{booktabs}`.
 
 ## Usage
 
