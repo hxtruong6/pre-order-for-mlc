@@ -25,8 +25,10 @@ import preorder4mlc.solvers as solvers  # noqa: E402
 from preorder4mlc.constants import TargetMetric  # noqa: E402
 from preorder4mlc.searching_algorithms import Search_BOPreOs  # noqa: E402
 
-SCRATCH = Path("/tmp/claude-24679/-home-s2320437-WORK-preorder4MLC/"
-               "1acafedf-6413-4348-9250-5e9e5557bcc1/scratchpad")
+SCRATCH = Path(os.environ.get(
+    "PREORDER_BENCH_DIR",
+    "/tmp/claude-24679/-home-s2320437-WORK-preorder4MLC/"
+    "1acafedf-6413-4348-9250-5e9e5557bcc1/scratchpad"))
 K = 53
 
 
