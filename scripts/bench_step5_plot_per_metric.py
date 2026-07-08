@@ -10,10 +10,13 @@ Each figure shows, for that single target metric:
   * the four ILP curves (GLPK / HiGHS x full / height=2) with fitted L^x,
   * explicit anchored L^3 and L^4 reference lines,
   * horizontal baseline lines (BR, CC, CLR, ECC) for context.
+
+Self-contained: reads the tracked runtime_scaling_data.csv (seconds) and uses
+the fixed enron baseline per-instance times, so it regenerates anywhere without
+the transient benchmark scratch files. All times are in SECONDS.
 """
 
 import csv
-import pickle
 from pathlib import Path
 
 import matplotlib
@@ -22,10 +25,14 @@ import matplotlib.pyplot as plt  # noqa: E402
 import matplotlib.ticker as mticker  # noqa: E402
 import numpy as np  # noqa: E402
 
-SCRATCH = Path("/tmp/claude-24679/-home-s2320437-WORK-preorder4MLC/"
-               "1acafedf-6413-4348-9250-5e9e5557bcc1/scratchpad")
-OUTDIR = Path("/home/s2320437/WORK/preorder4MLC/results/runtime_scaling")
+REPO = Path(__file__).resolve().parents[1]
+DATA_CSV = REPO / "docs/reviewer_response/runtime_scaling_data.csv"
+OUTDIR = REPO / "docs/reviewer_response"
 OUTDIR.mkdir(parents=True, exist_ok=True)
+
+# fixed enron (K=53) per-instance baseline inference times, in SECONDS
+BASELINE_S = {"BR": 0.002548, "CC": 0.005189, "CLR": 0.03003, "ECC": 0.1374}
+N_TEST = 300
 
 # metric key in CSV -> (filename stem, human title)
 METRICS = {
@@ -54,21 +61,21 @@ ILP_STYLE = {
 
 def load():
     rows = []
-    with (SCRATCH / "scaling_results.csv").open() as f:
+    with DATA_CSV.open() as f:
         for r in csv.DictReader(f):
             r["mean_solve_s"] = float(r["mean_solve_s"])
             r["L"] = int(r["L"])
             rows.append(r)
-    meta = pickle.load((SCRATCH / "enron_bench_meta.pkl").open("rb"))
+    meta = {"baseline_per_instance_s": BASELINE_S, "n_test": N_TEST}
     return rows, meta
 
 
 def curve(rows, solver, height, metric):
-    """Single-metric curve -> (Ls, times_ms)."""
+    """Single-metric curve -> (Ls, times_s)."""
     sel = [r for r in rows if r["solver"] == solver
            and r["height"] == height and r["metric"] == metric]
     Ls = sorted({r["L"] for r in sel})
-    ys = [next(r["mean_solve_s"] for r in sel if r["L"] == L) * 1e3
+    ys = [next(r["mean_solve_s"] for r in sel if r["L"] == L)
           for L in Ls]
     return np.array(Ls, dtype=float), np.array(ys)
 
@@ -97,11 +104,11 @@ def make_figure(rows, meta, metric_key, stem, title):
         ax.text(53, anchor_y * (53 / anchor_L) ** k,
                 f"  $L^{k}$ reference", color=c, fontsize=9, va="center")
 
-    # Baseline horizontal lines (per-instance, ms). Metric-independent.
+    # Baseline horizontal lines (per-instance, seconds). Metric-independent.
     for name, sec in meta["baseline_per_instance_s"].items():
         c, lbl = BASELINE_STYLE[name]
-        ax.axhline(sec * 1e3, color=c, ls=":", lw=1.4)
-        ax.text(6, sec * 1e3, f" {lbl}: {sec*1e3:.1f} ms",
+        ax.axhline(sec, color=c, ls=":", lw=1.4)
+        ax.text(6, sec, f" {lbl}: {sec:.4g} s",
                 color=c, fontsize=8, va="bottom", ha="left")
 
     ax.set_xscale("log")
@@ -109,7 +116,7 @@ def make_figure(rows, meta, metric_key, stem, title):
     ax.set_xticks([6, 10, 14, 19, 25, 31, 37, 45, 53])
     ax.get_xaxis().set_major_formatter(mticker.ScalarFormatter())
     ax.set_xlabel("Number of labels $L$ (log scale)")
-    ax.set_ylabel("Average time per test instance (ms, log scale)")
+    ax.set_ylabel("Average time per test instance (s, log scale)")
     ax.set_title(f"Per-instance ILP runtime scaling -- {title}\n"
                  "(real enron RF pairwise probabilities, "
                  f"mean over {meta['n_test']} test instances)")

@@ -25,21 +25,28 @@ Variables scale as **O(L²)**, transitivity constraints as **O(L³)**. From
 
 ## 2. Measured runtime vs L
 
-Average solve time per test instance (ms), sweeping label-subset size on the
-same trained enron model (only `L` varies):
+Average solve time per test instance (seconds), sweeping label-subset size on
+the same trained enron model (only `L` varies); each value is the mean over the
+two target metrics:
 
 | `L` | GLPK full | GLPK h=2 | HiGHS full | HiGHS h=2 |
 |----:|---:|---:|---:|---:|
-| 6  | 1.0     | 1.1      | 3.7   | 1.8  |
-| 14 | 41.6    | 124.9    | 24.6  | 9.7  |
-| 19 | 250.9   | 987.0    | 66.4  | 23.1 |
-| 25 | 1,455   | 5,444    | 151.9 | 50.9 |
-| 31 | 7,500   | 21,957   | 304.8 | 100.5 |
-| 37 | impractical | impractical | 632   | 176  |
-| 45 | impractical | impractical | 1,178 | 336  |
-| 53 | impractical | impractical | 2,007 | 577  |
+| 6  | 0.001       | 0.001         | 0.004 | 0.002 |
+| 14 | 0.042       | 0.125         | 0.025 | 0.010 |
+| 19 | 0.251       | 0.987         | 0.066 | 0.023 |
+| 25 | 1.46        | 5.44          | 0.152 | 0.051 |
+| 31 | 7.50        | 21.96         | 0.305 | 0.101 |
+| 37 | not measured | not measured | 0.632 | 0.176 |
+| 45 | not measured | not measured | 1.178 | 0.336 |
+| 53 | >48h (DNF)  | 621.9 (~10 min) | 2.007 | 0.577 |
 
-(GLPK capped at `L≤31`: beyond that a single instance exceeds practical time.)
+GLPK at `L∈{37,45}` was not run (a single instance already needs seconds to
+tens of seconds by `L=31`). At `L=53` we timed GLPK **directly**: the
+height=2 variant solves in **621.9 s (~10 min/instance, ~1000× slower than
+HiGHS)**, while full transitivity **did not finish within a 48-hour wall-clock
+limit** (SLURM job, hard-capped). These direct `K=53` measurements, per target
+metric and preference order, are in the companion table `tikz/runtime_at_53.tex`;
+the four scaling figures are under `tikz/`.
 
 ![Runtime scaling](runtime_scaling.png)
 
@@ -55,6 +62,14 @@ Fitting a power law `time ∝ L^x` to the measured curves gives:
 The figure below overlays these curves against explicit `L^3` and `L^4`
 reference lines: HiGHS (full) sits almost exactly on the `L^3` reference, while
 GLPK is far steeper.
+
+The exponents above are fitted on `L≤31`, so it is worth checking them against
+the direct `L=53` measurements. For GLPK **height=2** the fit roughly holds:
+extrapolating `L^6.1` predicts ~500 s and we measured 621.9 s (same order).
+For GLPK **full transitivity** the fit **catastrophically underestimates**:
+extrapolating `L^5.4` predicts ~1 min at `L=53`, but the solve did not finish in
+48 hours (>2600× longer). This is why we do not extrapolate GLPK past its
+measured regime in the figures and why enron uses HiGHS.
 
 ![Empirical power-law slopes](runtime_scaling_slopes.png)
 
@@ -77,8 +92,9 @@ Fitted exponents per metric: GLPK `L^5.3`/`L^5.6` (full, Hamming/Subset),
 HiGHS `L^3.1`/`L^2.9` (full). The two metrics track each other closely.
 
 - **GLPK (default solver) does not scale**: cost grows ~L^5.4 (full) / ~L^6.1
-  (height=2) and a single instance already needs seconds at `L=25` and tens of
-  seconds by `L=31`. It is impractical beyond `L≈37`.
+  (height=2), a single instance already needs seconds at `L=25` and tens of
+  seconds by `L=31`. At `L=53` full transitivity does not finish in 48 h and
+  height=2 needs ~10 min/instance (~1000× slower than HiGHS): unusable at scale.
 - **HiGHS scales ~L^3.0** (matching the O(L³) constraint count) and stays
   practical: about **2 s / instance** at `L=53` (full transitivity) or **~0.6 s**
   with the height=2 variant.
@@ -89,7 +105,7 @@ Baselines do no per-instance optimization (per-instance inference on enron):
 
 | BR | CC | CLR | ECC | BOPOs (HiGHS, h=2) | BOPOs (HiGHS, full) |
 |---:|---:|----:|----:|-------------------:|--------------------:|
-| ~2.5 ms | ~5 ms | ~30 ms | ~137 ms | ~0.6 s | ~2 s |
+| ~0.0025 s | ~0.005 s | ~0.030 s | ~0.137 s | ~0.6 s | ~2 s |
 
 The extra cost of BOPOs is a single per-instance ILP. It is parallelizable
 across the test set (`PREORDER_SEARCH_N_JOBS`), and it sits on top of the same

@@ -5,10 +5,13 @@ Second figure requested by reviewer 1: instead of only marking curves as
 fit the empirical power-law exponent of each solver/variant curve, and
 annotate the fitted exponent directly on the plot. This makes the claim
 "GLPK grows ~L^5, HiGHS ~L^3" verifiable at a glance.
+
+Self-contained: reads the tracked runtime_scaling_data.csv (seconds), so it
+regenerates anywhere without the transient benchmark scratch files. All times
+are in SECONDS.
 """
 
 import csv
-import pickle
 from pathlib import Path
 
 import matplotlib
@@ -16,32 +19,32 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 
-SCRATCH = Path("/tmp/claude-24679/-home-s2320437-WORK-preorder4MLC/"
-               "1acafedf-6413-4348-9250-5e9e5557bcc1/scratchpad")
-OUTDIR = Path("/home/s2320437/WORK/preorder4MLC/results/runtime_scaling")
+REPO = Path(__file__).resolve().parents[1]
+DATA_CSV = REPO / "docs/reviewer_response/runtime_scaling_data.csv"
+OUTDIR = REPO / "docs/reviewer_response"
 OUTDIR.mkdir(parents=True, exist_ok=True)
+N_TEST = 300
 
 
 def load():
     rows = []
-    with (SCRATCH / "scaling_results.csv").open() as f:
+    with DATA_CSV.open() as f:
         for r in csv.DictReader(f):
             r["mean_solve_s"] = float(r["mean_solve_s"])
             r["L"] = int(r["L"])
             rows.append(r)
-    meta = pickle.load((SCRATCH / "enron_bench_meta.pkl").open("rb"))
-    return rows, meta
+    return rows, {"n_test": N_TEST}
 
 
 def curve(rows, solver, height):
-    """Mean over the two target metrics per L -> (Ls, times_ms)."""
+    """Mean over the two target metrics per L -> (Ls, times_s)."""
     Ls = sorted({r["L"] for r in rows
                  if r["solver"] == solver and r["height"] == height})
     ys = []
     for L in Ls:
         vals = [r["mean_solve_s"] for r in rows if r["L"] == L
                 and r["solver"] == solver and r["height"] == height]
-        ys.append(np.mean(vals) * 1e3)
+        ys.append(np.mean(vals))
     return np.array(Ls, dtype=float), np.array(ys)
 
 
@@ -94,7 +97,7 @@ def main():
     ax.set_xticks([6, 10, 14, 19, 25, 31, 37, 45, 53])
     ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
     ax.set_xlabel("Number of labels $L$ (log scale)")
-    ax.set_ylabel("Average inference time per test instance (ms, log scale)")
+    ax.set_ylabel("Average inference time per test instance (s, log scale)")
     ax.set_title("Empirical power-law scaling of the per-instance ILP\n"
                  "(real enron RF pairwise probabilities, "
                  f"mean over {meta['n_test']} test instances)")
