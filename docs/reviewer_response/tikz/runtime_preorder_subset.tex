@@ -2,7 +2,7 @@
 \begin{tikzpicture}
 \begin{loglogaxis}[
     width=10cm, height=7.5cm,
-    xlabel={Number of labels $K$}, ylabel={Avg.\ time per instance (ms)},
+    xlabel={Number of labels $K$}, ylabel={Avg.\ time per instance (s)},
     title={pre-order, Subset (0/1 exact-match) accuracy},
     xtick={6,10,14,19,25,31,37,45,53},
     xticklabels={6,10,14,19,25,31,37,45,53},
@@ -13,25 +13,25 @@
     legend style={font=\tiny, inner sep=1pt, row sep=-1pt},
     xmin=5.5, xmax=60,
 ]
-\addplot[green!55!black, dotted, thick, forget plot, domain=6:53, samples=2] {2.548};
-\node[green!55!black, font=\fontsize{4}{5}\selectfont, anchor=south east] at (axis cs:53,2.548) {BR 2.5 ms};
-\addplot[teal, dotted, thick, forget plot, domain=6:53, samples=2] {5.189};
-\node[teal, font=\fontsize{4}{5}\selectfont, anchor=south east] at (axis cs:53,5.189) {CC 5.2 ms};
-\addplot[violet, dotted, thick, forget plot, domain=6:53, samples=2] {30.03};
-\node[violet, font=\fontsize{4}{5}\selectfont, anchor=south east] at (axis cs:53,30.03) {CLR 30.0 ms};
-\addplot[brown, dotted, thick, forget plot, domain=6:53, samples=2] {137.4};
-\node[brown, font=\fontsize{4}{5}\selectfont, anchor=south east] at (axis cs:53,137.4) {ECC 137.4 ms};
-\addplot[red!75!black, dashed, forget plot, domain=6:53, samples=2] {2.69146e-05*x^5.5717};
-\addplot[red!75!black, mark=*, thick] coordinates {(6,0.87) (10,7.84) (14,47.3) (19,280.6) (25,1657) (31,8316.8)};
+\addplot[green!55!black, dotted, thick, forget plot, domain=6:53, samples=2] {0.002548};
+\node[green!55!black, font=\fontsize{4}{5}\selectfont, anchor=south east] at (axis cs:53,0.002548) {BR 0.0025 s};
+\addplot[teal, dotted, thick, forget plot, domain=6:53, samples=2] {0.005189};
+\node[teal, font=\fontsize{4}{5}\selectfont, anchor=south east] at (axis cs:53,0.005189) {CC 0.0052 s};
+\addplot[violet, dotted, thick, forget plot, domain=6:53, samples=2] {0.03003};
+\node[violet, font=\fontsize{4}{5}\selectfont, anchor=south east] at (axis cs:53,0.03003) {CLR 0.030 s};
+\addplot[brown, dotted, thick, forget plot, domain=6:53, samples=2] {0.1374};
+\node[brown, font=\fontsize{4}{5}\selectfont, anchor=south east] at (axis cs:53,0.1374) {ECC 0.137 s};
+\addplot[red!75!black, dashed, forget plot, domain=6:31, samples=2] {2.69144e-08*x^5.5717};
+\addplot[red!75!black, mark=*, thick] coordinates {(6,0.00087) (10,0.00784) (14,0.0473) (19,0.2806) (25,1.657) (31,8.3168)};
 \addlegendentry{GLPK, full transitivity ($\propto K^{5.6}$)}
-\addplot[orange!90!black, dashed, forget plot, domain=6:53, samples=2] {1.77524e-05*x^6.0586};
-\addplot[orange!90!black, mark=square*, thick] coordinates {(6,1.13) (10,17.6) (14,124.26) (19,986.67) (25,5450.6) (31,21968)};
+\addplot[orange!90!black, dashed, forget plot, domain=6:31, samples=2] {1.77524e-08*x^6.0586};
+\addplot[orange!90!black, mark=square*, thick] coordinates {(6,0.00113) (10,0.0176) (14,0.12426) (19,0.98667) (25,5.4506) (31,21.968) (53,621.09)};
 \addlegendentry{GLPK, height=2 ($\propto K^{6.1}$)}
-\addplot[blue!70!black, dashed, forget plot, domain=6:53, samples=2] {0.0115714*x^2.9318};
-\addplot[blue!70!black, mark=*, thick] coordinates {(6,2.9996) (10,8.3643) (14,23.071) (19,60.136) (25,129.27) (31,245.64) (37,470.64) (45,884.73) (53,1587.2)};
+\addplot[blue!70!black, dashed, forget plot, domain=6:53, samples=2] {1.15715e-05*x^2.9318};
+\addplot[blue!70!black, mark=*, thick] coordinates {(6,0.0029996) (10,0.0083643) (14,0.023071) (19,0.060136) (25,0.12927) (31,0.24564) (37,0.47064) (45,0.88473) (53,1.5872)};
 \addlegendentry{HiGHS, full transitivity ($\propto K^{2.9}$)}
-\addplot[cyan!70!black, dashed, forget plot, domain=6:53, samples=2] {0.0096463*x^2.7104};
-\addplot[cyan!70!black, mark=square*, thick] coordinates {(6,1.8185) (10,4.476) (14,9.6767) (19,22.593) (25,50.917) (31,100.42) (37,175.77) (45,334.29) (53,574.84)};
+\addplot[cyan!70!black, dashed, forget plot, domain=6:53, samples=2] {9.6463e-06*x^2.7104};
+\addplot[cyan!70!black, mark=square*, thick] coordinates {(6,0.0018185) (10,0.004476) (14,0.0096767) (19,0.022593) (25,0.050917) (31,0.10042) (37,0.17577) (45,0.33429) (53,0.57484)};
 \addlegendentry{HiGHS, height=2 ($\propto K^{2.7}$)}
 \end{loglogaxis}
 \end{tikzpicture}
