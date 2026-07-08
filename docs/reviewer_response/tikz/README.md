@@ -31,9 +31,9 @@ partial order x Hamming / Subset). All entries are measured directly at
 via `scripts/bench_step10_one.py`; HiGHS over test instances; baselines
 over the full test set). For the pre-order search, GLPK at **full
 transitivity** is impractically slow (a single instance did not finish
-after more than four hours, vs. under a second for HiGHS), so those two
-cells are `n/a` with a `$\dagger$` note; the **height-2** pre-order case is
-tractable but ~10^3x slower than HiGHS (about 10 min/instance). No
+within a 48-hour wall-clock limit, vs. under a second for HiGHS), so those
+two cells are `n/a` with a `$\dagger$` note; the **height-2** pre-order case
+is tractable but ~10^3x slower than HiGHS (about 10 min/instance). No
 extrapolation is used. Needs `\usepackage{booktabs}`.
 
 ## Usage
