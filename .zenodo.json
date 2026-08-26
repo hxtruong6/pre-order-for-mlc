@@ -1,13 +1,13 @@
 {
   "title": "preorder4mlc: Robust multi-label classification via preference learning",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "upload_type": "software",
   "access_right": "open",
   "license": "MIT",
   "description": "<p>preorder4mlc is a Python package that casts multi-label classification (MLC) as order-structure learning. It transforms an MLC problem into a preference-learning task, trains pairwise classifiers, and predicts Bayes-optimal (pre)order structures via integer linear programming. It targets robust MLC under noisy and imbalanced labels and MLC with partial abstention.</p><p>This release accompanies the article <em>\"Robust multi-label classification via preference learning\"</em> (Machine Learning, Springer, 2026).</p>",
   "creators": [
-    { "name": "Hoang, Xuan-Truong", "orcid": "0009-0003-4350-5148" },
     { "name": "Nguyen, Vu-Linh" },
+    { "name": "Hoang, Xuan-Truong", "orcid": "0009-0003-4350-5148" },
     { "name": "Destercke, Sébastien" },
     { "name": "de Campos, Cassio" },
     { "name": "Huynh, Van-Nam" }

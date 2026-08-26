@@ -14,7 +14,8 @@ instead of guessing.
 > 📄 Code and full experimental results for:
 > **Robust multi-label classification via preference learning** —
 > Vu-Linh Nguyen, Xuan-Truong Hoang, Sébastien Destercke, Cassio de Campos,
-> Van-Nam Huynh (Nguyen and Hoang contributed equally).
+> Van-Nam Huynh. Vu-Linh Nguyen and Xuan-Truong Hoang contributed equally to
+> this work and should be regarded as co-first authors.
 > Accepted for publication in *Machine Learning* (Springer), 2026.
 > The DOI will be added once the Version of Record is published online.
 

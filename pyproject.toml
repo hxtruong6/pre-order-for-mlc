@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "preorder4mlc"
-version = "1.0.0"
+version = "1.0.1"
 description = "Robust multi-label classification via preference learning: pairwise classifiers and ILP-based Bayes-optimal order-structure prediction."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }
 authors = [
-    { name = "Xuan-Truong Hoang", email = "hxtruong@jaist.ac.jp" },
     { name = "Vu-Linh Nguyen", email = "vu-linh.nguyen@hds.utc.fr" },
+    { name = "Xuan-Truong Hoang", email = "hxtruong@jaist.ac.jp" },
     { name = "Sébastien Destercke", email = "sebastien.destercke@hds.utc.fr" },
     { name = "Cassio de Campos", email = "c.decampos@tue.nl" },
     { name = "Van-Nam Huynh", email = "huynh@jaist.ac.jp" },
