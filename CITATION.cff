@@ -27,8 +27,8 @@ authors:
     affiliation: "School of Knowledge Science, Japan Advanced Institute of Science and Technology, Japan"
 repository-code: "https://github.com/hxtruong6/pre-order-for-mlc"
 license: MIT
-version: "1.0.1"
-date-released: "2026-08-26"
+version: "1.0.2"
+date-released: "2026-08-27"
 keywords:
   - multi-label classification
   - preference learning

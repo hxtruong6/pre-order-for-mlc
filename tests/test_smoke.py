@@ -10,4 +10,4 @@ def test_package_imports():
 
 
 def test_version_matches_metadata():
-    assert importlib.metadata.version("preorder4mlc") == "1.0.1"
+    assert importlib.metadata.version("preorder4mlc") == "1.0.2"
