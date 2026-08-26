@@ -27,8 +27,12 @@ CLAUDE.md
 # code-review-graph index
 .code-review-graph/
 
-# enron.arff is downloaded separately from COMETA / MULAN — see REPRODUCE.md §2.
-data/enron.arff
+# Dataset files are downloaded separately and are not shipped with the package.
+*.arff
+
+# Local paper-writing workspaces
+overleaf/
+paper_revision/
 
 # --- Python ---------------------------------------------------------------
 
