@@ -34,7 +34,7 @@ instead of guessing.
 
 ## What it does
 
-The method is built around **Bipartite Ordered Preference Orders (BOPOs)**.
+The method is built around **Bayes-Optimal Preference Orders (BOPOs)**.
 Instead of predicting each label independently, it works in three steps:
 
 1. **Learn pairwise preferences.** For every pair of labels, a calibrated
