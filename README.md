@@ -12,18 +12,24 @@ label in isolation — and that can **abstain** on labels it is unsure about
 instead of guessing.
 
 > 📄 Code and full experimental results for:
-> **Robust Multi-Label Classification via Preference Learning** —
+> **Robust multi-label classification via preference learning** —
 > Vu-Linh Nguyen, Xuan-Truong Hoang, Sébastien Destercke, Cassio de Campos,
 > Van-Nam Huynh (Nguyen and Hoang contributed equally).
-> *Machine Learning* (Springer), 2026. \<TODO: DOI once assigned\>
+> Accepted for publication in *Machine Learning* (Springer), 2026.
+> The DOI will be added once the Version of Record is published online.
 
-> **Abstract.** We explore how multi-label classification (MLC) tasks can
-> be cast into order structure learning, exploiting the rich structure of
-> orders to improve and robustify MLC. We formalise the transformation of
-> MLC into an order structure learning and prediction task, study the
-> prediction of Bayes-optimal order structures, and run experiments in
-> settings where orders are especially beneficial: robust MLC under noisy
-> and imbalanced labels, and MLC prediction with partial abstention.
+> **Abstract.** In this paper, we explore how multi-label classification
+> (MLC) tasks can be cast into order structure learning. Our motivation for
+> doing so is to exploit the very rich structure of the orders to improve and
+> robustify MLC learning. We describe formally how MLC can be transformed into
+> an order structure learning and prediction task, and then proceed to study
+> the problem of predicting Bayes-optimal order structures. We then perform
+> some experiments in settings where the use of order structures can be very
+> beneficial: robust MLC in the presence of noisy and imbalanced labels, and
+> making MLC predictions with partial abstention.
+>
+> **Keywords:** MLC; preference learning; noisy and imbalanced labels;
+> robustness.
 
 ## What it does
 
@@ -142,7 +148,7 @@ If you use this code, please cite the paper (see
 
 ```bibtex
 @article{nguyen2026robust,
-  title     = {Robust Multi-Label Classification via Preference Learning},
+  title     = {Robust multi-label classification via preference learning},
   author    = {Nguyen, Vu-Linh and Hoang, Xuan-Truong and Destercke, S{\'e}bastien and de Campos, Cassio and Huynh, Van-Nam},
   journal   = {Machine Learning},
   publisher = {Springer},
